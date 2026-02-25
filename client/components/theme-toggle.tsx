@@ -21,7 +21,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={mounted ? (isDark ? "Switch to light theme" : "Switch to dark theme") : "Toggle theme"}
-      className="fixed right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted"
+      className="fixed right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted print:hidden"
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.98 }}
     >
