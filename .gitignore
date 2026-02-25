@@ -19,6 +19,15 @@ dist/
 build/
 *.tsbuildinfo
 
+# Server
+server/dist/
+server/uploads/
+server/temp/
+server/logs/
+
+# Puppeteer cache
+.cache/puppeteer/
+
 # Logs
 logs/
 *.log
@@ -48,6 +57,7 @@ Desktop.ini
 
 # TypeScript
 *.tsbuildinfo
+next-env.d.ts
 
 # Vercel (if deployed)
 .vercel
