@@ -535,8 +535,8 @@ PATCH /api/resume/:id/step/:step
 ```
 
 - Form data is held in Zustand store (survives component re-renders)
-- Debounced API calls every 5 seconds to avoid excessive requests
-- Failed saves are queued in `localStorage` and retried on next load
+- `useAutoSave` hook (`client/hooks/useAutoSave.ts`): debounced save trigger — pass `saveStepN` and step deps; skips when no `resumeId`. (Currently available but not wired; form saves on "Choose template" instead.)
+- Failed saves are queued in `localStorage` and retried on next load (optional enhancement)
 - `currentStep` is tracked server-side so user can resume where they left off
 
 ### Concurrency Control (Optimistic Locking)
@@ -1192,7 +1192,11 @@ chitkara-cv/
 │   │   │   ├── MinimalTemplate.tsx
 │   │   │   ├── AcademicTemplate.tsx
 │   │   │   └── TechnicalTemplate.tsx
+│   │   ├── theme-toggle.tsx
+│   │   ├── theme-provider.tsx
 │   │   └── common/
+│   ├── hooks/
+│   │   └── useAutoSave.ts         # Debounced auto-save hook (resume steps)
 │   ├── store/
 │   │   ├── authStore.ts          # Auth state (user, sendOtp, verifyOtp, logout)
 │   │   └── resumeStore.ts
@@ -1214,26 +1218,31 @@ chitkara-cv/
 │   │   │   ├── auth.ts              # JWT verification
 │   │   │   ├── rateLimiter.ts       # Rate limiting configs
 │   │   │   ├── validate.ts          # Request validation
+│   │   │   ├── requestLogger.ts     # Request/response logging
 │   │   │   └── errorHandler.ts      # Global error handler
 │   │   ├── routes/
 │   │   │   ├── auth.routes.ts
-│   │   │   ├── resume.routes.ts
-│   │   │   ├── ai.routes.ts
-│   │   │   └── upload.routes.ts
+│   │   │   ├── resume.route.ts
+│   │   │   ├── ai.route.ts
+│   │   │   └── upload.route.ts
 │   │   ├── controllers/
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── resume.controller.ts
+│   │   │   ├── preview.controller.ts    # HTML preview rendering
+│   │   │   ├── pdf.controller.ts        # PDF download
 │   │   │   ├── ai.controller.ts
 │   │   │   └── upload.controller.ts
 │   │   ├── services/
 │   │   │   ├── otp.service.ts
 │   │   │   ├── email.service.ts
 │   │   │   ├── ai.service.ts        # OpenAI API wrapper
-│   │   │   ├── pdf.service.ts       # Puppeteer PDF generation
-│   │   │   └── ats.service.ts       # ATS scoring engine
+│   │   │   ├── ats.service.ts       # ATS scoring engine
+│   │   │   ├── storage.service.ts   # S3/MinIO upload & delete
+│   │   │   ├── template.service.ts  # Handlebars template rendering
+│   │   │   └── pdf.service.ts       # Puppeteer PDF generation
 │   │   ├── types/
 │   │   │   ├── express.d.ts         # Express request augmentation
-│   │   │   └── index.ts             # Shared type definitions
+│   │   │   └── index.ts             # Shared types, getParam(), JwtPayload
 │   │   ├── utils/
 │   │   │   ├── AppError.ts
 │   │   │   └── logger.ts            # Winston config

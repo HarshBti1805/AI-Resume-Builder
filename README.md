@@ -64,7 +64,11 @@ chitkara-cv/
 │   │   ├── ui/                   # shadcn/ui components
 │   │   ├── form/                 # Form step components
 │   │   ├── templates/            # 5 resume template components
+│   │   ├── theme-toggle.tsx      # Light/dark mode toggle
+│   │   ├── theme-provider.tsx    # Theme context provider
 │   │   └── common/               # Header, Stepper, etc.
+│   ├── hooks/
+│   │   └── useAutoSave.ts        # Debounced auto-save hook (optional)
 │   ├── store/
 │   │   ├── authStore.ts          # Zustand auth state (user, OTP, logout)
 │   │   └── resumeStore.ts        # Zustand resume form state
@@ -86,26 +90,31 @@ chitkara-cv/
 │   │   │   ├── auth.ts           # JWT verification
 │   │   │   ├── rateLimiter.ts    # Rate limiting
 │   │   │   ├── validate.ts       # Request validation
+│   │   │   ├── requestLogger.ts  # Request/response logging
 │   │   │   └── errorHandler.ts   # Global error handler
 │   │   ├── routes/
 │   │   │   ├── auth.routes.ts
-│   │   │   ├── resume.routes.ts
-│   │   │   ├── ai.routes.ts
-│   │   │   └── upload.routes.ts
+│   │   │   ├── resume.route.ts
+│   │   │   ├── ai.route.ts
+│   │   │   └── upload.route.ts
 │   │   ├── controllers/
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── resume.controller.ts
+│   │   │   ├── preview.controller.ts  # HTML preview
+│   │   │   ├── pdf.controller.ts      # PDF download
 │   │   │   ├── ai.controller.ts
 │   │   │   └── upload.controller.ts
 │   │   ├── services/
 │   │   │   ├── otp.service.ts
 │   │   │   ├── email.service.ts
 │   │   │   ├── ai.service.ts     # OpenAI API wrapper
-│   │   │   ├── pdf.service.ts    # Puppeteer PDF generation
-│   │   │   └── ats.service.ts    # ATS scoring engine
+│   │   │   ├── ats.service.ts    # ATS scoring engine
+│   │   │   ├── storage.service.ts    # S3/MinIO upload & delete
+│   │   │   ├── template.service.ts   # Handlebars template rendering
+│   │   │   └── pdf.service.ts    # Puppeteer PDF generation
 │   │   ├── types/
 │   │   │   ├── express.d.ts      # Express request augmentation
-│   │   │   └── index.ts          # Shared type definitions
+│   │   │   └── index.ts          # Shared types, getParam(), JwtPayload, ApiResponse
 │   │   ├── utils/
 │   │   │   ├── AppError.ts
 │   │   │   └── logger.ts
