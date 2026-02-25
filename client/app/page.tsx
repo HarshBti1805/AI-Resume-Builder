@@ -8,48 +8,85 @@ const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.06, delayChildren: 0.08 },
+    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
   },
 };
 
 const item = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] as const } },
 };
 
-const features = [
+const sectionReveal = {
+  hidden: { opacity: 0, y: 28 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] as const },
+  },
+};
+
+const steps = [
   {
-    title: "OTP-Based Auth",
-    description: "Verify with your university email for secure, one-time access.",
+    num: "01",
+    title: "Sign in",
+    desc: "Use your @chitkara.edu.in email. We send a one-time code — no passwords.",
   },
   {
-    title: "5-Step Guided Form",
-    description:
-      "Personal → Academics → Skills & Projects → Experience → Summary.",
+    num: "02",
+    title: "Fill the form",
+    desc: "Five guided sections: personal info, academics, skills, experience, summary.",
   },
   {
-    title: "5 ATS-Compliant Templates",
-    description: "Classic, Modern, Minimal, Academic, Technical — pick your style.",
+    num: "03",
+    title: "Pick a template",
+    desc: "Choose from 5 ATS-optimized layouts. Check your score before downloading.",
   },
   {
-    title: "AI Content Generation",
-    description: "Auto-generate summaries and enhance bullet points with GPT.",
-  },
-  {
-    title: "ATS Checker",
-    description: "Rule-based + AI scoring with actionable suggestions.",
-  },
-  {
-    title: "PDF Download",
-    description: "Server-side generation — polished, print-ready resumes.",
+    num: "04",
+    title: "Download PDF",
+    desc: "Print-ready, recruiter-friendly. Upload to any job portal without formatting issues.",
   },
 ];
 
-const steps = [
-  { step: "01", label: "Sign in with your university email" },
-  { step: "02", label: "Fill the guided 5-step form" },
-  { step: "03", label: "Pick a template & run ATS check" },
-  { step: "04", label: "Download your PDF resume" },
+const features = [
+  {
+    title: "AI-written summary",
+    desc: "Stuck on your professional summary? Our AI drafts one from your profile data in seconds.",
+    span: "sm:col-span-2",
+  },
+  {
+    title: "ATS score",
+    desc: "See how applicant tracking systems read your resume. Get a score out of 100 with specific fixes.",
+    span: "",
+  },
+  {
+    title: "Auto-save",
+    desc: "Your progress saves every few seconds. Close the tab, come back tomorrow — everything's there.",
+    span: "",
+  },
+  {
+    title: "Bullet enhancer",
+    desc: "Weak project descriptions? One click rewrites them with action verbs and quantified impact.",
+    span: "sm:col-span-2",
+  },
+  {
+    title: "5 templates",
+    desc: "Classic, Modern, Minimal, Academic, Technical. Each one designed to pass ATS filters and look clean on paper.",
+    span: "sm:col-span-2",
+  },
+  {
+    title: "University-only access",
+    desc: "Restricted to Chitkara students. Your data stays private, your resume stays yours.",
+    span: "",
+  },
+];
+
+const stats = [
+  { value: "6s", label: "Average time a recruiter spends on your resume" },
+  { value: "75%", label: "Resumes rejected by ATS before a human sees them" },
+  { value: "5", label: "Professional templates built for Indian placements" },
+  { value: "<15m", label: "Time to build your complete resume on ChitkaraCV" },
 ];
 
 export default function Home() {
@@ -57,210 +94,346 @@ export default function Home() {
     <div className="relative min-h-screen overflow-hidden">
       <ThemeToggle />
 
-      {/* Layered background */}
+      {/* Background layers */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,var(--primary)/.12),var(--background)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,var(--primary)/.08,transparent_70%)]"
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_80%,var(--primary)/.06),transparent_70%]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)/.35_1px_transparent,transparent_1px),linear-gradient(to_bottom,var(--border)/.35_1px_transparent,transparent_1px)] bg-[size:28px_28px]"
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)/.25_1px,transparent_1px),linear-gradient(to_bottom,var(--border)/.25_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_40%,black_20%,transparent_100%)]"
         aria-hidden
       />
 
-      <main className="relative mx-auto max-w-4xl px-4 pb-32 pt-28 sm:px-6 sm:pt-36">
-        <motion.div
+      <main className="relative mx-auto max-w-5xl px-5 pb-32 pt-24 sm:px-8 sm:pt-32">
+        {/* ═══════════════════════════════════════════════ */}
+        {/* HERO                                           */}
+        {/* ═══════════════════════════════════════════════ */}
+        <motion.section
           variants={container}
           initial="hidden"
           animate="show"
           className="flex flex-col items-center text-center"
         >
-
-
-          {/* Logo */}
-          <motion.div variants={item} className="mb-4">
+          <motion.div variants={item}>
             <Link
               href="/"
-              className="font-akrobat text-4xl font-semibold tracking-wide text-foreground transition-opacity normal-case tracking-wider hover:opacity-80 sm:text-5xl"
+              className="font-akrobat text-3xl font-bold tracking-wider text-foreground transition-opacity hover:opacity-80 sm:text-5xl"
             >
               ChitkaraCV
             </Link>
           </motion.div>
 
-          {/* Badge */}
-          <motion.div
+          <motion.span
             variants={item}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-border/80 bg-card/60 px-4 py-1.5 font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground backdrop-blur-sm"
+            className="mt-4 inline-flex items-center rounded-full border border-border/70 bg-card/50 px-4 py-1.5 font-dm-mono text-[11px] uppercase tracking-widest text-muted-foreground backdrop-blur-sm"
           >
-            For Chitkara University students
-          </motion.div>
+            for Chitkara University students
+          </motion.span>
 
-          {/* Hero */}
           <motion.h1
             variants={item}
-            className="font-instrument-serif mb-5 max-w-2xl tracking-wide text-foreground sm:tracking-wider text-3xl sm:text-4xl md:text-5xl"
+            className="font-instrument-serif mt-8 max-w-3xl text-4xl leading-[1.15] tracking-wide text-foreground sm:text-5xl md:text-6xl"
           >
-            Build a resume that gets noticed
+            Your resume shouldn&apos;t be
+            <br className="hidden sm:block" />
+            {" "}the reason you don&apos;t get called
           </motion.h1>
+
           <motion.p
             variants={item}
-            className="font-manrope mb-10 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+            className="font-manrope mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-[17px]"
           >
-            A structured, AI-enhanced resume builder for university students.
-            Guided form, ATS-friendly templates, and one-click PDF — no design
-            skills required.
+            Guided form, AI-enhanced content, ATS-checked output.
+            Build a placement-ready resume in under 15 minutes.
           </motion.p>
 
-          <motion.div variants={item} className="flex flex-wrap justify-center gap-4">
+          <motion.div variants={item} className="mt-10 flex flex-wrap justify-center gap-4">
             <Link
               href="/login"
-              className="font-space-grotesk inline-flex h-12 items-center justify-center rounded-xl bg-foreground px-8 font-medium text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 hover:shadow-xl hover:shadow-black/15 focus:outline-none focus:ring-2 focus:ring-foreground/30 dark:shadow-black/20 dark:hover:shadow-black/30"
+              className="font-space-grotesk inline-flex h-12 items-center justify-center rounded-xl bg-foreground px-8 text-[15px] font-medium text-background shadow-lg shadow-black/8 transition-all hover:opacity-90 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-foreground/30"
             >
-              Get started
+              Create my resume →
             </Link>
             <a
               href="#how-it-works"
-              className="font-manrope inline-flex h-12 items-center justify-center rounded-xl border border-border bg-muted/40 px-8 font-medium text-foreground transition-colors hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="font-manrope inline-flex h-12 items-center justify-center rounded-xl border border-border/80 bg-card/40 px-8 text-[15px] font-medium text-foreground backdrop-blur-sm transition-colors hover:bg-card/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
               How it works
             </a>
           </motion.div>
 
-          {/* Trust line */}
           <motion.p
             variants={item}
-            className="mt-8 font-manrope text-xs uppercase tracking-widest text-muted-foreground/80"
+            className="mt-8 font-dm-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground/60"
           >
-            ATS-optimized · Auto-save · One-click PDF
+            Free · Auto-saves · Download anytime
           </motion.p>
-        </motion.div>
+        </motion.section>
 
-        {/* How it works */}
+        {/* ═══════════════════════════════════════════════ */}
+        {/* STATS ROW                                      */}
+        {/* ═══════════════════════════════════════════════ */}
         <motion.section
-          id="how-it-works"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.45 }}
-          className="mt-28 sm:mt-36"
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="mt-24 sm:mt-32"
         >
-          <h2 className="font-instrument-serif mb-10 text-center tracking-wide text-xl text-foreground sm:tracking-wider sm:text-2xl">
-            How it works
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {steps.map((s, i) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            {stats.map((stat, i) => (
               <motion.div
-                key={s.step}
-                initial={{ opacity: 0, y: 14 }}
+                key={stat.value}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.35, delay: i * 0.06 }}
-                className="group relative rounded-2xl border border-border/80 bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-all hover:border-border hover:shadow-md dark:border-border/60 dark:bg-card/60 dark:hover:border-border/80"
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className="rounded-2xl border border-border/60 bg-card/50 p-5 text-center backdrop-blur-sm"
               >
-                <span className="font-dm-mono text-2xl font-medium text-primary/80">
-                  {s.step}
-                </span>
-                <p className="mt-2 font-manrope text-sm text-muted-foreground leading-relaxed">
-                  {s.label}
+                <p className="font-neue-machina text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                  {stat.value}
                 </p>
-                {i < steps.length - 1 && (
-                  <span
-                    className="absolute -right-2 top-1/2 hidden -translate-y-1/2 text-muted-foreground/40 lg:block"
-                    aria-hidden
-                  >
-                    →
-                  </span>
-                )}
+                <p className="font-manrope mt-1.5 text-xs leading-snug text-muted-foreground">
+                  {stat.label}
+                </p>
               </motion.div>
             ))}
           </div>
         </motion.section>
 
-        {/* Problem statement card */}
+        {/* ═══════════════════════════════════════════════ */}
+        {/* THE PROBLEM                                    */}
+        {/* ═══════════════════════════════════════════════ */}
         <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.45 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
           className="mt-20 sm:mt-28"
         >
-          <div className="rounded-2xl border border-border/80 bg-card/80 p-6 shadow-lg shadow-black/5 backdrop-blur-sm dark:border-border/60 dark:bg-card/60 sm:p-8">
-            <div className="border-l-4 border-primary/50 pl-5 sm:pl-6">
-              <h2 className="font-instrument-serif mb-3 tracking-wide text-xl text-foreground sm:tracking-wider sm:text-2xl">
-                Why ChitkaraCV?
+          <div className="rounded-2xl border border-border/60 bg-card/50 p-6 backdrop-blur-sm sm:p-10">
+            <div className="mx-auto max-w-2xl">
+              <p className="font-dm-mono text-[11px] uppercase tracking-[0.2em] text-primary/70">
+                The problem
+              </p>
+              <h2 className="font-instrument-serif mt-3 text-2xl tracking-wide text-foreground sm:text-3xl">
+                Most resumes never reach a human
               </h2>
-              <p className="font-manrope text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Students often use inconsistent resume formats, which hurts ATS
-                (Applicant Tracking System) compatibility and reduces interview
-                chances. ChitkaraCV gives you a guided flow so every resume is
-                structured, professional, and ATS-friendly — regardless of design
-                experience.
+              <p className="font-manrope mt-4 text-[15px] leading-relaxed text-muted-foreground">
+                Companies use Applicant Tracking Systems to filter resumes before
+                anyone reads them. Wrong formatting, missing sections, or generic
+                bullet points — your application gets auto-rejected. No feedback,
+                no second chance.
+              </p>
+              <p className="font-manrope mt-3 text-[15px] leading-relaxed text-muted-foreground">
+                ChitkaraCV fixes this. Every template is built to pass ATS scans.
+                Every section is guided so you don&apos;t miss what matters. The AI
+                helps you write content that stands out once it does reach the recruiter.
               </p>
             </div>
           </div>
         </motion.section>
 
-        {/* Features grid */}
+        {/* ═══════════════════════════════════════════════ */}
+        {/* HOW IT WORKS                                   */}
+        {/* ═══════════════════════════════════════════════ */}
         <motion.section
-          id="features"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.45 }}
+          id="how-it-works"
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
           className="mt-20 sm:mt-28"
         >
-          <h2 className="font-instrument-serif mb-10 text-center tracking-wide text-xl text-foreground sm:tracking-wider sm:text-2xl">
-            What you get
-          </h2>
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {features.map((feature, i) => (
-              <motion.li
-                key={feature.title}
-                initial={{ opacity: 0, y: 14 }}
+          <div className="mb-10 text-center">
+            <p className="font-dm-mono text-[11px] uppercase tracking-[0.2em] text-primary/70">
+              Process
+            </p>
+            <h2 className="font-instrument-serif mt-2 text-2xl tracking-wide text-foreground sm:text-3xl">
+              Four steps. Under fifteen minutes.
+            </h2>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((s, i) => (
+              <motion.div
+                key={s.num}
+                initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.35, delay: i * 0.05 }}
-                className="group rounded-xl border border-border/80 bg-card/80 p-5 shadow-sm backdrop-blur-sm transition-all hover:border-border hover:shadow-md dark:border-border/60 dark:bg-card/60 dark:hover:border-border/80"
+                transition={{ duration: 0.4, delay: i * 0.07 }}
+                className="group relative rounded-2xl border border-border/60 bg-card/50 p-5 backdrop-blur-sm transition-all hover:border-border/90 hover:bg-card/70"
               >
-                <h3 className="font-space-grotesk mb-1.5 text-sm font-semibold uppercase tracking-wider text-foreground">
-                  {feature.title}
+                <span className="font-bogita-mono text-3xl font-medium text-primary/30 transition-colors group-hover:text-primary/50">
+                  {s.num}
+                </span>
+                <h3 className="font-space-grotesk mt-3 text-sm font-semibold uppercase tracking-wider text-foreground">
+                  {s.title}
                 </h3>
-                <p className="font-manrope text-sm leading-relaxed text-muted-foreground">
-                  {feature.description}
+                <p className="font-manrope mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {s.desc}
                 </p>
-              </motion.li>
+              </motion.div>
             ))}
-          </ul>
+          </div>
         </motion.section>
 
-        {/* Bottom CTA */}
+        {/* ═══════════════════════════════════════════════ */}
+        {/* FEATURES — BENTO GRID                          */}
+        {/* ═══════════════════════════════════════════════ */}
         <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.45 }}
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="mt-20 sm:mt-28"
+        >
+          <div className="mb-10 text-center">
+            <p className="font-dm-mono text-[11px] uppercase tracking-[0.2em] text-primary/70">
+              Features
+            </p>
+            <h2 className="font-instrument-serif mt-2 text-2xl tracking-wide text-foreground sm:text-3xl">
+              Built to remove the guesswork
+            </h2>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className={`group rounded-2xl border border-border/60 bg-card/50 p-6 backdrop-blur-sm transition-all hover:border-border/90 hover:bg-card/70 ${f.span}`}
+              >
+                <h3 className="font-space-grotesk text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                  {f.title}
+                </h3>
+                <p className="font-manrope mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                  {f.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* USE CASES                                      */}
+        {/* ═══════════════════════════════════════════════ */}
+        <motion.section
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="mt-20 sm:mt-28"
+        >
+          <div className="mb-10 text-center">
+            <p className="font-dm-mono text-[11px] uppercase tracking-[0.2em] text-primary/70">
+              Use cases
+            </p>
+            <h2 className="font-instrument-serif mt-2 text-2xl tracking-wide text-foreground sm:text-3xl">
+              Wherever you&apos;re applying
+            </h2>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              {
+                title: "Placement season",
+                desc: "Campus drives, company forms, offline submissions. One resume that works everywhere.",
+              },
+              {
+                title: "Internship applications",
+                desc: "First internship? We help you frame projects and academics so they actually stand out.",
+              },
+              {
+                title: "Off-campus roles",
+                desc: "Applying outside Chitkara? ATS-friendly formatting means you get past the initial automated filter.",
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className="rounded-2xl border border-border/60 bg-card/50 p-6 backdrop-blur-sm"
+              >
+                <h3 className="font-space-grotesk text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                  {card.title}
+                </h3>
+                <p className="font-manrope mt-2.5 text-sm leading-relaxed text-muted-foreground">
+                  {card.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* PRO TIP                                        */}
+        {/* ═══════════════════════════════════════════════ */}
+        <motion.section
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          className="mt-20 sm:mt-28"
+        >
+          <div className="rounded-2xl border border-primary/15 bg-primary/[0.03] p-6 sm:p-8">
+            <p className="font-manrope mx-auto max-w-2xl text-center text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+              <span className="font-space-grotesk font-semibold text-foreground">
+                Worth knowing —
+              </span>{" "}
+              Recruiters spend about 6 seconds scanning a resume. Clear section
+              headers, strong opening bullets, and a clean single-column layout
+              are what keep you in the pile. Every ChitkaraCV template is
+              designed around this.
+            </p>
+          </div>
+        </motion.section>
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* BOTTOM CTA                                     */}
+        {/* ═══════════════════════════════════════════════ */}
+        <motion.section
+          variants={sectionReveal}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
           className="mt-24 sm:mt-32"
         >
-          <div className="overflow-hidden rounded-2xl border border-border/80 bg-card/80 shadow-xl shadow-black/5 backdrop-blur-sm dark:border-border/60 dark:bg-card/60">
-            <div className="bg-gradient-to-br from-primary/5 via-transparent to-primary/5 p-8 text-center sm:p-12">
-              <h2 className="font-instrument-serif mb-3 tracking-wide text-xl text-foreground sm:tracking-wider sm:text-2xl">
-                Ready to build your resume?
+          <div className="rounded-2xl border border-border/60 bg-card/50 backdrop-blur-sm">
+            <div className="p-8 text-center sm:p-14">
+              <p className="font-dm-mono text-[11px] uppercase tracking-[0.2em] text-primary/70">
+                Get started
+              </p>
+              <h2 className="font-instrument-serif mt-3 text-2xl tracking-wide text-foreground sm:text-3xl">
+                Your next application deserves better
               </h2>
-              <p className="font-manrope mb-8 text-sm text-muted-foreground">
-                Sign in with your university email and get started in minutes.
+              <p className="font-manrope mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+                Sign in with your Chitkara email. We send a code, you fill the
+                form, you download a resume. Under 15 minutes.
               </p>
               <Link
                 href="/login"
-                className="font-space-grotesk inline-flex h-12 items-center justify-center rounded-xl bg-foreground px-8 font-medium text-background shadow-lg shadow-black/10 transition-all hover:opacity-90 hover:shadow-xl hover:shadow-black/15 focus:outline-none focus:ring-2 focus:ring-foreground/30 dark:shadow-black/20 dark:hover:shadow-black/30"
+                className="font-space-grotesk mt-8 inline-flex h-12 items-center justify-center rounded-xl bg-foreground px-8 text-[15px] font-medium text-background shadow-lg shadow-black/8 transition-all hover:opacity-90 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-foreground/30"
               >
-                Sign in to get started
+                Create my resume →
               </Link>
             </div>
           </div>
         </motion.section>
+
+        {/* ═══════════════════════════════════════════════ */}
+        {/* FOOTER                                         */}
+        {/* ═══════════════════════════════════════════════ */}
+        <footer className="mt-20 border-t border-border/40 pt-8 text-center">
+          <p className="font-dm-mono text-[11px] tracking-wider text-muted-foreground/50">
+            ChitkaraCV · Built by students, for students · Chitkara University
+          </p>
+        </footer>
       </main>
     </div>
   );
