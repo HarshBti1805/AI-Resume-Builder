@@ -12,11 +12,11 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ┌──────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
 │                   Next.js (App Router)                       │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
-│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ │  │
-│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    │  │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
-└──────────────────────┬───────────────────────────────────────┘
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐│
+│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ ││
+│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    ││
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘│
+└──────────────────────┬──────────────────────────────────────┘
                        │ HTTPS (REST API)
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -26,14 +26,14 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              EXPRESS.JS — MODULAR MONOLITH                   │
+│            EXPRESS.JS + TYPESCRIPT — MODULAR MONOLITH        │
 │                                                              │
-│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │
-│  │ Auth Module│  │Resume Module│  │    AI Module           │ │
-│  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)│ │
-│  │  - JWT     │  │  - Templates│  │  - ATS Check           │ │
-│  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         │ │
-│  └────────────┘  └─────────────┘  └────────────────────────┘ │
+│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐│
+│  │ Auth Module│  │Resume Module│  │    AI Module           ││
+│  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)││
+│  │  - JWT     │  │  - Templates│  │  - ATS Check           ││
+│  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         ││
+│  └────────────┘  └─────────────┘  └────────────────────────┘│
 └──────────────────────┬───────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┬──────────────┐
@@ -48,7 +48,7 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 └──────────────┘ └──────────┘ └──────────┘ └──────────────┘
 ```
 
-**Architecture: Modular Monolith** — Single Express server with clean internal separation via modules (routes, controllers, services). Not microservices. This avoids unnecessary complexity for a prototype while keeping the codebase organized enough to extract services later if needed.
+**Architecture: Modular Monolith** — Single Express + TypeScript server with clean internal separation via modules (routes, controllers, services). Not microservices. This avoids unnecessary complexity for a prototype while keeping the codebase organized enough to extract services later if needed.
 
 ---
 
@@ -59,7 +59,7 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 | Frontend      | Next.js 14 (App Router)      | SSR, routing, built-in optimizations        |
 | UI            | Tailwind CSS + shadcn/ui     | Fast prototyping, consistent design         |
 | State Mgmt    | Zustand                      | Lightweight, persists form across steps     |
-| Backend       | Express.js (Node 20+)        | Fast API development, ecosystem             |
+| Backend       | Express.js + TypeScript      | Type safety, better DX, catch errors early  |
 | Database      | PostgreSQL 15+               | Relational integrity, structured data       |
 | ORM           | Prisma                       | Type-safe queries, auto migrations, studio  |
 | Cache/Session | Redis                        | OTP storage, rate limiting, session cache   |
@@ -73,65 +73,156 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 
 ---
 
-## 4. Authentication Flow
+## 4. TypeScript Server Setup
+
+### `server/tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### `server/package.json` Scripts
+
+```json
+{
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc && npx prisma generate",
+    "start": "node dist/server.js",
+    "lint": "eslint src/ --ext .ts",
+    "prisma:generate": "npx prisma generate",
+    "prisma:migrate": "npx prisma migrate dev",
+    "prisma:studio": "npx prisma studio"
+  }
+}
+```
+
+### Express Type Augmentation — `server/src/types/express.d.ts`
+
+```typescript
+import { User } from "@prisma/client";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        email: string;
+      };
+    }
+  }
+}
+
+export {};
+```
+
+### Shared Types — `server/src/types/index.ts`
+
+```typescript
+import { Request, Response, NextFunction } from "express";
+
+// Typed async handler to avoid try/catch in every controller
+export type AsyncHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => Promise<void>;
+
+// API response shape
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+// OTP stored in Redis
+export interface StoredOtp {
+  hash: string;
+  attempts: number;
+}
+
+// ATS check result
+export interface AtsResult {
+  total: number;
+  max: number;
+  issues: string[];
+  suggestions: string[];
+}
+
+// AI-generated ATS analysis
+export interface AiAtsAnalysis {
+  score: number;
+  issues: string[];
+  suggestions: string[];
+}
+```
+
+---
+
+## 5. Authentication Flow
 
 ```
-Student                  Frontend              Backend              Redis          Email
-  │                        │                      │                    │               │
-  │── Enter uni email ───▶│                      │                    │               │
-  │                        │── POST /auth/otp ──▶│                    │               │
-  │                        │                      │── Validate @uni.edu│               │
-  │                        │                      │── Generate 6-digit │               │
-  │                        │                      │── Store OTP ─────▶│ (TTL: 5 min)  │
-  │                        │                      │── Send email ─────────────────────▶│
-  │                        │◀── 200 OK ──────────│                    │               │
-  │                        │                      │                    │               │
-  │── Enter OTP ─────────▶│                      │                     │               │
-  │                        │── POST /auth/verify▶│                    │               │
-  │                        │                      │── Fetch OTP ──────▶│               │
-  │                        │                      │◀── OTP value ──────│               │
-  │                        │                      │── Compare & validate               │
-  │                        │                      │── Upsert user in PostgreSQL        │
-  │                        │                      │── Issue JWT (access + refresh)      │
-  │                        │◀── JWT tokens ──────│                    │               │
-  │◀── Redirect to form ──│                      │                    │               │
+Student                  Frontend                Backend                Redis            Email
+  │                        │                        │                     │                │
+  │── Enter uni email ────▶│                        │                     │                │
+  │                        │── POST /auth/otp ─────▶│                     │                │
+  │                        │                        │── Validate @uni.edu │                │
+  │                        │                        │── Generate 6-digit  │                │
+  │                        │                        │── Store OTP ───────▶│ (TTL: 5 min)   │
+  │                        │                        │── Send email ──────────────────────▶ │
+  │                        │◀── 200 OK ─────────────│                     │                │
+  │                        │                        │                     │                │
+  │── Enter OTP ──────────▶│                        │                     │                │
+  │                        │── POST /auth/verify ──▶│                     │                │
+  │                        │                        │── Fetch OTP ───────▶│                │
+  │                        │                        │◀── OTP value ───────│                │
+  │                        │                        │── Compare & validate                 │
+  │                        │                        │── Upsert user in PostgreSQL          │
+  │                        │                        │── Issue JWT (access + refresh)        │
+  │                        │◀── JWT tokens ─────────│                     │                │
+  │◀── Redirect to form ──│                        │                     │                │
 ```
 
 ### Security Measures
 
 | Measure                  | Implementation                                        |
 | ------------------------ | ----------------------------------------------------- |
-| Email Domain Validation  | Only `@university.edu` emails accepted                |
+| Email Domain Validation  | Only `@chitkara.edu.in` emails accepted               |
 | OTP Brute-force          | Max 3 attempts per OTP; lockout 15 min after failure  |
-| OTP Rate Limiting        | Max 3 OTP requests per eStudent                  Frontend              Backend              Redis          Email
-  │                        │                      │                    │               │
-  │── Enter uni email ───▶│                      │                    │               │
-  │                        │── POST /auth/otp ──▶│                    │               │
-  │                        │                      │── Validate @uni.edu│               │
-  │                        │                      │── Generate 6-digit │               │
-  │                        │                      │── Store OTP ─────▶│ (TTL: 5 min)  │
-  │                        │                      │── Send email ─────────────────────▶│
-  │                        │◀── 200 OK ──────────│                    │               │
-  │                        │                      │                    │               │
-  │── Enter OTP ─────────▶│                      │                     │               │
-  │                        │── POST /auth/verify▶│                    │               │
-  │                        │                      │── Fetch OTP ──────▶│               │
-  │                        │                      │◀── OTP value ──────│               │
-  │                        │                      │── Compare & validate               │
-  │                        │                      │── Upsert user in PostgreSQL        │
-  │                        │                      │── Issue JWT (access + refresh)      │
-  │                        │◀── JWT tokens ──────│                    │               │
-  │◀── Redirect to form ──│                      │                    │               │mail per hour (Redis counter) |
+| OTP Rate Limiting        | Max 3 OTP requests per email per hour (Redis counter) |
 | JWT Access Token         | Short-lived (15 min), stored in httpOnly cookie       |
 | JWT Refresh Token        | Long-lived (7 days), stored in httpOnly secure cookie |
 | CSRF Protection          | SameSite=Strict cookie attribute                      |
-| Helmet.js                | Security headers (XSS, HSTS, etc.)                    |
+| Helmet.js                | Security headers (XSS, HSTS, etc.)                   |
 | Input Sanitization       | `express-validator` + Prisma parameterized queries    |
 | SQL Injection Prevention | Prisma ORM never uses raw string interpolation        |
 
 ---
 
-## 5. Database Schema (PostgreSQL + Prisma)
+## 6. Database Schema (PostgreSQL + Prisma)
 
 ### Prisma Schema — `server/prisma/schema.prisma`
 
@@ -312,10 +403,10 @@ enum AchievementType {
 }
 ```
 
-### Prisma Client Singleton — `server/src/config/prisma.js`
+### Prisma Client Singleton — `server/src/config/prisma.ts`
 
-```javascript
-const { PrismaClient } = require("@prisma/client");
+```typescript
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient({
   log:
@@ -324,12 +415,14 @@ const prisma = new PrismaClient({
       : ["error"],
 });
 
-module.exports = prisma;
+export default prisma;
 ```
 
 ### Common Query Patterns
 
-```javascript
+```typescript
+import prisma from "../config/prisma";
+
 // Create resume with nested projects
 const resume = await prisma.resume.create({
   data: {
@@ -348,11 +441,12 @@ const resume = await prisma.resume.create({
 
 // Update a specific step (optimistic locking)
 const updated = await prisma.resume.updateMany({
-  where: { id: resumeId, userId: userId, version: currentVersion },
+  where: { id: resumeId, userId, version: currentVersion },
   data: { ...stepData, version: { increment: 1 } },
 });
-if (updated.count === 0)
+if (updated.count === 0) {
   throw new ConflictError("Resume was modified elsewhere");
+}
 
 // Fetch full resume with all relations
 const fullResume = await prisma.resume.findUnique({
@@ -383,46 +477,46 @@ npx prisma studio
 
 ---
 
-## 6. API Design
+## 7. API Design
 
 ### Auth Routes
 
 ```
 POST   /api/auth/send-otp         → Send OTP to uni email
 POST   /api/auth/verify-otp       → Verify OTP, upsert user, return JWT
-POST   /api/auth/refresh           → Refresh access token
-POST   /api/auth/logout             → Invalidate refresh token
+POST   /api/auth/refresh          → Refresh access token
+POST   /api/auth/logout           → Invalidate refresh token
 ```
 
 ### Resume Routes (Protected — JWT required)
 
 ```
-POST   /api/resume                  → Create new resume (returns resumeId)
-GET    /api/resume/:id              → Get resume data with all relations
-PATCH  /api/resume/:id/step/:step   → Save a specific step (auto-save)
-PUT    /api/resume/:id/template     → Set selected template
-GET    /api/resume/:id/preview      → Get rendered HTML preview
-POST   /api/resume/:id/download     → Generate & download PDF
+POST   /api/resume                → Create new resume (returns resumeId)
+GET    /api/resume/:id            → Get resume data with all relations
+PATCH  /api/resume/:id/step/:step → Save a specific step (auto-save)
+PUT    /api/resume/:id/template   → Set selected template
+GET    /api/resume/:id/preview    → Get rendered HTML preview
+POST   /api/resume/:id/download   → Generate & download PDF
 ```
 
 ### AI Routes (Protected — JWT + Rate Limited)
 
 ```
-POST   /api/ai/generate-summary     → Generate professional summary from resume data
-POST   /api/ai/enhance-text         → Improve a bullet point / description
-POST   /api/ai/ats-check            → Run ATS compatibility check
+POST   /api/ai/generate-summary   → Generate professional summary from resume data
+POST   /api/ai/enhance-text       → Improve a bullet point / description
+POST   /api/ai/ats-check          → Run ATS compatibility check
 ```
 
 ### Upload Routes (Protected)
 
 ```
-POST   /api/upload/photo             → Upload profile photo (max 2MB, jpg/png)
-DELETE /api/upload/photo/:key        → Delete uploaded photo
+POST   /api/upload/photo           → Upload profile photo (max 2MB, jpg/png)
+DELETE /api/upload/photo/:key      → Delete uploaded photo
 ```
 
 ---
 
-## 7. Reliability & Availability Strategy
+## 8. Reliability & Availability Strategy
 
 ### Auto-Save Mechanism
 
@@ -447,63 +541,60 @@ PATCH /api/resume/:id/step/:step
 
 ### Concurrency Control (Optimistic Locking)
 
-```javascript
-// Every resume has a `version` field
-// Updates are conditional on version match
+```typescript
 const updated = await prisma.resume.updateMany({
   where: {
     id: resumeId,
-    userId: userId,
-    version: currentVersion, // Only update if version matches
+    userId,
+    version: currentVersion,
   },
   data: {
     ...stepData,
-    version: { increment: 1 }, // Bump version on success
+    version: { increment: 1 },
   },
 });
 
 if (updated.count === 0) {
-  // Version mismatch — stale data, someone else updated
-  throw new ConflictError("Resume was modified. Please refresh.");
+  throw new AppError("Resume was modified. Please refresh.", 409, "VERSION_CONFLICT");
 }
 ```
 
-- If two tabs are open, the stale one gets a conflict error and must refresh
-- Prevents lost updates without database-level locks
-
 ### Process Management
 
-```yaml
-# ecosystem.config.js (PM2)
+```javascript
+// ecosystem.config.js (PM2)
 module.exports = {
   apps: [{
-    name: "resume-api",
+    name: "chitkaracv-api",
     script: "dist/server.js",
-    instances: "max",          # One process per CPU core
-    exec_mode: "cluster",      # Cluster mode for load balancing
+    instances: "max",
+    exec_mode: "cluster",
     max_memory_restart: "500M",
     env: { NODE_ENV: "production" },
     autorestart: true,
     max_restarts: 10,
-    restart_delay: 1000
-  }]
+    restart_delay: 1000,
+  }],
 };
 ```
 
 ### Health Checks
 
-```javascript
-// GET /health — used by load balancer / monitoring
-app.get("/health", async (req, res) => {
+```typescript
+import { Request, Response } from "express";
+import prisma from "../config/prisma";
+import redis from "../config/redis";
+
+app.get("/health", async (_req: Request, res: Response) => {
   const checks = {
-    server: "ok",
+    server: "ok" as const,
     postgres: await prisma.$queryRaw`SELECT 1`
-      .then(() => "ok")
-      .catch(() => "down"),
+      .then(() => "ok" as const)
+      .catch(() => "down" as const),
     redis: await redis
       .ping()
-      .then(() => "ok")
-      .catch(() => "down"),
+      .then(() => "ok" as const)
+      .catch(() => "down" as const),
     timestamp: new Date(),
   };
   const healthy = checks.postgres === "ok" && checks.redis === "ok";
@@ -513,80 +604,80 @@ app.get("/health", async (req, res) => {
 
 ---
 
-## 8. Security Architecture
+## 9. Security Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────┐
 │                      SECURITY LAYERS                       │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
-│  ┌─ LAYER 1: Network ─────────────────────────────────┐    │
-│  │  • HTTPS everywhere (TLS 1.3)                      │    │
-│  │  • Nginx rate limiting (100 req/min per IP)        │    │
-│  │  • CORS whitelist (only frontend domain)           │    │
-│  │  • DDoS protection (Cloudflare / uni firewall)     │    │
-│  └────────────────────────────────────────────────────┘    │
+│  ┌─ LAYER 1: Network ─────────────────────────────────┐   │
+│  │  • HTTPS everywhere (TLS 1.3)                      │   │
+│  │  • Nginx rate limiting (100 req/min per IP)        │   │
+│  │  • CORS whitelist (only frontend domain)           │   │
+│  │  • DDoS protection (Cloudflare / uni firewall)     │   │
+│  └────────────────────────────────────────────────────┘   │
 │                                                            │
-│  ┌─ LAYER 2: Application ─────────────────────────────┐    │
-│  │  • Helmet.js (security headers)                    │    │
-│  │  • express-rate-limit (per-route limits)           │    │
-│  │  • Input validation (express-validator)            │    │
-│  │  • SQL injection: impossible (Prisma parameterized)│    │
-│  │  • XSS prevention (DOMPurify on frontend)          │    │
-│  │  • CSRF tokens (SameSite=Strict cookies)           │    │
-│  └────────────────────────────────────────────────────┘    │
+│  ┌─ LAYER 2: Application ─────────────────────────────┐   │
+│  │  • Helmet.js (security headers)                    │   │
+│  │  • express-rate-limit (per-route limits)           │   │
+│  │  • Input validation (express-validator)            │   │
+│  │  • SQL injection: impossible (Prisma parameterized)│   │
+│  │  • XSS prevention (DOMPurify on frontend)         │   │
+│  │  • CSRF tokens (SameSite=Strict cookies)          │   │
+│  └────────────────────────────────────────────────────┘   │
 │                                                            │
-│  ┌─ LAYER 3: Authentication ──────────────────────────┐    │
-│  │  • JWT access tokens (15 min TTL, httpOnly cookie) │    │
-│  │  • Refresh tokens (7 day TTL, httpOnly, Secure)    │    │
-│  │  • OTP hashed with bcrypt before storage           │    │
-│  │  • Brute-force protection (3 attempts, 15 min lock)│    │
-│  └────────────────────────────────────────────────────┘    │
+│  ┌─ LAYER 3: Authentication ──────────────────────────┐   │
+│  │  • JWT access tokens (15 min TTL, httpOnly cookie) │   │
+│  │  • Refresh tokens (7 day TTL, httpOnly, Secure)    │   │
+│  │  • OTP hashed with bcrypt before storage           │   │
+│  │  • Brute-force protection (3 attempts, 15 min lock)│   │
+│  └────────────────────────────────────────────────────┘   │
 │                                                            │
-│  ┌─ LAYER 4: Data ────────────────────────────────────┐    │
-│  │  • PostgreSQL with SSL connections                 │    │
-│  │  • User can only access own resume (userId check)  │    │
-│  │  • Prisma: no raw queries, parameterized by default│    │
-│  │  • Cascade deletes (user deletion cleans all data) │    │
-│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │    │
-│  │  • No PII in logs (Winston sanitized transport)    │    │
-│  │  • Environment secrets in .env (never committed)   │    │
-│  └────────────────────────────────────────────────────┘    │
+│  ┌─ LAYER 4: Data ────────────────────────────────────┐   │
+│  │  • PostgreSQL with SSL connections                 │   │
+│  │  • User can only access own resume (userId check)  │   │
+│  │  • Prisma: no raw queries, parameterized by default│   │
+│  │  • Cascade deletes (user deletion cleans all data) │   │
+│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │   │
+│  │  • No PII in logs (Winston sanitized transport)    │   │
+│  │  • Environment secrets in .env (never committed)   │   │
+│  └────────────────────────────────────────────────────┘   │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
 ### Rate Limiting Strategy
 
-```javascript
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 OTP requests per window
-  keyGenerator: (req) => req.body.email || req.ip,
-  store: new RedisStore({ client: redis }),
+```typescript
+import rateLimit from "express-rate-limit";
+import RedisStore from "rate-limit-redis";
+import redis from "../config/redis";
+
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.body.email || req.ip || "unknown",
+  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
 });
 
-const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 AI requests per minute per user
-  keyGenerator: (req) => req.user.id,
-  store: new RedisStore({ client: redis }),
+export const aiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => req.user?.id || req.ip || "unknown",
+  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
 });
 
-const generalLimiter = rateLimit({
+export const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
-  store: new RedisStore({ client: redis }),
+  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
 });
-
-app.use("/api/auth", authLimiter);
-app.use("/api/ai", aiLimiter);
-app.use("/api", generalLimiter);
 ```
 
 ---
 
-## 9. Performance & Zero-Latency Strategy
+## 10. Performance & Zero-Latency Strategy
 
 ### Frontend Performance
 
@@ -612,7 +703,6 @@ app.use("/api", generalLimiter);
 ### Prisma Connection Pool Tuning
 
 ```env
-# In DATABASE_URL, add connection pool params
 DATABASE_URL=postgresql://user:pass@host:5432/db?schema=public&connection_limit=20&pool_timeout=10
 ```
 
@@ -626,7 +716,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?schema=public&connection_limit=
 
 ---
 
-## 10. PDF Generation Pipeline
+## 11. PDF Generation Pipeline
 
 ```
 Resume Data (from PostgreSQL via Prisma)
@@ -653,32 +743,49 @@ Upload to S3 + return download URL
 
 ### Puppeteer Pool (Avoid Cold Starts)
 
-```javascript
-const pool = createPool({
-  create: () =>
-    puppeteer.launch({
-      headless: "new",
-      args: ["--no-sandbox", "--disable-dev-shm-usage"],
-    }),
-  destroy: (browser) => browser.close(),
-  max: 5, // Max 5 concurrent browsers
-  min: 1, // Keep 1 warm at all times
-  idleTimeoutMillis: 60000,
-});
+```typescript
+import { createPool, Pool } from "generic-pool";
+import puppeteer, { Browser } from "puppeteer";
+
+const browserPool: Pool<Browser> = createPool(
+  {
+    create: () =>
+      puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-dev-shm-usage"],
+      }),
+    destroy: (browser: Browser) => browser.close(),
+  },
+  {
+    max: 5,
+    min: 1,
+    idleTimeoutMillis: 60000,
+  }
+);
+
+export default browserPool;
 ```
 
 ---
 
-## 11. AI Integration Design (OpenAI)
+## 12. AI Integration Design (OpenAI)
 
 ### Content Generation
 
-```javascript
-const { OpenAI } = require("openai");
+```typescript
+import OpenAI from "openai";
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Summary Generation
-const generateSummary = async (resumeData) => {
+interface ResumeDataForAI {
+  stream: string;
+  university: string;
+  skills: string[];
+  projects: { title: string }[];
+  internships: { role: string; company: string }[];
+}
+
+export const generateSummary = async (resumeData: ResumeDataForAI): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -700,11 +807,10 @@ const generateSummary = async (resumeData) => {
     temperature: 0.7,
   });
 
-  return response.choices[0].message.content;
+  return response.choices[0].message.content ?? "";
 };
 
-// Bullet Enhancement
-const enhanceBullet = async (rawText, context) => {
+export const enhanceBullet = async (rawText: string, context: string): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -722,31 +828,44 @@ const enhanceBullet = async (rawText, context) => {
     temperature: 0.6,
   });
 
-  return response.choices[0].message.content;
+  return response.choices[0].message.content ?? "";
 };
 ```
 
 ### ATS Scoring Engine
 
-```javascript
-const atsCheck = async (resumeData) => {
-  const score = { total: 0, max: 100, issues: [], suggestions: [] };
+```typescript
+import OpenAI from "openai";
+import type { AtsResult, AiAtsAnalysis } from "../types";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+interface ResumeDataForAts {
+  contactEmail?: string | null;
+  phone?: string | null;
+  fullName?: string | null;
+  cgpa?: number | null;
+  skills: string[];
+  summary?: string | null;
+  projects: { title: string; description: string }[];
+}
+
+export const atsCheck = async (resumeData: ResumeDataForAts): Promise<AtsResult> => {
+  const result: AtsResult = { total: 0, max: 100, issues: [], suggestions: [] };
 
   // ── Rule-based checks (40 points, instant) ──
-  if (!resumeData.contactEmail) score.issues.push("Missing email");
-  if (!resumeData.phone) score.issues.push("Missing phone number");
-  if (!resumeData.skills.length) score.issues.push("No skills listed");
-  if (!resumeData.summary) score.issues.push("No professional summary");
-  if (resumeData.projects.length < 2)
-    score.suggestions.push("Add more projects (minimum 2)");
+  if (!resumeData.contactEmail) result.issues.push("Missing email");
+  if (!resumeData.phone) result.issues.push("Missing phone number");
+  if (!resumeData.skills.length) result.issues.push("No skills listed");
+  if (!resumeData.summary) result.issues.push("No professional summary");
+  if (resumeData.projects.length < 2) result.suggestions.push("Add more projects (minimum 2)");
 
-  const sections = ["fullName", "cgpa", "skills", "summary"];
-  const filled = sections.filter(
-    (s) =>
-      resumeData[s] &&
-      (Array.isArray(resumeData[s]) ? resumeData[s].length > 0 : true),
-  );
-  score.total += (filled.length / sections.length) * 40;
+  const sections = ["fullName", "cgpa", "skills", "summary"] as const;
+  const filled = sections.filter((s) => {
+    const val = resumeData[s];
+    return val && (Array.isArray(val) ? val.length > 0 : true);
+  });
+  result.total += (filled.length / sections.length) * 40;
 
   // ── AI-powered analysis (60 points) ──
   const response = await openai.chat.completions.create({
@@ -754,8 +873,7 @@ const atsCheck = async (resumeData) => {
     messages: [
       {
         role: "system",
-        content:
-          "You are an ATS compatibility analyzer. Return ONLY valid JSON.",
+        content: "You are an ATS compatibility analyzer. Return ONLY valid JSON.",
       },
       {
         role: "user",
@@ -769,18 +887,18 @@ const atsCheck = async (resumeData) => {
     temperature: 0.3,
   });
 
-  const aiResult = JSON.parse(response.choices[0].message.content);
-  score.total += aiResult.score;
-  score.issues.push(...aiResult.issues);
-  score.suggestions.push(...aiResult.suggestions);
+  const aiResult: AiAtsAnalysis = JSON.parse(response.choices[0].message.content ?? "{}");
+  result.total += aiResult.score;
+  result.issues.push(...aiResult.issues);
+  result.suggestions.push(...aiResult.suggestions);
 
-  return score;
+  return result;
 };
 ```
 
 ---
 
-## 12. Deployment Architecture
+## 13. Deployment Architecture
 
 ### Docker Compose
 
@@ -788,7 +906,6 @@ const atsCheck = async (resumeData) => {
 version: "3.8"
 
 services:
-  # Frontend
   frontend:
     build: ./client
     ports: ["3000:3000"]
@@ -796,7 +913,6 @@ services:
       - NEXT_PUBLIC_API_URL=http://api:4000
     depends_on: [api]
 
-  # Backend API
   api:
     build: ./server
     ports: ["4000:4000"]
@@ -819,7 +935,6 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
-  # Database
   postgres:
     image: postgres:16-alpine
     environment:
@@ -834,7 +949,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Cache
   redis:
     image: redis:7-alpine
     volumes: ["redis_data:/data"]
@@ -846,7 +960,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Reverse Proxy
   nginx:
     image: nginx:alpine
     ports: ["80:80", "443:443"]
@@ -860,54 +973,64 @@ volumes:
   redis_data:
 ```
 
-### Nginx Configuration (Key Parts)
+### Server Dockerfile (TypeScript Build)
 
-```nginx
-upstream api_backend {
-    least_conn;
-    server api:4000;
-}
+```dockerfile
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+COPY prisma ./prisma/
+RUN npm ci
+COPY . .
+RUN npx prisma generate
+RUN npm run build
 
-server {
-    listen 443 ssl;
-    server_name resume.university.edu;
-
-    # Rate limiting zones
-    limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
-    limit_req_zone $binary_remote_addr zone=auth:10m rate=5r/m;
-
-    location /api/auth/ {
-        limit_req zone=auth burst=3 nodelay;
-        proxy_pass http://api_backend;
-    }
-
-    location /api/ {
-        limit_req zone=api burst=20 nodelay;
-        proxy_pass http://api_backend;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Request-ID $request_id;
-    }
-
-    location / {
-        proxy_pass http://frontend:3000;
-    }
-
-    location /_next/static/ {
-        proxy_pass http://frontend:3000;
-        expires 365d;
-        add_header Cache-Control "public, immutable";
-    }
-}
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/templates ./templates
+EXPOSE 4000
+CMD ["node", "dist/server.js"]
 ```
 
 ---
 
-## 13. Monitoring & Logging
+## 14. Monitoring & Logging
 
-### What to Log
+### Logger Setup
 
-```javascript
-app.use((req, res, next) => {
+```typescript
+import winston from "winston";
+
+const logger = winston.createLogger({
+  level: process.env.NODE_ENV === "production" ? "info" : "debug",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        winston.format.simple()
+      ),
+    }),
+  ],
+});
+
+export default logger;
+```
+
+### Request Logging Middleware
+
+```typescript
+import { Request, Response, NextFunction } from "express";
+import logger from "../utils/logger";
+
+export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
   const start = Date.now();
   res.on("finish", () => {
     logger.info({
@@ -915,12 +1038,12 @@ app.use((req, res, next) => {
       path: req.path,
       status: res.statusCode,
       duration: Date.now() - start,
-      userId: req.user?.id, // Never log email/PII
+      userId: req.user?.id,
       requestId: req.headers["x-request-id"],
     });
   });
   next();
-});
+};
 ```
 
 ### Key Metrics
@@ -937,67 +1060,97 @@ app.use((req, res, next) => {
 
 ---
 
-## 14. Error Handling Strategy
+## 15. Error Handling Strategy
 
-### Global Error Handler
+### AppError Class
 
-```javascript
-class AppError extends Error {
-  constructor(message, statusCode, code) {
+```typescript
+export class AppError extends Error {
+  public readonly statusCode: number;
+  public readonly code: string;
+  public readonly isOperational: boolean;
+
+  constructor(message: string, statusCode: number, code: string) {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
     this.isOperational = true;
+    Object.setPrototypeOf(this, AppError.prototype);
   }
 }
+```
 
-app.use((err, req, res, next) => {
+### Global Error Handler
+
+```typescript
+import { Request, Response, NextFunction } from "express";
+import { Prisma } from "@prisma/client";
+import { AppError } from "../utils/AppError";
+import logger from "../utils/logger";
+
+export const errorHandler = (
+  err: Error,
+  req: Request,
+  res: Response,
+  _next: NextFunction
+): void => {
   logger.error({
     error: err.message,
-    code: err.code,
     stack: err.stack,
     requestId: req.headers["x-request-id"],
   });
 
-  // Handle Prisma-specific errors
-  if (err.code === "P2002") {
-    return res.status(409).json({
+  // Prisma: unique constraint violation
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+    res.status(409).json({
       success: false,
       error: { code: "DUPLICATE_ENTRY", message: "This record already exists" },
     });
+    return;
   }
-  if (err.code === "P2025") {
-    return res.status(404).json({
+
+  // Prisma: record not found
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+    res.status(404).json({
       success: false,
       error: { code: "NOT_FOUND", message: "Record not found" },
     });
+    return;
   }
 
-  if (err.isOperational) {
-    return res.status(err.statusCode).json({
+  // Operational errors (thrown intentionally)
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
       success: false,
       error: { code: err.code, message: err.message },
     });
+    return;
   }
 
+  // Unexpected errors
   res.status(500).json({
     success: false,
     error: { code: "INTERNAL_ERROR", message: "Something went wrong" },
   });
-});
+};
 ```
 
 ### Graceful Shutdown
 
-```javascript
-const shutdown = async (signal) => {
+```typescript
+import prisma from "./config/prisma";
+import redis from "./config/redis";
+import browserPool from "./services/pdf.service";
+import logger from "./utils/logger";
+
+const shutdown = async (signal: string): Promise<void> => {
   logger.info(`${signal} received. Starting graceful shutdown...`);
 
   server.close();
   await prisma.$disconnect();
   await redis.quit();
-  await puppeteerPool.drain();
-  await puppeteerPool.clear();
+  await browserPool.drain();
+  await browserPool.clear();
 
   logger.info("Shutdown complete");
   process.exit(0);
@@ -1009,7 +1162,7 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 
 ---
 
-## 15. Folder Structure
+## 16. Folder Structure
 
 ```
 chitkara-cv/
@@ -1047,46 +1200,51 @@ chitkara-cv/
 │   │   └── validators.ts
 │   └── middleware.ts
 │
-├── server/                          # Express Backend
+├── server/                          # Express Backend (TypeScript)
 │   ├── prisma/
 │   │   ├── schema.prisma            # ← Database schema (source of truth)
 │   │   └── migrations/              # ← Auto-generated by Prisma
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── prisma.js            # Prisma client singleton
-│   │   │   ├── redis.js
-│   │   │   └── env.js
+│   │   │   ├── prisma.ts            # Prisma client singleton
+│   │   │   ├── redis.ts             # Redis connection
+│   │   │   └── env.ts               # Env validation (zod)
 │   │   ├── middleware/
-│   │   │   ├── auth.js
-│   │   │   ├── rateLimiter.js
-│   │   │   ├── validate.js
-│   │   │   └── errorHandler.js
+│   │   │   ├── auth.ts              # JWT verification
+│   │   │   ├── rateLimiter.ts       # Rate limiting configs
+│   │   │   ├── validate.ts          # Request validation
+│   │   │   └── errorHandler.ts      # Global error handler
 │   │   ├── routes/
-│   │   │   ├── auth.routes.js
-│   │   │   ├── resume.routes.js
-│   │   │   ├── ai.routes.js
-│   │   │   └── upload.routes.js
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── resume.routes.ts
+│   │   │   ├── ai.routes.ts
+│   │   │   └── upload.routes.ts
 │   │   ├── controllers/
-│   │   │   ├── auth.controller.js
-│   │   │   ├── resume.controller.js
-│   │   │   ├── ai.controller.js
-│   │   │   └── upload.controller.js
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── resume.controller.ts
+│   │   │   ├── ai.controller.ts
+│   │   │   └── upload.controller.ts
 │   │   ├── services/
-│   │   │   ├── otp.service.js
-│   │   │   ├── email.service.js
-│   │   │   ├── ai.service.js        # OpenAI API wrapper
-│   │   │   ├── pdf.service.js
-│   │   │   └── ats.service.js
+│   │   │   ├── otp.service.ts
+│   │   │   ├── email.service.ts
+│   │   │   ├── ai.service.ts        # OpenAI API wrapper
+│   │   │   ├── pdf.service.ts       # Puppeteer PDF generation
+│   │   │   └── ats.service.ts       # ATS scoring engine
+│   │   ├── types/
+│   │   │   ├── express.d.ts         # Express request augmentation
+│   │   │   └── index.ts             # Shared type definitions
 │   │   ├── utils/
-│   │   │   ├── AppError.js
-│   │   │   └── logger.js
-│   │   └── server.js
+│   │   │   ├── AppError.ts
+│   │   │   └── logger.ts            # Winston config
+│   │   └── server.ts                # Entry point
 │   ├── templates/
 │   │   ├── classic.hbs
 │   │   ├── modern.hbs
 │   │   ├── minimal.hbs
 │   │   ├── academic.hbs
 │   │   └── technical.hbs
+│   ├── tsconfig.json
+│   ├── Dockerfile
 │   └── package.json
 │
 ├── docker-compose.yml
@@ -1098,11 +1256,12 @@ chitkara-cv/
 
 ---
 
-## 16. Implementation Roadmap
+## 17. Implementation Roadmap
 
 ### Phase 1 — Foundation (Week 1-2)
 
-- [ ] Project setup (Next.js + Express + Docker Compose)
+- [ ] Project setup (Next.js + Express TypeScript + Docker Compose)
+- [ ] TypeScript config (`tsconfig.json`, type definitions, tsx dev runner)
 - [ ] PostgreSQL + Prisma setup (schema, initial migration)
 - [ ] Redis setup
 - [ ] Auth flow (email validation, OTP, JWT)
@@ -1139,12 +1298,13 @@ chitkara-cv/
 - [ ] Load testing (Artillery / k6)
 - [ ] Monitoring setup (PM2 + Winston + health checks)
 - [ ] Graceful shutdown (Prisma disconnect)
+- [ ] TypeScript build pipeline + production Dockerfile
 - [ ] Final Docker + Nginx setup
 - [ ] Documentation
 
 ---
 
-## 17. Scaling Considerations (Post-Prototype)
+## 18. Scaling Considerations (Post-Prototype)
 
 When moving from prototype to production:
 

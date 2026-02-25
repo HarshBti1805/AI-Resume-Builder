@@ -14,7 +14,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 
 ## Features
 
-- **OTP-Based Auth** — Students verify via university email (`@university.edu`)
+- **OTP-Based Auth** — Students verify via university email (`@chitkara.edu.in`)
 - **5-Step Guided Form** — Personal Details → Academics → Skills & Projects → Experience & Achievements → Hobbies & Summary
 - **5 ATS-Compliant Templates** — Classic, Modern, Minimal, Academic, Technical
 - **AI Content Generation** — Auto-generate professional summaries and enhance bullet points (OpenAI GPT)
@@ -27,17 +27,17 @@ Students in our university have no fixed resume templates, leading to inconsiste
 
 ## Tech Stack
 
-| Layer        | Technology                          |
-| ------------ | ----------------------------------- |
+| Layer        | Technology                                                 |
+| ------------ | ---------------------------------------------------------- |
 | Frontend     | Next.js 14 (App Router), Tailwind CSS, shadcn/ui, Zustand |
-| Backend      | Express.js, Node.js 20+            |
-| Database     | PostgreSQL + Prisma ORM             |
-| Cache        | Redis                               |
-| AI           | OpenAI API (GPT-4o / GPT-4o-mini)  |
-| PDF          | Puppeteer                           |
-| Email        | Nodemailer                          |
-| File Storage | AWS S3 / MinIO                      |
-| Deployment   | Docker, Nginx                       |
+| Backend      | Express.js + TypeScript, Node.js 20+                      |
+| Database     | PostgreSQL + Prisma ORM                                    |
+| Cache        | Redis                                                      |
+| AI           | OpenAI API (GPT-4o / GPT-4o-mini)                         |
+| PDF          | Puppeteer                                                  |
+| Email        | Nodemailer                                                 |
+| File Storage | AWS S3 / MinIO                                             |
+| Deployment   | Docker, Nginx                                              |
 
 ---
 
@@ -72,41 +72,45 @@ chitkara-cv/
 │   │   └── validators.ts         # Zod validation schemas
 │   └── middleware.ts             # Auth route protection
 │
-├── server/                       # Express.js Backend
+├── server/                       # Express.js Backend (TypeScript)
 │   ├── prisma/
 │   │   ├── schema.prisma         # Database schema
 │   │   └── migrations/           # Auto-generated migrations
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── prisma.js         # Prisma client singleton
-│   │   │   ├── redis.js          # Redis connection
-│   │   │   └── env.js            # Env variable validation
+│   │   │   ├── prisma.ts         # Prisma client singleton
+│   │   │   ├── redis.ts          # Redis connection
+│   │   │   └── env.ts            # Env variable validation
 │   │   ├── middleware/
-│   │   │   ├── auth.js           # JWT verification
-│   │   │   ├── rateLimiter.js    # Rate limiting
-│   │   │   ├── validate.js       # Request validation
-│   │   │   └── errorHandler.js   # Global error handler
+│   │   │   ├── auth.ts           # JWT verification
+│   │   │   ├── rateLimiter.ts    # Rate limiting
+│   │   │   ├── validate.ts       # Request validation
+│   │   │   └── errorHandler.ts   # Global error handler
 │   │   ├── routes/
-│   │   │   ├── auth.routes.js
-│   │   │   ├── resume.routes.js
-│   │   │   ├── ai.routes.js
-│   │   │   └── upload.routes.js
+│   │   │   ├── auth.routes.ts
+│   │   │   ├── resume.routes.ts
+│   │   │   ├── ai.routes.ts
+│   │   │   └── upload.routes.ts
 │   │   ├── controllers/
-│   │   │   ├── auth.controller.js
-│   │   │   ├── resume.controller.js
-│   │   │   ├── ai.controller.js
-│   │   │   └── upload.controller.js
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── resume.controller.ts
+│   │   │   ├── ai.controller.ts
+│   │   │   └── upload.controller.ts
 │   │   ├── services/
-│   │   │   ├── otp.service.js
-│   │   │   ├── email.service.js
-│   │   │   ├── ai.service.js     # OpenAI API wrapper
-│   │   │   ├── pdf.service.js    # Puppeteer PDF generation
-│   │   │   └── ats.service.js    # ATS scoring engine
+│   │   │   ├── otp.service.ts
+│   │   │   ├── email.service.ts
+│   │   │   ├── ai.service.ts     # OpenAI API wrapper
+│   │   │   ├── pdf.service.ts    # Puppeteer PDF generation
+│   │   │   └── ats.service.ts    # ATS scoring engine
+│   │   ├── types/
+│   │   │   ├── express.d.ts      # Express request augmentation
+│   │   │   └── index.ts          # Shared type definitions
 │   │   ├── utils/
-│   │   │   ├── AppError.js
-│   │   │   └── logger.js
-│   │   └── server.js
+│   │   │   ├── AppError.ts
+│   │   │   └── logger.ts
+│   │   └── server.ts
 │   ├── templates/                # Handlebars templates for PDF
+│   ├── tsconfig.json
 │   └── package.json
 │
 ├── docker-compose.yml
@@ -186,7 +190,7 @@ S3_ACCESS_KEY=your-access-key
 S3_SECRET_KEY=your-secret-key
 
 # Allowed Email Domain
-ALLOWED_EMAIL_DOMAIN=university.edu
+ALLOWED_EMAIL_DOMAIN=chitkara.edu.in
 ```
 
 **`client/.env.local`**
@@ -225,7 +229,7 @@ npx prisma studio
 ### 5. Run Development Servers
 
 ```bash
-# Terminal 1 — Backend
+# Terminal 1 — Backend (tsx watches and recompiles TypeScript)
 cd server
 npm run dev
 
@@ -250,38 +254,38 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ### Auth
 
-| Method | Endpoint              | Description            |
-| ------ | --------------------- | ---------------------- |
-| POST   | `/api/auth/send-otp`  | Send OTP to uni email  |
-| POST   | `/api/auth/verify-otp`| Verify OTP, return JWT |
-| POST   | `/api/auth/refresh`   | Refresh access token   |
-| POST   | `/api/auth/logout`    | Invalidate session     |
+| Method | Endpoint               | Description            |
+| ------ | ---------------------- | ---------------------- |
+| POST   | `/api/auth/send-otp`   | Send OTP to uni email  |
+| POST   | `/api/auth/verify-otp` | Verify OTP, return JWT |
+| POST   | `/api/auth/refresh`    | Refresh access token   |
+| POST   | `/api/auth/logout`     | Invalidate session     |
 
 ### Resume (Protected)
 
-| Method | Endpoint                          | Description                  |
-| ------ | --------------------------------- | ---------------------------- |
-| POST   | `/api/resume`                     | Create new resume            |
-| GET    | `/api/resume/:id`                 | Get resume data              |
-| PATCH  | `/api/resume/:id/step/:step`      | Save a specific form step    |
-| PUT    | `/api/resume/:id/template`        | Set selected template        |
-| GET    | `/api/resume/:id/preview`         | Get rendered HTML preview    |
-| POST   | `/api/resume/:id/download`        | Generate & download PDF      |
+| Method | Endpoint                     | Description              |
+| ------ | ---------------------------- | ------------------------ |
+| POST   | `/api/resume`                | Create new resume        |
+| GET    | `/api/resume/:id`            | Get resume data          |
+| PATCH  | `/api/resume/:id/step/:step` | Save a specific form step|
+| PUT    | `/api/resume/:id/template`   | Set selected template    |
+| GET    | `/api/resume/:id/preview`    | Get rendered HTML preview|
+| POST   | `/api/resume/:id/download`   | Generate & download PDF  |
 
 ### AI (Protected + Rate Limited)
 
-| Method | Endpoint                     | Description                        |
-| ------ | ---------------------------- | ---------------------------------- |
-| POST   | `/api/ai/generate-summary`   | Generate professional summary      |
-| POST   | `/api/ai/enhance-text`       | Improve a bullet point             |
-| POST   | `/api/ai/ats-check`          | Run ATS compatibility check        |
+| Method | Endpoint                   | Description                   |
+| ------ | -------------------------- | ----------------------------- |
+| POST   | `/api/ai/generate-summary` | Generate professional summary |
+| POST   | `/api/ai/enhance-text`     | Improve a bullet point        |
+| POST   | `/api/ai/ats-check`        | Run ATS compatibility check   |
 
 ### Upload (Protected)
 
-| Method | Endpoint                | Description          |
-| ------ | ----------------------- | -------------------- |
-| POST   | `/api/upload/photo`     | Upload profile photo |
-| DELETE | `/api/upload/photo/:key`| Delete photo         |
+| Method | Endpoint                 | Description          |
+| ------ | ------------------------ | -------------------- |
+| POST   | `/api/upload/photo`      | Upload profile photo |
+| DELETE | `/api/upload/photo/:key` | Delete photo         |
 
 ---
 
@@ -306,13 +310,13 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ## Templates
 
-| # | Template     | Best For                        | Layout        |
-|---|------------- |---------------------------------|---------------|
-| 1 | Classic      | General purpose, traditional    | Single column, serif font |
-| 2 | Modern       | Clean, contemporary look        | Sans-serif, color accent  |
-| 3 | Minimal      | Maximum readability             | Lots of whitespace        |
-| 4 | Academic     | Research / higher-ed focused    | Education-first ordering  |
-| 5 | Technical    | CS / Engineering students       | Skills-prominent, project-heavy |
+| #   | Template  | Best For                     | Layout                        |
+| --- | --------- | ---------------------------- | ----------------------------- |
+| 1   | Classic   | General purpose, traditional | Single column, serif font     |
+| 2   | Modern    | Clean, contemporary look     | Sans-serif, color accent      |
+| 3   | Minimal   | Maximum readability          | Lots of whitespace            |
+| 4   | Academic  | Research / higher-ed focused | Education-first ordering      |
+| 5   | Technical | CS / Engineering students    | Skills-prominent, project-heavy|
 
 All templates are ATS-compliant by design: single-column layouts, standard section headings, system fonts, no text-in-images, proper heading hierarchy.
 
@@ -355,7 +359,7 @@ react-hook-form            # Form handling
 ### Server
 
 ```
-express
+express                    # Web framework
 @prisma/client             # Prisma ORM (PostgreSQL)
 prisma                     # Prisma CLI (dev dependency)
 ioredis                    # Redis client
@@ -373,13 +377,25 @@ rate-limit-redis           # Redis-backed rate limits
 express-validator          # Input validation
 winston                    # Logging
 compression                # Response compression
+
+# TypeScript (dev dependencies)
+typescript                 # TypeScript compiler
+tsx                        # Dev server (watch + run .ts directly)
+@types/express             # Express type definitions
+@types/node                # Node.js type definitions
+@types/jsonwebtoken        # JWT type definitions
+@types/bcryptjs            # Bcrypt type definitions
+@types/nodemailer          # Nodemailer type definitions
+@types/cors                # CORS type definitions
+@types/compression         # Compression type definitions
+@types/multer              # Multer type definitions
 ```
 
 ---
 
 ## Security
 
-- University email domain validation (`@university.edu` only)
+- University email domain validation (`@chitkara.edu.in` only)
 - OTPs hashed with bcrypt, stored in Redis with 5-min TTL
 - Brute-force protection: 3 OTP attempts, 15-min lockout
 - JWT access tokens (15 min) + refresh tokens (7 days) in httpOnly cookies
@@ -401,8 +417,9 @@ npm run start        # Start production server
 npm run lint         # ESLint
 
 # Server
-npm run dev          # Start with nodemon
-npm run start        # Start production server
+npm run dev          # Start with tsx watch (auto-reload on .ts changes)
+npm run build        # Compile TypeScript to dist/
+npm run start        # Run compiled JS from dist/
 npm run lint         # ESLint
 
 # Prisma
@@ -433,4 +450,4 @@ This project is built for internal university use. All rights reserved.
 
 ## Team
 
-Built by students of **[Your University Name]** as a prototype to standardize resume quality across the campus.
+Built by students of **Chitkara University** as a prototype to standardize resume quality across the campus.
