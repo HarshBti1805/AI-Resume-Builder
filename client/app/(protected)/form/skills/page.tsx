@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import type { Project } from "@/store/resumeStore";
+import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,17 +19,7 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-interface Project {
-  id: string;
-  title: string;
-  description: string;
-  techStack: string[];
-  liveUrl: string;
-  repoUrl: string;
-}
-
 const emptyProject = (): Project => ({
-  id: crypto.randomUUID(),
   title: "",
   description: "",
   techStack: [],
@@ -36,22 +28,29 @@ const emptyProject = (): Project => ({
 });
 
 export default function SkillsPage() {
-  const [skills, setSkills] = useState<string[]>([]);
+  const { step3, updateStep3 } = useResumeStore();
   const [skillInput, setSkillInput] = useState("");
-  const [projects, setProjects] = useState<Project[]>([emptyProject()]);
   const [techInputs, setTechInputs] = useState<Record<string, string>>({});
 
-  // ─── Skills ───
+  // Ensure at least one project
+  useEffect(() => {
+    if (step3.projects.length === 0) {
+      updateStep3({ projects: [emptyProject()] });
+    }
+  }, [step3.projects.length, updateStep3]);
+
+  const projects = step3.projects.length > 0 ? step3.projects : [emptyProject()];
+
   const addSkill = () => {
     const trimmed = skillInput.trim();
-    if (trimmed && !skills.includes(trimmed)) {
-      setSkills((prev) => [...prev, trimmed]);
+    if (trimmed && !step3.skills.includes(trimmed)) {
+      updateStep3({ skills: [...step3.skills, trimmed] });
       setSkillInput("");
     }
   };
 
   const removeSkill = (skill: string) => {
-    setSkills((prev) => prev.filter((s) => s !== skill));
+    updateStep3({ skills: step3.skills.filter((s) => s !== skill) });
   };
 
   const handleSkillKeyDown = (e: React.KeyboardEvent) => {
@@ -61,37 +60,47 @@ export default function SkillsPage() {
     }
   };
 
-  // ─── Projects ───
   const addProject = () => {
-    setProjects((prev) => [...prev, emptyProject()]);
+    updateStep3({
+      projects: [...step3.projects, emptyProject()],
+    });
   };
 
-  const removeProject = (id: string) => {
-    if (projects.length <= 1) return;
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+  const removeProject = (index: number) => {
+    if (step3.projects.length <= 1) return;
+    updateStep3({
+      projects: step3.projects.filter((_, i) => i !== index),
+    });
   };
 
-  const updateProject = (id: string, field: keyof Project, value: string | string[]) => {
-    setProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-    );
+  const updateProject = (
+    index: number,
+    field: keyof Project,
+    value: string | string[]
+  ) => {
+    updateStep3({
+      projects: step3.projects.map((p, i) =>
+        i === index ? { ...p, [field]: value } : p
+      ),
+    });
   };
 
-  const addTech = (projectId: string) => {
-    const value = (techInputs[projectId] || "").trim();
+  const addTech = (index: number) => {
+    const key = `proj-${index}`;
+    const value = (techInputs[key] || "").trim();
     if (!value) return;
-    const project = projects.find((p) => p.id === projectId);
+    const project = step3.projects[index];
     if (project && !project.techStack.includes(value)) {
-      updateProject(projectId, "techStack", [...project.techStack, value]);
+      updateProject(index, "techStack", [...project.techStack, value]);
     }
-    setTechInputs((prev) => ({ ...prev, [projectId]: "" }));
+    setTechInputs((prev) => ({ ...prev, [key]: "" }));
   };
 
-  const removeTech = (projectId: string, tech: string) => {
-    const project = projects.find((p) => p.id === projectId);
+  const removeTech = (index: number, tech: string) => {
+    const project = step3.projects[index];
     if (project) {
       updateProject(
-        projectId,
+        index,
         "techStack",
         project.techStack.filter((t) => t !== tech)
       );
@@ -140,9 +149,9 @@ export default function SkillsPage() {
               Add
             </button>
           </div>
-          {skills.length > 0 && (
+          {step3.skills.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {skills.map((skill) => (
+              {step3.skills.map((skill: string) => (
                 <span
                   key={skill}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 font-manrope text-xs text-foreground"
@@ -180,7 +189,7 @@ export default function SkillsPage() {
             <div className="flex flex-col gap-4">
               {projects.map((project, index) => (
                 <motion.div
-                  key={project.id}
+                  key={index}
                   layout
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -195,7 +204,7 @@ export default function SkillsPage() {
                     {projects.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeProject(project.id)}
+                        onClick={() => removeProject(index)}
                         className="font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
                       >
                         Remove
@@ -212,7 +221,7 @@ export default function SkillsPage() {
                         type="text"
                         value={project.title}
                         onChange={(e) =>
-                          updateProject(project.id, "title", e.target.value)
+                          updateProject(index, "title", e.target.value)
                         }
                         placeholder="Real-time Chat Application"
                         required
@@ -227,7 +236,7 @@ export default function SkillsPage() {
                       <textarea
                         value={project.description}
                         onChange={(e) =>
-                          updateProject(project.id, "description", e.target.value)
+                          updateProject(index, "description", e.target.value)
                         }
                         placeholder="Built a real-time messaging app with Socket.io supporting 100+ concurrent users. Implemented message persistence with MongoDB and JWT-based authentication."
                         rows={3}
@@ -244,17 +253,17 @@ export default function SkillsPage() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          value={techInputs[project.id] || ""}
+                          value={techInputs[`proj-${index}`] || ""}
                           onChange={(e) =>
                             setTechInputs((prev) => ({
                               ...prev,
-                              [project.id]: e.target.value,
+                              [`proj-${index}`]: e.target.value,
                             }))
                           }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              addTech(project.id);
+                              addTech(index);
                             }
                           }}
                           placeholder="React, Node.js..."
@@ -262,7 +271,7 @@ export default function SkillsPage() {
                         />
                         <button
                           type="button"
-                          onClick={() => addTech(project.id)}
+                          onClick={() => addTech(index)}
                           className="rounded-xl bg-foreground/10 px-3 py-2.5 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
                         >
                           Add
@@ -278,7 +287,7 @@ export default function SkillsPage() {
                               {tech}
                               <button
                                 type="button"
-                                onClick={() => removeTech(project.id, tech)}
+                                onClick={() => removeTech(index, tech)}
                                 className="text-muted-foreground hover:text-foreground"
                               >
                                 ×
@@ -298,7 +307,7 @@ export default function SkillsPage() {
                           type="url"
                           value={project.liveUrl}
                           onChange={(e) =>
-                            updateProject(project.id, "liveUrl", e.target.value)
+                            updateProject(index, "liveUrl", e.target.value)
                           }
                           placeholder="https://myapp.vercel.app"
                           className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -312,7 +321,7 @@ export default function SkillsPage() {
                           type="url"
                           value={project.repoUrl}
                           onChange={(e) =>
-                            updateProject(project.id, "repoUrl", e.target.value)
+                            updateProject(index, "repoUrl", e.target.value)
                           }
                           placeholder="https://github.com/user/repo"
                           className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"

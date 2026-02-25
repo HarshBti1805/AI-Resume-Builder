@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "bcryptjs": "^3.0.3",
@@ -26,6 +27,7 @@
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.3.1",
     "generic-pool": "^3.9.0",
+    "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
@@ -45,6 +47,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/generic-pool": "^3.1.11",
+    "@types/handlebars": "^4.0.40",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/morgan": "^1.9.10",
     "@types/multer": "^2.0.0",

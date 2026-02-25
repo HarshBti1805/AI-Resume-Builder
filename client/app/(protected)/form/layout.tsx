@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
+import { useResumeStore } from "@/store/resumeStore";
 
 const steps = [
   { id: 1, label: "Personal", href: "/form/personal" },
@@ -19,10 +21,60 @@ export default function FormLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  const {
+    resumeId,
+    initResume,
+    loadResume,
+    isSaving,
+    lastSaved,
+    saveError,
+    setCurrentStep,
+  } = useResumeStore();
+  const [initDone, setInitDone] = useState(false);
+
+  // Initialize or load resume once persist has rehydrated
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      // Brief delay so Zustand persist can rehydrate from localStorage
+      await new Promise((r) => setTimeout(r, 50));
+      const currentResumeId = useResumeStore.getState().resumeId;
+
+      if (currentResumeId) {
+        try {
+          await loadResume(currentResumeId);
+        } catch {
+          try {
+            await initResume();
+          } catch {
+            // Auth might have expired
+          }
+        }
+      } else {
+        try {
+          await initResume();
+        } catch {
+          // Auth might have expired
+        }
+      }
+      if (!cancelled) setInitDone(true);
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentStepIndex = steps.findIndex((s) => pathname.startsWith(s.href));
   const currentStep = currentStepIndex === -1 ? 0 : currentStepIndex;
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  // Keep store in sync with current step
+  useEffect(() => {
+    setCurrentStep(currentStep + 1);
+  }, [currentStep, setCurrentStep]);
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
@@ -44,10 +96,25 @@ export default function FormLayout({
             ChitkaraCV
           </Link>
 
-          <div className="hidden items-center gap-1 sm:flex">
-            <span className="font-dm-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">
+          <div className="flex items-center gap-3">
+            <span className="hidden font-dm-mono text-[11px] uppercase tracking-widest text-muted-foreground/60 sm:block">
               Step {currentStep + 1} of {steps.length}
             </span>
+            {isSaving && (
+              <span className="font-manrope text-xs text-muted-foreground">
+                Saving…
+              </span>
+            )}
+            {lastSaved && !isSaving && (
+              <span className="font-manrope text-xs text-muted-foreground/70">
+                Saved
+              </span>
+            )}
+            {saveError && !isSaving && (
+              <span className="font-manrope text-xs text-destructive">
+                {saveError}
+              </span>
+            )}
           </div>
         </div>
 
@@ -160,14 +227,20 @@ export default function FormLayout({
 
           {/* ─── Form content ─── */}
           <main className="min-w-0 flex-1">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
-            >
-              {children}
-            </motion.div>
+            {initDone ? (
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+              >
+                {children}
+              </motion.div>
+            ) : (
+              <div className="flex min-h-[200px] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-foreground" />
+              </div>
+            )}
           </main>
         </div>
       </div>

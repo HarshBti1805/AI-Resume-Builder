@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import type { Internship, Achievement } from "@/store/resumeStore";
+import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,24 +19,7 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
-interface Internship {
-  id: string;
-  company: string;
-  role: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-}
-
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-}
-
 const emptyInternship = (): Internship => ({
-  id: crypto.randomUUID(),
   company: "",
   role: "",
   description: "",
@@ -43,56 +28,77 @@ const emptyInternship = (): Internship => ({
 });
 
 const emptyAchievement = (): Achievement => ({
-  id: crypto.randomUUID(),
   title: "",
   description: "",
   type: "OTHER",
 });
 
 export default function ExperiencePage() {
-  const [internships, setInternships] = useState<Internship[]>([
-    emptyInternship(),
-  ]);
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    emptyAchievement(),
-  ]);
+  const { step4, updateStep4 } = useResumeStore();
 
-  // ─── Internships ───
+  useEffect(() => {
+    if (step4.internships.length === 0) {
+      updateStep4({ internships: [emptyInternship()] });
+    }
+  }, [step4.internships.length, updateStep4]);
+
+  useEffect(() => {
+    if (step4.achievements.length === 0) {
+      updateStep4({ achievements: [emptyAchievement()] });
+    }
+  }, [step4.achievements.length, updateStep4]);
+
+  const internships =
+    step4.internships.length > 0 ? step4.internships : [emptyInternship()];
+  const achievements =
+    step4.achievements.length > 0 ? step4.achievements : [emptyAchievement()];
+
   const addInternship = () =>
-    setInternships((prev) => [...prev, emptyInternship()]);
+    updateStep4({
+      internships: [...step4.internships, emptyInternship()],
+    });
 
-  const removeInternship = (id: string) => {
-    if (internships.length <= 1) return;
-    setInternships((prev) => prev.filter((i) => i.id !== id));
+  const removeInternship = (index: number) => {
+    if (step4.internships.length <= 1) return;
+    updateStep4({
+      internships: step4.internships.filter((_, i) => i !== index),
+    });
   };
 
   const updateInternship = (
-    id: string,
+    index: number,
     field: keyof Internship,
     value: string
   ) => {
-    setInternships((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, [field]: value } : i))
-    );
+    updateStep4({
+      internships: step4.internships.map((i, idx) =>
+        idx === index ? { ...i, [field]: value } : i
+      ),
+    });
   };
 
-  // ─── Achievements ───
   const addAchievement = () =>
-    setAchievements((prev) => [...prev, emptyAchievement()]);
+    updateStep4({
+      achievements: [...step4.achievements, emptyAchievement()],
+    });
 
-  const removeAchievement = (id: string) => {
-    if (achievements.length <= 1) return;
-    setAchievements((prev) => prev.filter((a) => a.id !== id));
+  const removeAchievement = (index: number) => {
+    if (step4.achievements.length <= 1) return;
+    updateStep4({
+      achievements: step4.achievements.filter((_, i) => i !== index),
+    });
   };
 
   const updateAchievement = (
-    id: string,
+    index: number,
     field: keyof Achievement,
     value: string
   ) => {
-    setAchievements((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a))
-    );
+    updateStep4({
+      achievements: step4.achievements.map((a, idx) =>
+        idx === index ? { ...a, [field]: value } : a
+      ),
+    });
   };
 
   return (
@@ -131,7 +137,7 @@ export default function ExperiencePage() {
             <div className="flex flex-col gap-4">
               {internships.map((intern, index) => (
                 <motion.div
-                  key={intern.id}
+                  key={index}
                   layout
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -146,7 +152,7 @@ export default function ExperiencePage() {
                     {internships.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeInternship(intern.id)}
+                        onClick={() => removeInternship(index)}
                         className="font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
                       >
                         Remove
@@ -165,7 +171,7 @@ export default function ExperiencePage() {
                           value={intern.company}
                           onChange={(e) =>
                             updateInternship(
-                              intern.id,
+                              index,
                               "company",
                               e.target.value
                             )
@@ -183,7 +189,7 @@ export default function ExperiencePage() {
                           type="text"
                           value={intern.role}
                           onChange={(e) =>
-                            updateInternship(intern.id, "role", e.target.value)
+                            updateInternship(index, "role", e.target.value)
                           }
                           placeholder="Software Engineering Intern"
                           required
@@ -200,7 +206,7 @@ export default function ExperiencePage() {
                         value={intern.description}
                         onChange={(e) =>
                           updateInternship(
-                            intern.id,
+                            index,
                             "description",
                             e.target.value
                           )
@@ -221,7 +227,7 @@ export default function ExperiencePage() {
                           value={intern.startDate}
                           onChange={(e) =>
                             updateInternship(
-                              intern.id,
+                              index,
                               "startDate",
                               e.target.value
                             )
@@ -238,7 +244,7 @@ export default function ExperiencePage() {
                           value={intern.endDate}
                           onChange={(e) =>
                             updateInternship(
-                              intern.id,
+                              index,
                               "endDate",
                               e.target.value
                             )
@@ -273,7 +279,7 @@ export default function ExperiencePage() {
             <div className="flex flex-col gap-4">
               {achievements.map((achievement, index) => (
                 <motion.div
-                  key={achievement.id}
+                  key={index}
                   layout
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -288,7 +294,7 @@ export default function ExperiencePage() {
                     {achievements.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeAchievement(achievement.id)}
+                        onClick={() => removeAchievement(index)}
                         className="font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
                       >
                         Remove
@@ -307,7 +313,7 @@ export default function ExperiencePage() {
                           value={achievement.title}
                           onChange={(e) =>
                             updateAchievement(
-                              achievement.id,
+                              index,
                               "title",
                               e.target.value
                             )
@@ -322,12 +328,12 @@ export default function ExperiencePage() {
                           Type
                         </label>
                         <select
-                          value={achievement.type}
+                          value={achievement.type || "OTHER"}
                           onChange={(e) =>
                             updateAchievement(
-                              achievement.id,
+                              index,
                               "type",
-                              e.target.value
+                              e.target.value || "OTHER"
                             )
                           }
                           className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -349,7 +355,7 @@ export default function ExperiencePage() {
                         value={achievement.description}
                         onChange={(e) =>
                           updateAchievement(
-                            achievement.id,
+                            index,
                             "description",
                             e.target.value
                           )

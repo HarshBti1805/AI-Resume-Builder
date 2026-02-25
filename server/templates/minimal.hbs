@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>{{fullName}} — Resume</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    font-size: 10pt;
+    color: #111;
+    background: #fff;
+    padding: 52px 56px;
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  h1 { font-size: 26pt; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .contact { font-size: 9pt; color: #666; display: flex; flex-wrap: wrap; gap: 0; }
+  .contact span::after { content: " · "; }
+  .contact span:last-child::after { content: ""; }
+  .contact a { color: #666; text-decoration: none; }
+  hr { border: none; border-top: 1px solid #e5e5e5; margin: 20px 0; }
+
+  /* ── Section ── */
+  .section { display: grid; grid-template-columns: 120px 1fr; gap: 0 24px; margin-bottom: 16px; }
+  .section-label {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #999;
+    padding-top: 2px;
+  }
+
+  /* ── Row ── */
+  .row { margin-bottom: 10px; }
+  .row:last-child { margin-bottom: 0; }
+  .row-header { display: flex; justify-content: space-between; }
+  .row-title { font-weight: 600; font-size: 10pt; }
+  .row-date { font-size: 8.5pt; color: #888; }
+  .row-sub { font-size: 9pt; color: #666; margin-top: 1px; }
+  .row-desc { font-size: 9pt; color: #444; margin-top: 3px; }
+
+  /* ── Skills ── */
+  .skills-text { font-size: 9.5pt; color: #444; }
+
+  /* ── Project ── */
+  .proj-tech { font-size: 8.5pt; color: #888; }
+  .proj-links { font-size: 8.5pt; color: #888; margin-top: 2px; }
+  .proj-links a { color: #888; text-decoration: none; }
+
+  /* ── Photo ── */
+  .header-wrap { display: flex; justify-content: space-between; align-items: flex-start; }
+  .photo { width: 64px; height: 64px; border-radius: 4px; object-fit: cover; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header-wrap">
+  <div>
+    <h1>{{fullName}}</h1>
+    <div class="contact">
+      {{#ifVal contactEmail}}<span>{{contactEmail}}</span>{{/ifVal}}
+      {{#ifVal phone}}<span>{{phone}}</span>{{/ifVal}}
+      {{#ifVal city}}<span>{{city}}{{#ifVal state}}, {{state}}{{/ifVal}}</span>{{/ifVal}}
+      {{#ifVal linkedin}}<span><a href="{{linkedin}}">LinkedIn</a></span>{{/ifVal}}
+      {{#ifVal github}}<span><a href="{{github}}">GitHub</a></span>{{/ifVal}}
+      {{#ifVal portfolio}}<span><a href="{{portfolio}}">Portfolio</a></span>{{/ifVal}}
+    </div>
+  </div>
+  {{#ifVal photoUrl}}<img class="photo" src="{{photoUrl}}" alt="" />{{/ifVal}}
+</div>
+
+<hr />
+
+<!-- ── SUMMARY ── -->
+{{#ifVal summary}}
+<div class="section">
+  <div class="section-label">Summary</div>
+  <div class="row-desc">{{summary}}</div>
+</div>
+{{/ifVal}}
+
+<!-- ── EDUCATION ── -->
+{{#ifVal university}}
+<div class="section">
+  <div class="section-label">Education</div>
+  <div>
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">{{university}}</span>
+        <span class="row-date">{{batchStart}} – {{batchEnd}}</span>
+      </div>
+      <div class="row-sub">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}{{#ifVal cgpa}} · CGPA {{cgpa}}{{/ifVal}}</div>
+    </div>
+    {{#ifVal marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{board12th}}</span><span class="row-date">{{marks12th}}%</span></div></div>{{/ifVal}}
+    {{#ifVal marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{board10th}}</span><span class="row-date">{{marks10th}}%</span></div></div>{{/ifVal}}
+    {{#ifNotEmpty coursework}}<div class="row-sub">Coursework: {{join coursework ", "}}</div>{{/ifNotEmpty}}
+  </div>
+</div>
+{{/ifVal}}
+
+<!-- ── SKILLS ── -->
+{{#ifNotEmpty skills}}
+<div class="section">
+  <div class="section-label">Skills</div>
+  <div class="skills-text">{{join skills " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── EXPERIENCE ── -->
+{{#ifNotEmpty internships}}
+<div class="section">
+  <div class="section-label">Experience</div>
+  <div>
+    {{#each internships}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">{{role}}, {{company}}</span>
+        <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
+      </div>
+      {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    </div>
+    {{/each}}
+  </div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── PROJECTS ── -->
+{{#ifNotEmpty projects}}
+<div class="section">
+  <div class="section-label">Projects</div>
+  <div>
+    {{#each projects}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">{{title}}</span>
+        {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
+      </div>
+      {{#ifNotEmpty techStack}}<div class="proj-tech">{{join techStack " · "}}</div>{{/ifNotEmpty}}
+      {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+      {{#if liveUrl}}<div class="proj-links">{{#ifVal liveUrl}}<a href="{{liveUrl}}">Live</a>{{/ifVal}}{{#ifVal repoUrl}} · <a href="{{repoUrl}}">Repo</a>{{/ifVal}}</div>{{/if}}
+    </div>
+    {{/each}}
+  </div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── ACHIEVEMENTS ── -->
+{{#ifNotEmpty achievements}}
+<div class="section">
+  <div class="section-label">Achievements</div>
+  <div>
+    {{#each achievements}}
+    <div class="row">
+      <span class="row-title">{{title}}</span>
+      {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    </div>
+    {{/each}}
+  </div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── HOBBIES ── -->
+{{#ifNotEmpty hobbies}}
+<div class="section">
+  <div class="section-label">Interests</div>
+  <div class="skills-text">{{join hobbies " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+
+</body>
+</html>

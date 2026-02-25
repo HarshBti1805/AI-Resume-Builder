@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>{{fullName}} — Curriculum Vitae</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+    font-size: 10.5pt;
+    color: #1a1a1a;
+    background: #fff;
+    padding: 40px 52px;
+    line-height: 1.55;
+  }
+
+  /* ── Header ── */
+  .header { margin-bottom: 20px; }
+  h1 { font-size: 21pt; font-weight: bold; margin-bottom: 4px; }
+  .tagline { font-size: 10.5pt; color: #555; font-style: italic; margin-bottom: 8px; }
+  .contact { font-size: 9pt; color: #444; }
+  .contact a { color: #444; text-decoration: none; }
+  .contact-sep::before { content: " | "; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 16px; }
+  .section-title {
+    font-size: 12pt;
+    font-variant: small-caps;
+    font-weight: bold;
+    border-bottom: 1.5px solid #555;
+    padding-bottom: 2px;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Education rows ── */
+  .edu-row { margin-bottom: 10px; }
+  .edu-inst { font-weight: bold; font-size: 10.5pt; }
+  .edu-degree { font-size: 10pt; font-style: italic; color: #333; }
+  .edu-meta { font-size: 9pt; color: #555; margin-top: 1px; }
+  .edu-year { float: right; font-size: 9.5pt; color: #555; }
+
+  /* ── General row ── */
+  .row { margin-bottom: 9px; }
+  .row-header { display: flex; justify-content: space-between; }
+  .row-title { font-weight: bold; }
+  .row-date { font-size: 9pt; color: #666; }
+  .row-sub { font-size: 9.5pt; color: #555; font-style: italic; margin-top: 1px; }
+  .row-desc { font-size: 9.5pt; color: #333; margin-top: 3px; }
+
+  /* ── Skills ── */
+  .skills-row { margin-bottom: 5px; font-size: 9.5pt; }
+  .skill-cat { font-weight: bold; }
+
+  /* ── Achievements ── */
+  .ach { margin-bottom: 5px; font-size: 9.5pt; }
+  .ach::before { content: "◆ "; font-size: 7pt; }
+
+  /* ── Hobbies ── */
+  .hobbies { font-size: 9.5pt; color: #444; }
+
+  /* ── Photo ── */
+  .header-wrap { display: flex; justify-content: space-between; }
+  .photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header-wrap">
+  <div class="header">
+    <h1>{{fullName}}</h1>
+    {{#ifVal stream}}<div class="tagline">{{stream}}{{#ifVal branch}} — {{branch}}{{/ifVal}}</div>{{/ifVal}}
+    <div class="contact">
+      {{#ifVal contactEmail}}<span>{{contactEmail}}</span>{{/ifVal}}
+      {{#ifVal phone}}<span class="contact-sep">{{phone}}</span>{{/ifVal}}
+      {{#ifVal city}}<span class="contact-sep">{{city}}{{#ifVal state}}, {{state}}{{/ifVal}}</span>{{/ifVal}}
+      {{#ifVal linkedin}}<span class="contact-sep"><a href="{{linkedin}}">LinkedIn</a></span>{{/ifVal}}
+      {{#ifVal github}}<span class="contact-sep"><a href="{{github}}">GitHub</a></span>{{/ifVal}}
+      {{#ifVal portfolio}}<span class="contact-sep"><a href="{{portfolio}}">Portfolio</a></span>{{/ifVal}}
+    </div>
+  </div>
+  {{#ifVal photoUrl}}<img class="photo" src="{{photoUrl}}" alt="" />{{/ifVal}}
+</div>
+
+<!-- ── SUMMARY ── -->
+{{#ifVal summary}}
+<div class="section">
+  <div class="section-title">Profile</div>
+  <div class="row-desc">{{summary}}</div>
+</div>
+{{/ifVal}}
+
+<!-- ── EDUCATION (first for academic template) ── -->
+{{#ifVal university}}
+<div class="section">
+  <div class="section-title">Education</div>
+  <div class="edu-row">
+    <div class="edu-inst">{{university}} <span class="edu-year">{{batchStart}} – {{batchEnd}}</span></div>
+    <div class="edu-degree">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}</div>
+    {{#ifVal cgpa}}<div class="edu-meta">CGPA: {{cgpa}}</div>{{/ifVal}}
+    {{#ifNotEmpty coursework}}<div class="edu-meta">Relevant Coursework: {{join coursework ", "}}</div>{{/ifNotEmpty}}
+  </div>
+  {{#ifVal marks12th}}
+  <div class="edu-row">
+    <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{marks12th}}%</span></div>
+    {{#ifVal board12th}}<div class="edu-degree">{{board12th}}</div>{{/ifVal}}
+  </div>
+  {{/ifVal}}
+  {{#ifVal marks10th}}
+  <div class="edu-row">
+    <div class="edu-inst">Secondary (10th) <span class="edu-year">{{marks10th}}%</span></div>
+    {{#ifVal board10th}}<div class="edu-degree">{{board10th}}</div>{{/ifVal}}
+  </div>
+  {{/ifVal}}
+</div>
+{{/ifVal}}
+
+<!-- ── EXPERIENCE ── -->
+{{#ifNotEmpty internships}}
+<div class="section">
+  <div class="section-title">Research &amp; Work Experience</div>
+  {{#each internships}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{role}}</span>
+      <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
+    </div>
+    <div class="row-sub">{{company}}</div>
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── PROJECTS ── -->
+{{#ifNotEmpty projects}}
+<div class="section">
+  <div class="section-title">Projects &amp; Research Work</div>
+  {{#each projects}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{title}}</span>
+      {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
+    </div>
+    {{#ifNotEmpty techStack}}<div class="row-sub">{{join techStack ", "}}</div>{{/ifNotEmpty}}
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── SKILLS ── -->
+{{#ifNotEmpty skills}}
+<div class="section">
+  <div class="section-title">Technical Competencies</div>
+  <div class="row-desc">{{join skills " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── ACHIEVEMENTS ── -->
+{{#ifNotEmpty achievements}}
+<div class="section">
+  <div class="section-title">Honours &amp; Achievements</div>
+  {{#each achievements}}
+  <div class="ach"><strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}</div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── HOBBIES ── -->
+{{#ifNotEmpty hobbies}}
+<div class="section">
+  <div class="section-title">Interests</div>
+  <div class="hobbies">{{join hobbies " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+
+</body>
+</html>

@@ -1,95 +1,134 @@
-import express from "express";
-import cors from "cors";
+import "./config/env"; // validate env vars before anything else
+
+import express, { Request, Response } from "express";
 import helmet from "helmet";
-import morgan from "morgan";
-import cookieParser from "cookie-parser";
+import cors from "cors";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 
-import { env } from "./config/env";
-import prisma from "./config/prisma";
-import redis from "./config/redis"
-import logger from "./utils/logger";
-import { errorHandler } from "./middleware/errorHandler";
 import { generalLimiter } from "./middleware/rateLimiter";
+import { errorHandler } from "./middleware/errorHandler";
+import { requestLogger } from "./middleware/requestLogger";
 
-// Routes
 import authRoutes from "./routes/auth.routes";
+import resumeRoutes from "./routes/resume.route";
+import aiRoutes from "./routes/ai.route";
+import uploadRoutes from "./routes/upload.route";
 
+import prisma from "./config/prisma";
+import redis from "./config/redis";
+import { drainBrowserPool } from "./services/pdf.service";
+import logger from "./utils/logger";
 
 const app = express();
 
-// ─── Global Middleware ────────────────────────
+// ─────────────────────────────────────────────
+// Global middleware
+// ─────────────────────────────────────────────
+
 app.use(helmet());
 app.use(
   cors({
-    origin: env.CLIENT_URL,
-    credentials: true, // Required for httpOnly cookies
+    origin: process.env.FRONTEND_URL ?? "http://localhost:3000",
+    credentials: true,
   })
 );
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 app.use(compression());
-app.use(morgan("dev"));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(cookieParser());
+app.use(requestLogger);
 app.use(generalLimiter);
 
-// ─── Health Check ─────────────────────────────
-app.get("/health", async (_req, res) => {
-  const checks = {
-    server: "ok" as const,
-    postgres: await prisma
-      .$queryRaw`SELECT 1`
-      .then(() => "ok" as const)
-      .catch(() => "down" as const),
-    redis: await redis
-      .ping()
-      .then(() => "ok" as const)
-      .catch(() => "down" as const),
-    timestamp: new Date(),
-  };
+// ─────────────────────────────────────────────
+// Health check
+// ─────────────────────────────────────────────
 
-  const healthy = checks.postgres === "ok" && checks.redis === "ok";
-  res.status(healthy ? 200 : 503).json(checks);
+app.get("/health", async (_req: Request, res: Response) => {
+  const [pgOk, redisOk] = await Promise.all([
+    prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
+    redis.ping().then(() => true).catch(() => false),
+  ]);
+
+  const healthy = pgOk && redisOk;
+
+  res.status(healthy ? 200 : 503).json({
+    server: "ok",
+    postgres: pgOk ? "ok" : "down",
+    redis: redisOk ? "ok" : "down",
+    timestamp: new Date().toISOString(),
+  });
 });
 
-// ─── API Routes ───────────────────────────────
-app.use("/api/auth", authRoutes);
-// app.use("/api/resume", resumeRoutes);   // Add when ready
-// app.use("/api/ai", aiRoutes);           // Add when ready
-// app.use("/api/upload", uploadRoutes);   // Add when ready
+// ─────────────────────────────────────────────
+// Routes
+// ─────────────────────────────────────────────
 
-// ─── 404 Handler ──────────────────────────────
-app.use((_req, res) => {
+app.use("/api/auth", authRoutes);
+app.use("/api/resume", resumeRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/upload", uploadRoutes);
+
+// ─────────────────────────────────────────────
+// 404 fallthrough
+// ─────────────────────────────────────────────
+
+app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: { code: "NOT_FOUND", message: "Route not found" },
   });
 });
 
-// ─── Global Error Handler ─────────────────────
+// ─────────────────────────────────────────────
+// Global error handler (must be last)
+// ─────────────────────────────────────────────
+
 app.use(errorHandler);
 
-// ─── Start Server ─────────────────────────────
-const PORT = parseInt(env.PORT);
+// ─────────────────────────────────────────────
+// Start server
+// ─────────────────────────────────────────────
+
+const PORT = Number(process.env.PORT ?? 4000);
 
 const server = app.listen(PORT, () => {
-  logger.info(`🚀 ChitkaraCV API running on port ${PORT}`);
-  logger.info(`📍 Environment: ${env.NODE_ENV}`);
+  logger.info(`Server running on port ${PORT} [${process.env.NODE_ENV}]`);
 });
 
-// ─── Graceful Shutdown ────────────────────────
+// ─────────────────────────────────────────────
+// Graceful shutdown
+// ─────────────────────────────────────────────
+
 const shutdown = async (signal: string): Promise<void> => {
-  logger.info(`${signal} received. Starting graceful shutdown...`);
+  logger.info(`${signal} received — shutting down gracefully`);
 
-  server.close();
-  await prisma.$disconnect();
-  await redis.quit();
+  server.close(async () => {
+    try {
+      await prisma.$disconnect();
+      await redis.quit();
+      await drainBrowserPool();
+      logger.info("Shutdown complete");
+      process.exit(0);
+    } catch (err) {
+      logger.error("Error during shutdown", { err });
+      process.exit(1);
+    }
+  });
 
-  logger.info("Shutdown complete");
-  process.exit(0);
+  // Force exit after 10 s if server.close() hangs
+  setTimeout(() => {
+    logger.error("Forced exit after timeout");
+    process.exit(1);
+  }, 10_000);
 };
 
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
+
+// Catch unhandled promise rejections
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled rejection", { reason });
+});
 
 export default app;

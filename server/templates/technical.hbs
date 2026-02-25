@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>{{fullName}} — Resume</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Roboto", Arial, sans-serif;
+    font-size: 9.5pt;
+    color: #1f2937;
+    background: #fff;
+    padding: 28px 44px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ── */
+  .header { border-left: 4px solid #0f766e; padding-left: 14px; margin-bottom: 20px; }
+  h1 { font-size: 22pt; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+  .header-sub { font-size: 10pt; color: #0f766e; font-weight: 600; margin-bottom: 6px; }
+  .contact { font-size: 8.5pt; color: #6b7280; display: flex; flex-wrap: wrap; gap: 0 16px; }
+  .contact a { color: #0f766e; text-decoration: none; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 15px; }
+  .section-title {
+    font-size: 9pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: #0f766e;
+    margin-bottom: 8px;
+    padding-bottom: 3px;
+    border-bottom: 1.5px solid #ccfbf1;
+  }
+
+  /* ── Skills – grouped by category ── */
+  .skills-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 20px; }
+  .skill-group { font-size: 9pt; }
+  .skill-group-label { font-weight: 700; color: #374151; }
+  .skill-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .skill-tag {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    border-radius: 3px;
+    padding: 1px 7px;
+    font-size: 8pt;
+    font-weight: 500;
+  }
+
+  /* ── Projects (prominent) ── */
+  .project-card {
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #0f766e;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+  .proj-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .proj-title { font-weight: 700; font-size: 10pt; color: #0f172a; }
+  .proj-date { font-size: 8.5pt; color: #9ca3af; }
+  .proj-tech { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 3px; }
+  .proj-tech-tag {
+    background: #f1f5f9;
+    color: #475569;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 8pt;
+    font-family: "Courier New", monospace;
+  }
+  .proj-desc { font-size: 9pt; color: #4b5563; margin-top: 4px; }
+  .proj-links { font-size: 8pt; color: #6b7280; margin-top: 4px; }
+  .proj-links a { color: #0f766e; text-decoration: none; margin-right: 10px; }
+
+  /* ── Row ── */
+  .row { margin-bottom: 9px; }
+  .row-header { display: flex; justify-content: space-between; }
+  .row-title { font-weight: 700; }
+  .row-date { font-size: 8.5pt; color: #9ca3af; }
+  .row-sub { font-size: 9pt; color: #6b7280; margin-top: 1px; }
+  .row-desc { font-size: 9pt; color: #4b5563; margin-top: 3px; }
+
+  /* ── Achievements ── */
+  .ach-item { margin-bottom: 4px; font-size: 9.5pt; }
+  .ach-badge { display: inline-block; background: #0f766e; color: #fff; font-size: 7.5pt; font-weight: 700; border-radius: 3px; padding: 1px 5px; margin-right: 5px; text-transform: uppercase; }
+
+  /* ── Photo ── */
+  .header-wrap { display: flex; justify-content: space-between; align-items: flex-start; }
+  .photo { width: 68px; height: 68px; border-radius: 6px; object-fit: cover; }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header-wrap">
+  <div class="header">
+    <h1>{{fullName}}</h1>
+    {{#ifVal stream}}<div class="header-sub">{{stream}}{{#ifVal branch}} · {{branch}}{{/ifVal}}</div>{{/ifVal}}
+    <div class="contact">
+      {{#ifVal contactEmail}}<span>{{contactEmail}}</span>{{/ifVal}}
+      {{#ifVal phone}}<span>{{phone}}</span>{{/ifVal}}
+      {{#ifVal city}}<span>{{city}}{{#ifVal state}}, {{state}}{{/ifVal}}</span>{{/ifVal}}
+      {{#ifVal github}}<span><a href="{{github}}">GitHub</a></span>{{/ifVal}}
+      {{#ifVal linkedin}}<span><a href="{{linkedin}}">LinkedIn</a></span>{{/ifVal}}
+      {{#ifVal portfolio}}<span><a href="{{portfolio}}">Portfolio</a></span>{{/ifVal}}
+    </div>
+  </div>
+  {{#ifVal photoUrl}}<img class="photo" src="{{photoUrl}}" alt="" />{{/ifVal}}
+</div>
+
+<!-- ── SUMMARY ── -->
+{{#ifVal summary}}
+<div class="section">
+  <div class="section-title">Summary</div>
+  <div class="row-desc">{{summary}}</div>
+</div>
+{{/ifVal}}
+
+<!-- ── SKILLS (prominent for technical) ── -->
+{{#ifNotEmpty skills}}
+<div class="section">
+  <div class="section-title">Technical Skills</div>
+  <div class="skill-tags">
+    {{#each skills}}<span class="skill-tag">{{this}}</span>{{/each}}
+  </div>
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── PROJECTS (prominent for technical) ── -->
+{{#ifNotEmpty projects}}
+<div class="section">
+  <div class="section-title">Projects</div>
+  {{#each projects}}
+  <div class="project-card">
+    <div class="proj-header">
+      <span class="proj-title">{{title}}</span>
+      {{#ifVal startDate}}<span class="proj-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
+    </div>
+    {{#ifNotEmpty techStack}}
+    <div class="proj-tech">
+      {{#each techStack}}<span class="proj-tech-tag">{{this}}</span>{{/each}}
+    </div>
+    {{/ifNotEmpty}}
+    {{#ifVal description}}<div class="proj-desc">{{description}}</div>{{/ifVal}}
+    {{#if liveUrl}}
+    <div class="proj-links">
+      {{#ifVal liveUrl}}<a href="{{liveUrl}}">⬡ Live Demo</a>{{/ifVal}}
+      {{#ifVal repoUrl}}<a href="{{repoUrl}}">⌬ Source Code</a>{{/ifVal}}
+    </div>
+    {{/if}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── EXPERIENCE ── -->
+{{#ifNotEmpty internships}}
+<div class="section">
+  <div class="section-title">Work Experience</div>
+  {{#each internships}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{role}} · {{company}}</span>
+      <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
+    </div>
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── EDUCATION ── -->
+{{#ifVal university}}
+<div class="section">
+  <div class="section-title">Education</div>
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{university}}</span>
+      <span class="row-date">{{batchStart}} – {{batchEnd}}</span>
+    </div>
+    <div class="row-sub">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}{{#ifVal cgpa}} · CGPA {{cgpa}}{{/ifVal}}</div>
+  </div>
+  {{#ifVal marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{board12th}}</span><span class="row-date">{{marks12th}}%</span></div></div>{{/ifVal}}
+  {{#ifVal marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{board10th}}</span><span class="row-date">{{marks10th}}%</span></div></div>{{/ifVal}}
+  {{#ifNotEmpty coursework}}<div class="row-sub" style="margin-top:4px;">Coursework: {{join coursework ", "}}</div>{{/ifNotEmpty}}
+</div>
+{{/ifVal}}
+
+<!-- ── ACHIEVEMENTS ── -->
+{{#ifNotEmpty achievements}}
+<div class="section">
+  <div class="section-title">Achievements</div>
+  {{#each achievements}}
+  <div class="ach-item">
+    <span class="ach-badge">{{type}}</span>
+    <strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+
+<!-- ── HOBBIES ── -->
+{{#ifNotEmpty hobbies}}
+<div class="section">
+  <div class="section-title">Interests</div>
+  <div class="row-desc">{{join hobbies " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+
+</body>
+</html>

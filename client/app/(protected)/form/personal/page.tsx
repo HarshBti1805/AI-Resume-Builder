@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -18,20 +18,10 @@ const item = {
 };
 
 export default function PersonalPage() {
-  const [form, setForm] = useState({
-    fullName: "",
-    dateOfBirth: "",
-    phone: "",
-    contactEmail: "",
-    city: "",
-    state: "",
-    linkedin: "",
-    github: "",
-    portfolio: "",
-  });
+  const { step1, updateStep1 } = useResumeStore();
 
-  const update = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const update = (field: keyof typeof step1, value: string) => {
+    updateStep1({ [field]: value });
   };
 
   return (
@@ -59,7 +49,7 @@ export default function PersonalPage() {
             </label>
             <input
               type="text"
-              value={form.fullName}
+              value={step1.fullName}
               onChange={(e) => update("fullName", e.target.value)}
               placeholder="Aditya Saini"
               required
@@ -72,7 +62,7 @@ export default function PersonalPage() {
             </label>
             <input
               type="date"
-              value={form.dateOfBirth}
+              value={step1.dateOfBirth}
               onChange={(e) => update("dateOfBirth", e.target.value)}
               className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
@@ -91,7 +81,7 @@ export default function PersonalPage() {
               </label>
               <input
                 type="tel"
-                value={form.phone}
+                value={step1.phone}
                 onChange={(e) => update("phone", e.target.value)}
                 placeholder="+91 98765 43210"
                 required
@@ -104,7 +94,7 @@ export default function PersonalPage() {
               </label>
               <input
                 type="email"
-                value={form.contactEmail}
+                value={step1.contactEmail}
                 onChange={(e) => update("contactEmail", e.target.value)}
                 placeholder="aditya@gmail.com"
                 required
@@ -126,7 +116,7 @@ export default function PersonalPage() {
               </label>
               <input
                 type="text"
-                value={form.city}
+                value={step1.city}
                 onChange={(e) => update("city", e.target.value)}
                 placeholder="Chandigarh"
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -138,7 +128,7 @@ export default function PersonalPage() {
               </label>
               <input
                 type="text"
-                value={form.state}
+                value={step1.state}
                 onChange={(e) => update("state", e.target.value)}
                 placeholder="Punjab"
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -159,7 +149,7 @@ export default function PersonalPage() {
               </label>
               <input
                 type="url"
-                value={form.linkedin}
+                value={step1.linkedin}
                 onChange={(e) => update("linkedin", e.target.value)}
                 placeholder="https://linkedin.com/in/aditya-saini"
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -172,7 +162,7 @@ export default function PersonalPage() {
                 </label>
                 <input
                   type="url"
-                  value={form.github}
+                  value={step1.github}
                   onChange={(e) => update("github", e.target.value)}
                   placeholder="https://github.com/aditya-saini"
                   className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -184,7 +174,7 @@ export default function PersonalPage() {
                 </label>
                 <input
                   type="url"
-                  value={form.portfolio}
+                  value={step1.portfolio}
                   onChange={(e) => update("portfolio", e.target.value)}
                   placeholder="https://aditya.dev"
                   className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"

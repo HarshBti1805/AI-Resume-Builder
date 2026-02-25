@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -18,36 +19,23 @@ const item = {
 };
 
 export default function AcademicPage() {
-  const [form, setForm] = useState({
-    university: "Chitkara University",
-    stream: "",
-    branch: "",
-    batchStart: "",
-    batchEnd: "",
-    cgpa: "",
-    marks12th: "",
-    board12th: "",
-    marks10th: "",
-    board10th: "",
-  });
-
-  const [coursework, setCoursework] = useState<string[]>([]);
+  const { step2, updateStep2 } = useResumeStore();
   const [courseInput, setCourseInput] = useState("");
 
-  const update = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const update = (field: keyof typeof step2, value: string | string[]) => {
+    updateStep2({ [field]: value });
   };
 
   const addCourse = () => {
     const trimmed = courseInput.trim();
-    if (trimmed && !coursework.includes(trimmed)) {
-      setCoursework((prev) => [...prev, trimmed]);
+    if (trimmed && !step2.coursework.includes(trimmed)) {
+      update("coursework", [...step2.coursework, trimmed]);
       setCourseInput("");
     }
   };
 
   const removeCourse = (course: string) => {
-    setCoursework((prev) => prev.filter((c) => c !== course));
+    update("coursework", step2.coursework.filter((c) => c !== course));
   };
 
   const handleCourseKeyDown = (e: React.KeyboardEvent) => {
@@ -85,7 +73,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="text"
-                value={form.university}
+                value={step2.university}
                 onChange={(e) => update("university", e.target.value)}
                 placeholder="Chitkara University"
                 required
@@ -97,7 +85,7 @@ export default function AcademicPage() {
                 Stream <span className="text-red-400">*</span>
               </label>
               <select
-                value={form.stream}
+                value={step2.stream}
                 onChange={(e) => update("stream", e.target.value)}
                 required
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -120,7 +108,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="text"
-                value={form.branch}
+                value={step2.branch}
                 onChange={(e) => update("branch", e.target.value)}
                 placeholder="Computer Science & Engineering"
                 required
@@ -139,7 +127,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="number"
-                value={form.batchStart}
+                value={step2.batchStart}
                 onChange={(e) => update("batchStart", e.target.value)}
                 placeholder="2023"
                 min="2000"
@@ -153,7 +141,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="number"
-                value={form.batchEnd}
+                value={step2.batchEnd}
                 onChange={(e) => update("batchEnd", e.target.value)}
                 placeholder="2027"
                 min="2000"
@@ -168,7 +156,7 @@ export default function AcademicPage() {
               <input
                 type="number"
                 step="0.01"
-                value={form.cgpa}
+                value={step2.cgpa}
                 onChange={(e) => update("cgpa", e.target.value)}
                 placeholder="8.5"
                 min="0"
@@ -193,7 +181,7 @@ export default function AcademicPage() {
               <input
                 type="number"
                 step="0.1"
-                value={form.marks12th}
+                value={step2.marks12th}
                 onChange={(e) => update("marks12th", e.target.value)}
                 placeholder="92.4"
                 className="font-dm-mono w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -205,7 +193,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="text"
-                value={form.board12th}
+                value={step2.board12th}
                 onChange={(e) => update("board12th", e.target.value)}
                 placeholder="CBSE"
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -227,7 +215,7 @@ export default function AcademicPage() {
               <input
                 type="number"
                 step="0.1"
-                value={form.marks10th}
+                value={step2.marks10th}
                 onChange={(e) => update("marks10th", e.target.value)}
                 placeholder="95.0"
                 className="font-dm-mono w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -239,7 +227,7 @@ export default function AcademicPage() {
               </label>
               <input
                 type="text"
-                value={form.board10th}
+                value={step2.board10th}
                 onChange={(e) => update("board10th", e.target.value)}
                 placeholder="CBSE"
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -274,9 +262,9 @@ export default function AcademicPage() {
               Add
             </button>
           </div>
-          {coursework.length > 0 && (
+          {step2.coursework.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {coursework.map((course) => (
+              {step2.coursework.map((course) => (
                 <span
                   key={course}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 font-manrope text-xs text-foreground"

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -18,21 +20,22 @@ const item = {
 };
 
 export default function SummaryPage() {
-  const [summary, setSummary] = useState("");
-  const [hobbies, setHobbies] = useState<string[]>([]);
+  const router = useRouter();
+  const { step5, updateStep5, saveStep5 } = useResumeStore();
   const [hobbyInput, setHobbyInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const addHobby = () => {
     const trimmed = hobbyInput.trim();
-    if (trimmed && !hobbies.includes(trimmed)) {
-      setHobbies((prev) => [...prev, trimmed]);
+    if (trimmed && !step5.hobbies.includes(trimmed)) {
+      updateStep5({ hobbies: [...step5.hobbies, trimmed] });
       setHobbyInput("");
     }
   };
 
   const removeHobby = (hobby: string) => {
-    setHobbies((prev) => prev.filter((h) => h !== hobby));
+    updateStep5({ hobbies: step5.hobbies.filter((h) => h !== hobby) });
   };
 
   const handleHobbyKeyDown = (e: React.KeyboardEvent) => {
@@ -47,16 +50,24 @@ export default function SummaryPage() {
     // TODO: call POST /api/ai/generate-summary with resume data
     // For now, simulate a delay
     setTimeout(() => {
-      setSummary(
-        "Motivated Computer Science student at Chitkara University with hands-on experience in full-stack development. Built multiple production-ready applications using React, Node.js, and PostgreSQL. Passionate about building tools that solve real problems and eager to contribute to impactful engineering teams."
-      );
+      updateStep5({
+        summary:
+          "Motivated Computer Science student at Chitkara University with hands-on experience in full-stack development. Built multiple production-ready applications using React, Node.js, and PostgreSQL. Passionate about building tools that solve real problems and eager to contribute to impactful engineering teams.",
+      });
       setIsGenerating(false);
     }, 1500);
   };
 
-  const handleFinish = () => {
-    // TODO: save final step data, mark resume as completed, navigate to template selection
-    window.location.href = "/templates";
+  const handleFinish = async () => {
+    setIsFinishing(true);
+    try {
+      await saveStep5();
+      router.push("/templates");
+    } catch {
+      // saveError is set in store; layout shows it
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
   return (
@@ -114,8 +125,8 @@ export default function SummaryPage() {
           </div>
 
           <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
+            value={step5.summary}
+            onChange={(e) => updateStep5({ summary: e.target.value })}
             placeholder="A 2-3 sentence summary highlighting your key skills, experience, and what you're looking for. Keep it specific — avoid generic phrases like 'hard-working team player'."
             rows={5}
             className="font-manrope w-full resize-none rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground leading-relaxed placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -123,16 +134,16 @@ export default function SummaryPage() {
 
           <div className="mt-2 flex items-center justify-between">
             <p className="font-manrope text-xs text-muted-foreground/60">
-              {summary.length > 0 && (
+              {step5.summary.length > 0 && (
                 <span>
-                  {summary.split(/\s+/).filter(Boolean).length} words
+                  {step5.summary.split(/\s+/).filter(Boolean).length} words
                 </span>
               )}
             </p>
-            {summary && (
+            {step5.summary && (
               <button
                 type="button"
-                onClick={() => setSummary("")}
+                onClick={() => updateStep5({ summary: "" })}
                 className="font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 Clear
@@ -180,9 +191,9 @@ export default function SummaryPage() {
               Add
             </button>
           </div>
-          {hobbies.length > 0 && (
+          {step5.hobbies.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
-              {hobbies.map((hobby) => (
+              {step5.hobbies.map((hobby) => (
                 <span
                   key={hobby}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 font-manrope text-xs text-foreground"
@@ -244,9 +255,10 @@ export default function SummaryPage() {
           <button
             type="button"
             onClick={handleFinish}
-            className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
+            disabled={isFinishing}
+            className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50"
           >
-            Choose template →
+            {isFinishing ? "Saving…" : "Choose template →"}
           </button>
         </motion.div>
       </form>
