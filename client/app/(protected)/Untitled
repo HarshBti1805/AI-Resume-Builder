@@ -1,0 +1,15 @@
+   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── verify/page.tsx
+│   │   ├── (protected)/
+│   │   │   ├── form/
+│   │   │   │   ├── layout.tsx       # Stepper layout
+│   │   │   │   ├── personal/page.tsx
+│   │   │   │   ├── academic/page.tsx
+│   │   │   │   ├── skills/page.tsx
+│   │   │   │   ├── experience/page.tsx
+│   │   │   │   └── summary/page.tsx
+│   │   │   ├── templates/page.tsx
+│   │   │   └── preview/page.tsx
+│   │   ├── layout.tsx
+│   │   └── page.tsx

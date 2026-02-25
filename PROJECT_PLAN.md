@@ -11,29 +11,29 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
-│                   Next.js (App Router)                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐ │
-│  │ Auth Flow │  │Multi-Step│  │ Template  │  │Preview/Edit/ │ │
-│  │ (OTP)    │  │  Form    │  │ Selector  │  │  Download    │ │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘ │
+│                   Next.js (App Router)                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ │  │
+│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
 └──────────────────────┬───────────────────────────────────────┘
                        │ HTTPS (REST API)
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│                    REVERSE PROXY / LOAD BALANCER              │
-│                        Nginx (SSL, Rate Limiting)             │
+│                   REVERSE PROXY / LOAD BALANCER              │
+│                   Nginx (SSL, Rate Limiting)                 │
 └──────────────────────┬───────────────────────────────────────┘
                        │
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
-│              EXPRESS.JS — MODULAR MONOLITH                    │
+│              EXPRESS.JS — MODULAR MONOLITH                   │
 │                                                              │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────────────┐ │
+│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │
 │  │ Auth Module│  │Resume Module│  │    AI Module           │ │
 │  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)│ │
 │  │  - JWT     │  │  - Templates│  │  - ATS Check           │ │
 │  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         │ │
-│  └────────────┘  └────────────┘  └────────────────────────┘ │
+│  └────────────┘  └─────────────┘  └────────────────────────┘ │
 └──────────────────────┬───────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┬──────────────┐
@@ -77,24 +77,24 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 
 ```
 Student                  Frontend              Backend              Redis          Email
-  │                        │                     │                    │               │
-  │── Enter uni email ────▶│                     │                    │               │
+  │                        │                      │                    │               │
+  │── Enter uni email ───▶│                      │                    │               │
   │                        │── POST /auth/otp ──▶│                    │               │
-  │                        │                     │── Validate @uni.edu│               │
-  │                        │                     │── Generate 6-digit │               │
-  │                        │                     │── Store OTP ──────▶│ (TTL: 5 min)  │
-  │                        │                     │── Send email ─────────────────────▶│
+  │                        │                      │── Validate @uni.edu│               │
+  │                        │                      │── Generate 6-digit │               │
+  │                        │                      │── Store OTP ─────▶│ (TTL: 5 min)  │
+  │                        │                      │── Send email ─────────────────────▶│
   │                        │◀── 200 OK ──────────│                    │               │
-  │                        │                     │                    │               │
-  │── Enter OTP ──────────▶│                     │                    │               │
+  │                        │                      │                    │               │
+  │── Enter OTP ─────────▶│                      │                     │               │
   │                        │── POST /auth/verify▶│                    │               │
-  │                        │                     │── Fetch OTP ──────▶│               │
-  │                        │                     │◀── OTP value ──────│               │
-  │                        │                     │── Compare & validate               │
-  │                        │                     │── Upsert user in PostgreSQL        │
-  │                        │                     │── Issue JWT (access + refresh)      │
+  │                        │                      │── Fetch OTP ──────▶│               │
+  │                        │                      │◀── OTP value ──────│               │
+  │                        │                      │── Compare & validate               │
+  │                        │                      │── Upsert user in PostgreSQL        │
+  │                        │                      │── Issue JWT (access + refresh)      │
   │                        │◀── JWT tokens ──────│                    │               │
-  │◀── Redirect to form ──│                     │                    │               │
+  │◀── Redirect to form ──│                      │                    │               │
 ```
 
 ### Security Measures
@@ -103,7 +103,25 @@ Student                  Frontend              Backend              Redis       
 | ------------------------ | ----------------------------------------------------- |
 | Email Domain Validation  | Only `@university.edu` emails accepted                |
 | OTP Brute-force          | Max 3 attempts per OTP; lockout 15 min after failure  |
-| OTP Rate Limiting        | Max 3 OTP requests per email per hour (Redis counter) |
+| OTP Rate Limiting        | Max 3 OTP requests per eStudent                  Frontend              Backend              Redis          Email
+  │                        │                      │                    │               │
+  │── Enter uni email ───▶│                      │                    │               │
+  │                        │── POST /auth/otp ──▶│                    │               │
+  │                        │                      │── Validate @uni.edu│               │
+  │                        │                      │── Generate 6-digit │               │
+  │                        │                      │── Store OTP ─────▶│ (TTL: 5 min)  │
+  │                        │                      │── Send email ─────────────────────▶│
+  │                        │◀── 200 OK ──────────│                    │               │
+  │                        │                      │                    │               │
+  │── Enter OTP ─────────▶│                      │                     │               │
+  │                        │── POST /auth/verify▶│                    │               │
+  │                        │                      │── Fetch OTP ──────▶│               │
+  │                        │                      │◀── OTP value ──────│               │
+  │                        │                      │── Compare & validate               │
+  │                        │                      │── Upsert user in PostgreSQL        │
+  │                        │                      │── Issue JWT (access + refresh)      │
+  │                        │◀── JWT tokens ──────│                    │               │
+  │◀── Redirect to form ──│                      │                    │               │mail per hour (Redis counter) |
 | JWT Access Token         | Short-lived (15 min), stored in httpOnly cookie       |
 | JWT Refresh Token        | Long-lived (7 days), stored in httpOnly secure cookie |
 | CSRF Protection          | SameSite=Strict cookie attribute                      |
@@ -499,16 +517,16 @@ app.get("/health", async (req, res) => {
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│                      SECURITY LAYERS                        │
+│                      SECURITY LAYERS                       │
 ├────────────────────────────────────────────────────────────┤
-│                                                             │
+│                                                            │
 │  ┌─ LAYER 1: Network ─────────────────────────────────┐    │
 │  │  • HTTPS everywhere (TLS 1.3)                      │    │
 │  │  • Nginx rate limiting (100 req/min per IP)        │    │
 │  │  • CORS whitelist (only frontend domain)           │    │
 │  │  • DDoS protection (Cloudflare / uni firewall)     │    │
 │  └────────────────────────────────────────────────────┘    │
-│                                                             │
+│                                                            │
 │  ┌─ LAYER 2: Application ─────────────────────────────┐    │
 │  │  • Helmet.js (security headers)                    │    │
 │  │  • express-rate-limit (per-route limits)           │    │
