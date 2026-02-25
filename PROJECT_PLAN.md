@@ -1,4 +1,4 @@
-# University Resume Builder — Architectural Plan
+# ChitkaraCV — Architectural Plan
 
 ## 1. Problem Statement
 
@@ -801,7 +801,7 @@ services:
     build: ./server
     ports: ["4000:4000"]
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/uniresume?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/chitkaracv?schema=public
       - REDIS_URL=redis://redis:6379
       - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
@@ -825,7 +825,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: uniresume
+      POSTGRES_DB: chitkaracv
     volumes: ["postgres_data:/var/lib/postgresql/data"]
     ports: ["5432:5432"]
     healthcheck:
@@ -1012,7 +1012,7 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 ## 15. Folder Structure
 
 ```
-uni-resume/
+chitkara-cv/
 ├── client/                          # Next.js Frontend
 │   ├── app/
 │   │   ├── (auth)/

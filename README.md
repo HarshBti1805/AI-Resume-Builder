@@ -1,4 +1,4 @@
-# 📄 UniResume — University Resume Builder
+# 📄 ChitkaraCV — University Resume Builder
 
 A structured, AI-enhanced resume builder designed to solve the lack of standardized, ATS-friendly resume templates for university students. Students fill a guided multi-step form, select from 5 pre-built templates, and download polished, ATS-compliant resumes.
 
@@ -8,7 +8,7 @@ A structured, AI-enhanced resume builder designed to solve the lack of standardi
 
 ## Problem Statement
 
-Students in our university have no fixed resume templates, leading to inconsistent formatting and poor ATS (Applicant Tracking System) compatibility. UniResume provides a guided flow that guarantees every resume is structured, professional, and ATS-friendly — regardless of the student's design skills.
+Students in our university have no fixed resume templates, leading to inconsistent formatting and poor ATS (Applicant Tracking System) compatibility. ChitkaraCV provides a guided flow that guarantees every resume is structured, professional, and ATS-friendly — regardless of the student's design skills.
 
 ---
 
@@ -44,7 +44,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 ## Project Structure
 
 ```
-uni-resume/
+chitkara-cv/
 ├── client/                       # Next.js Frontend
 │   ├── app/
 │   │   ├── (auth)/
@@ -143,8 +143,8 @@ Prisma handles migrations, type-safe queries, and relationship management automa
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/uni-resume.git
-cd uni-resume
+git clone https://github.com/your-username/chitkara-cv.git
+cd chitkara-cv
 ```
 
 ### 2. Environment Variables
@@ -159,7 +159,7 @@ PORT=4000
 NODE_ENV=development
 
 # PostgreSQL (Prisma)
-DATABASE_URL=postgresql://postgres:password@localhost:5432/uniresume?schema=public
+DATABASE_URL=postgresql://postgres:password@localhost:5432/chitkaracv?schema=public
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -180,7 +180,7 @@ SMTP_USER=your-email@gmail.com
 SMTP_PASS=your-app-password
 
 # File Upload
-S3_BUCKET=uniresume-uploads
+S3_BUCKET=chitkaracv-uploads
 S3_REGION=ap-south-1
 S3_ACCESS_KEY=your-access-key
 S3_SECRET_KEY=your-secret-key

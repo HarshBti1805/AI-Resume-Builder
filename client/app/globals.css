@@ -4,11 +4,166 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Local font faces (client/public/fonts) */
+@font-face {
+  font-family: "Akrobat";
+  src: url("/fonts/Akrobat-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Arvo";
+  src: url("/fonts/Arvo-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Avenir Next LT Pro";
+  src: url("/fonts/AvenirNextLTPro-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Bogita Mono";
+  src: url("/fonts/BogitaMono-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Broadway";
+  src: url("/fonts/Broadway.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "DM Mono";
+  src: url("/fonts/DMMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Instrument Serif";
+  src: url("/fonts/InstrumentSerif-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "Josefin Sans";
+  src: url("/fonts/JosefinSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Libre Baskerville";
+  src: url("/fonts/LibreBaskerville.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("/fonts/Manrope-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Montserrat";
+  src: url("/fonts/Montserrat.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Neue Machina";
+  src: url("/fonts/NeueMachina-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/fonts/PlayfairDisplay.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Raleway";
+  src: url("/fonts/Raleway.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Space Mono";
+  src: url("/fonts/SpaceMono-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Syne";
+  src: url("/fonts/Syne.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "TT Commons";
+  src: url("/fonts/TTCommons.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Violet Sans";
+  src: url("/fonts/VioletSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Vonique 64";
+  src: url("/fonts/Vonique64-JKgM.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-akrobat: "Akrobat", ui-sans-serif, system-ui, sans-serif;
+  --font-arvo: "Arvo", ui-serif, Georgia, serif;
+  --font-avenir-next: "Avenir Next LT Pro", ui-sans-serif, system-ui, sans-serif;
+  --font-bogita-mono: "Bogita Mono", ui-monospace, monospace;
+  --font-broadway: "Broadway", ui-sans-serif, system-ui, sans-serif;
+  --font-dm-mono: "DM Mono", ui-monospace, monospace;
+  --font-instrument-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-josefin-sans: "Josefin Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-libre-baskerville: "Libre Baskerville", ui-serif, Georgia, serif;
+  --font-manrope: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-montserrat: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-neue-machina: "Neue Machina", ui-sans-serif, system-ui, sans-serif;
+  --font-playfair-display: "Playfair Display", ui-serif, Georgia, serif;
+  --font-poppins: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-raleway: "Raleway", ui-sans-serif, system-ui, sans-serif;
+  --font-space-grotesk: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-space-mono: "Space Mono", ui-monospace, monospace;
+  --font-syne: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-tt-commons: "TT Commons", ui-sans-serif, system-ui, sans-serif;
+  --font-violet-sans: "Violet Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-vonique-64: "Vonique 64", ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
