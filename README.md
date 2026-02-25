@@ -31,7 +31,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 | ------------ | ----------------------------------- |
 | Frontend     | Next.js 14 (App Router), Tailwind CSS, shadcn/ui, Zustand |
 | Backend      | Express.js, Node.js 20+            |
-| Database     | MongoDB (Mongoose)                  |
+| Database     | PostgreSQL + Prisma ORM             |
 | Cache        | Redis                               |
 | AI           | OpenAI API (GPT-4o / GPT-4o-mini)  |
 | PDF          | Puppeteer                           |
@@ -73,9 +73,12 @@ uni-resume/
 │   └── middleware.ts             # Auth route protection
 │
 ├── server/                       # Express.js Backend
+│   ├── prisma/
+│   │   ├── schema.prisma         # Database schema
+│   │   └── migrations/           # Auto-generated migrations
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── db.js             # MongoDB connection
+│   │   │   ├── prisma.js         # Prisma client singleton
 │   │   │   ├── redis.js          # Redis connection
 │   │   │   └── env.js            # Env variable validation
 │   │   ├── middleware/
@@ -99,9 +102,6 @@ uni-resume/
 │   │   │   ├── ai.service.js     # OpenAI API wrapper
 │   │   │   ├── pdf.service.js    # Puppeteer PDF generation
 │   │   │   └── ats.service.js    # ATS scoring engine
-│   │   ├── models/
-│   │   │   ├── User.js
-│   │   │   └── Resume.js
 │   │   ├── utils/
 │   │   │   ├── AppError.js
 │   │   │   └── logger.js
@@ -116,12 +116,26 @@ uni-resume/
 
 ---
 
+## Database Schema (Prisma)
+
+The full schema lives in `server/prisma/schema.prisma`. Core models:
+
+- **User** — university email, auth metadata
+- **Resume** — central record per resume with personal & academic fields
+- **Project** — repeatable project entries linked to a resume
+- **Internship** — work experience entries linked to a resume
+- **Achievement** — competition wins, certifications, hackathons
+
+Prisma handles migrations, type-safe queries, and relationship management automatically. See the Project Plan document for the full `schema.prisma` file.
+
+---
+
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 20+
-- MongoDB (local or Atlas)
+- PostgreSQL 15+ (local or cloud — Supabase, Neon, Railway, etc.)
 - Redis
 - OpenAI API key
 - SMTP credentials (Gmail App Password / SendGrid / Mailtrap for dev)
@@ -144,8 +158,8 @@ Create `.env` files in both `client/` and `server/` directories:
 PORT=4000
 NODE_ENV=development
 
-# MongoDB
-MONGO_URI=mongodb://localhost:27017/uniresume
+# PostgreSQL (Prisma)
+DATABASE_URL=postgresql://postgres:password@localhost:5432/uniresume?schema=public
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -193,7 +207,22 @@ cd ../server
 npm install
 ```
 
-### 4. Run Development Servers
+### 4. Set Up the Database
+
+```bash
+cd server
+
+# Generate Prisma client from schema
+npx prisma generate
+
+# Run migrations to create tables
+npx prisma migrate dev --name init
+
+# (Optional) Open Prisma Studio to inspect your DB visually
+npx prisma studio
+```
+
+### 5. Run Development Servers
 
 ```bash
 # Terminal 1 — Backend
@@ -207,11 +236,13 @@ npm run dev
 
 Frontend runs on `http://localhost:3000`, Backend on `http://localhost:4000`.
 
-### 5. Run with Docker (Optional)
+### 6. Run with Docker (Optional)
 
 ```bash
 docker-compose up --build
 ```
+
+This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ---
 
@@ -325,7 +356,8 @@ react-hook-form            # Form handling
 
 ```
 express
-mongoose                   # MongoDB ODM
+@prisma/client             # Prisma ORM (PostgreSQL)
+prisma                     # Prisma CLI (dev dependency)
 ioredis                    # Redis client
 jsonwebtoken               # JWT auth
 bcryptjs                   # OTP hashing
@@ -339,7 +371,6 @@ cors                       # CORS config
 express-rate-limit         # Rate limiting
 rate-limit-redis           # Redis-backed rate limits
 express-validator          # Input validation
-express-mongo-sanitize     # NoSQL injection prevention
 winston                    # Logging
 compression                # Response compression
 ```
@@ -353,7 +384,7 @@ compression                # Response compression
 - Brute-force protection: 3 OTP attempts, 15-min lockout
 - JWT access tokens (15 min) + refresh tokens (7 days) in httpOnly cookies
 - Helmet.js security headers
-- Input sanitization against XSS and NoSQL injection
+- Input sanitization against XSS and SQL injection (Prisma uses parameterized queries by default)
 - Rate limiting: 10 OTP requests / 15 min, 10 AI requests / min, 100 general / min
 - CORS restricted to frontend domain only
 - No PII in application logs
@@ -373,6 +404,13 @@ npm run lint         # ESLint
 npm run dev          # Start with nodemon
 npm run start        # Start production server
 npm run lint         # ESLint
+
+# Prisma
+npx prisma generate  # Generate Prisma client after schema changes
+npx prisma migrate dev --name <migration_name>   # Create & apply migration
+npx prisma migrate deploy                        # Apply migrations in production
+npx prisma studio    # Open visual DB browser (dev only)
+npx prisma db seed   # Run seed script (if configured)
 ```
 
 ---
