@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuthStore } from "@/store/authStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -20,25 +21,29 @@ const item = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const { sendOtp, isLoading, error, clearError } = useAuthStore();
+
   const [name, setName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !name.trim() || !rollNumber.trim()) return;
-    setIsSubmitting(true);
-    // TODO: call POST /api/auth/send-otp
-    const params = new URLSearchParams({
-      email: email.trim(),
-      name: name.trim(),
-      roll: rollNumber.trim(),
-    });
-    setTimeout(() => {
+
+    try {
+      await sendOtp(email.trim());
+
+      // OTP sent successfully — redirect to verify page with params
+      const params = new URLSearchParams({
+        email: email.trim(),
+        name: name.trim(),
+        roll: rollNumber.trim(),
+      });
       router.push(`/verify?${params.toString()}`);
-      setIsSubmitting(false);
-    }, 600);
+    } catch {
+      // Error is already set in the store
+    }
   };
 
   return (
@@ -82,8 +87,26 @@ export default function LoginPage() {
             variants={item}
             className="mb-8 font-manrope text-sm text-muted-foreground"
           >
-            Enter your details to receive a one-time code at your university email.
+            Enter your details to receive a one-time code at your university
+            email.
           </motion.p>
+
+          {/* Error message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+            >
+              {error}
+              <button
+                onClick={clearError}
+                className="ml-2 font-medium underline"
+              >
+                Dismiss
+              </button>
+            </motion.div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <motion.div variants={item}>
@@ -101,7 +124,8 @@ export default function LoginPage() {
                 placeholder="Aditya Saini"
                 required
                 autoComplete="name"
-                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                disabled={isLoading}
+                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
             </motion.div>
 
@@ -120,7 +144,8 @@ export default function LoginPage() {
                 placeholder="2310990001"
                 required
                 autoComplete="off"
-                className="font-dm-mono w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                disabled={isLoading}
+                className="font-dm-mono w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
             </motion.div>
 
@@ -139,17 +164,18 @@ export default function LoginPage() {
                 placeholder="aditya0001.be23@chitkara.edu.in"
                 required
                 autoComplete="email"
-                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                disabled={isLoading}
+                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/70 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
               />
             </motion.div>
 
             <motion.div variants={item} className="pt-1">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isLoading}
                 className="font-space-grotesk w-full rounded-xl bg-foreground py-3.5 font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Sending code…" : "Send verification code"}
+                {isLoading ? "Sending code…" : "Send verification code"}
               </button>
             </motion.div>
           </form>

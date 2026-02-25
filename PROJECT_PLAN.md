@@ -1194,6 +1194,7 @@ chitkara-cv/
 │   │   │   └── TechnicalTemplate.tsx
 │   │   └── common/
 │   ├── store/
+│   │   ├── authStore.ts          # Auth state (user, sendOtp, verifyOtp, logout)
 │   │   └── resumeStore.ts
 │   ├── lib/
 │   │   ├── api.ts

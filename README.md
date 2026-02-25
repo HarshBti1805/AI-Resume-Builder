@@ -66,7 +66,8 @@ chitkara-cv/
 │   │   ├── templates/            # 5 resume template components
 │   │   └── common/               # Header, Stepper, etc.
 │   ├── store/
-│   │   └── resumeStore.ts        # Zustand state management
+│   │   ├── authStore.ts          # Zustand auth state (user, OTP, logout)
+│   │   └── resumeStore.ts        # Zustand resume form state
 │   ├── lib/
 │   │   ├── api.ts                # Axios instance
 │   │   └── validators.ts         # Zod validation schemas

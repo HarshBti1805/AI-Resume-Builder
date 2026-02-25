@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useAuthStore } from "@/store/authStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -19,35 +20,70 @@ const item = {
 };
 
 const OTP_LENGTH = 6;
+const RESEND_COOLDOWN = 60; // seconds
 
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const email = searchParams.get("email") ?? "";
   const name = searchParams.get("name") ?? "";
+  const rollNumber = searchParams.get("roll") ?? "";
+
+  const { verifyOtp, sendOtp, isLoading, error, clearError } = useAuthStore();
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resendTimer, setResendTimer] = useState(RESEND_COOLDOWN);
+  const [resendMessage, setResendMessage] = useState("");
+
+  // Redirect if no email in params (user navigated directly)
+  useEffect(() => {
+    if (!email) {
+      router.replace("/login");
+    }
+  }, [email, router]);
+
+  // Resend countdown timer
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const maskedEmail = email
-    ? `${email.slice(0, 2)}***@${email.split("@")[1] ?? ""}`
+    ? `${email.slice(0, 3)}***@${email.split("@")[1] ?? ""}`
     : "your email";
 
   const handleOtpChange = useCallback(
     (index: number, value: string) => {
+      // Handle paste (multiple digits at once)
       if (value.length > 1) {
-        const digits = value.replace(/\D/g, "").slice(0, OTP_LENGTH).split("");
+        const digits = value
+          .replace(/\D/g, "")
+          .slice(0, OTP_LENGTH)
+          .split("");
         const next = [...otp];
         digits.forEach((d, i) => {
           if (index + i < OTP_LENGTH) next[index + i] = d;
         });
         setOtp(next);
+
+        // Focus the next empty input or last input
+        const focusIndex = Math.min(index + digits.length, OTP_LENGTH - 1);
+        const nextInput = document.querySelector<HTMLInputElement>(
+          `input[name="otp-${focusIndex}"]`
+        );
+        nextInput?.focus();
         return;
       }
+
       const digit = value.replace(/\D/g, "").slice(-1);
       const next = [...otp];
       next[index] = digit;
       setOtp(next);
+
       if (digit && index < OTP_LENGTH - 1) {
         const nextInput = document.querySelector<HTMLInputElement>(
           `input[name="otp-${index + 1}"]`
@@ -70,16 +106,47 @@ function VerifyContent() {
     [otp]
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
     if (code.length !== OTP_LENGTH) return;
-    setIsSubmitting(true);
-    // TODO: call POST /api/auth/verify-otp with { email, otp: code }
-    setTimeout(() => {
+
+    try {
+      await verifyOtp({
+        email,
+        otp: code,
+        name,
+        rollNumber,
+      });
+
+      // Verification successful — redirect to form
       router.push("/form/personal");
-      setIsSubmitting(false);
-    }, 600);
+    } catch {
+      // Error is set in the store — clear OTP inputs for retry
+      setOtp(Array(OTP_LENGTH).fill(""));
+      const firstInput = document.querySelector<HTMLInputElement>(
+        `input[name="otp-0"]`
+      );
+      firstInput?.focus();
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0 || !email) return;
+    clearError();
+    setResendMessage("");
+
+    try {
+      await sendOtp(email);
+      setResendTimer(RESEND_COOLDOWN);
+      setResendMessage("New code sent!");
+      setOtp(Array(OTP_LENGTH).fill(""));
+
+      // Auto-clear success message after 3 seconds
+      setTimeout(() => setResendMessage(""), 3000);
+    } catch {
+      // Error handled by store
+    }
   };
 
   const canSubmit = otp.every((d) => d !== "");
@@ -121,11 +188,16 @@ function VerifyContent() {
           >
             Verify your email
           </motion.h1>
-          <motion.p variants={item} className="mb-8 font-manrope text-sm text-muted-foreground">
+          <motion.p
+            variants={item}
+            className="mb-8 font-manrope text-sm text-muted-foreground"
+          >
             {name ? (
               <>
-                Hi, <span className="font-medium text-foreground">{name}</span>. We sent a 6-digit
-                code to <span className="text-foreground">{maskedEmail}</span>
+                Hi,{" "}
+                <span className="font-medium text-foreground">{name}</span>. We
+                sent a 6-digit code to{" "}
+                <span className="text-foreground">{maskedEmail}</span>
               </>
             ) : (
               <>
@@ -135,8 +207,33 @@ function VerifyContent() {
             )}
           </motion.p>
 
+          {/* Error message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* Resend success message */}
+          {resendMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900/50 dark:bg-green-950/30 dark:text-green-400"
+            >
+              {resendMessage}
+            </motion.div>
+          )}
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-            <motion.div variants={item} className="flex justify-center gap-2 sm:gap-3">
+            <motion.div
+              variants={item}
+              className="flex justify-center gap-2 sm:gap-3"
+            >
               {otp.map((digit, index) => (
                 <motion.input
                   name={`otp-${index}`}
@@ -147,13 +244,14 @@ function VerifyContent() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
+                  disabled={isLoading}
                   initial={{ opacity: 0, scale: 0.92 }}
                   animate={{
                     opacity: 1,
                     scale: 1,
                     transition: { delay: 0.12 + index * 0.035 },
                   }}
-                  className="font-dm-mono h-14 w-12 rounded-xl border border-border bg-muted/40 text-center text-xl font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none sm:h-14 sm:w-12"
+                  className="font-dm-mono h-14 w-12 rounded-xl border border-border bg-muted/40 text-center text-xl font-medium text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none sm:h-14 sm:w-12"
                 />
               ))}
             </motion.div>
@@ -161,10 +259,10 @@ function VerifyContent() {
             <motion.div variants={item}>
               <button
                 type="submit"
-                disabled={!canSubmit || isSubmitting}
+                disabled={!canSubmit || isLoading}
                 className="font-space-grotesk w-full rounded-xl bg-foreground py-3.5 font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Verifying…" : "Verify & continue"}
+                {isLoading ? "Verifying…" : "Verify & continue"}
               </button>
             </motion.div>
           </form>
@@ -173,13 +271,21 @@ function VerifyContent() {
             variants={item}
             className="mt-6 text-center font-manrope text-sm text-muted-foreground"
           >
-            Didn’t receive the code?{" "}
-            <button
-              type="button"
-              className="text-foreground underline decoration-2 underline-offset-2 transition-opacity hover:opacity-80"
-            >
-              Resend
-            </button>
+            Didn&apos;t receive the code?{" "}
+            {resendTimer > 0 ? (
+              <span className="font-dm-mono text-xs text-muted-foreground/70">
+                Resend in {resendTimer}s
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={isLoading}
+                className="text-foreground underline decoration-2 underline-offset-2 transition-opacity hover:opacity-80 disabled:opacity-50"
+              >
+                Resend
+              </button>
+            )}
           </motion.p>
 
           <motion.p
