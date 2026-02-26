@@ -83,8 +83,6 @@ export default function FormLayout({
 
   return (
     <div className="relative flex h-screen flex-col bg-background text-foreground">
-      <ThemeToggle />
-
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,var(--primary)/.06,transparent_70%)]"
         aria-hidden
@@ -119,6 +117,7 @@ export default function FormLayout({
                 {saveError}
               </span>
             )}
+            <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted print:hidden" />
           </div>
         </div>
 
@@ -160,7 +159,7 @@ export default function FormLayout({
       <div className="relative flex min-h-0 flex-1">
         {/* ─── LEFT: Stepper + Form ─── */}
         <div
-          className={`flex-1 overflow-y-auto xl:border-r xl:border-border/40 ${
+          className={`flex-1 overflow-y-auto scrollbar-slim ${
             mobileTab === "preview" ? "hidden xl:block" : ""
           }`}
         >
@@ -285,7 +284,7 @@ export default function FormLayout({
 
         {/* ─── RIGHT: Live Preview ─── */}
         <div
-          className={`w-full overflow-y-auto scrollbar-none bg-muted/20 xl:w-[45%] ${
+          className={`w-full overflow-y-auto scrollbar-slim bg-muted/20 xl:w-[45%] xl:border-l xl:border-border/30 ${
             mobileTab === "form" ? "hidden xl:block" : ""
           }`}
         >

@@ -5,13 +5,16 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  className?: string;
+}
+
+export function ThemeToggle({ className }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  // Avoid hydration mismatch: theme is only known on client (e.g. localStorage)
   const isDark = mounted && theme !== "light";
 
   const toggle = () => setTheme(isDark ? "light" : "dark");
@@ -21,7 +24,10 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={mounted ? (isDark ? "Switch to light theme" : "Switch to dark theme") : "Toggle theme"}
-      className="fixed right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted print:hidden"
+      className={
+        className ??
+        "fixed right-4 top-4 z-50 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground shadow-sm backdrop-blur-sm transition-colors hover:bg-muted print:hidden"
+      }
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.98 }}
     >
@@ -33,12 +39,12 @@ export function ThemeToggle() {
       >
         {mounted ? (
           isDark ? (
-            <Sun className="h-5 w-5" />
+            <Sun className="h-[18px] w-[18px]" />
           ) : (
-            <Moon className="h-5 w-5" />
+            <Moon className="h-[18px] w-[18px]" />
           )
         ) : (
-          <Sun className="h-5 w-5" />
+          <Sun className="h-[18px] w-[18px]" />
         )}
       </motion.span>
     </motion.button>
