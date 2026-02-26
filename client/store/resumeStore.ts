@@ -122,6 +122,7 @@ export interface ResumeStore {
   saveStep3: () => Promise<void>;
   saveStep4: () => Promise<void>;
   saveStep5: () => Promise<void>;
+  saveAllSteps: () => Promise<void>;
 
   setTemplate: (template: TemplateType) => Promise<void>;
   setPhotoUrl: (url: string) => void;
@@ -366,10 +367,14 @@ export const useResumeStore = create<ResumeStore>()(
           const { resumeId, version, step3, currentStep } = get();
           if (!resumeId) return;
           set({ isSaving: true, saveError: null });
+          // Filter out empty projects (no title and no description)
+          const projectsToSave = step3.projects.filter(
+            (p) => (p.title ?? "").trim() || (p.description ?? "").trim()
+          );
           try {
             await api.patch(`/resume/${resumeId}/step/3`, {
               skills: step3.skills,
-              projects: step3.projects,
+              projects: projectsToSave,
               version,
               currentStep: Math.max(3, currentStep),
             });
@@ -435,6 +440,16 @@ export const useResumeStore = create<ResumeStore>()(
             set({ isSaving: false, saveError: msg });
             throw err;
           }
+        },
+
+        saveAllSteps: async () => {
+          const { saveStep1, saveStep2, saveStep3, saveStep4, saveStep5 } =
+            get();
+          await saveStep1();
+          await saveStep2();
+          await saveStep3();
+          await saveStep4();
+          await saveStep5();
         },
 
         // ── Template ─────────────────────────────────────────────

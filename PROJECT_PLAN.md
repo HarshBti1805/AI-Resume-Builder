@@ -12,11 +12,11 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ┌──────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
 │                   Next.js (App Router)                       │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐│
-│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ ││
-│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    ││
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘│
-└──────────────────────┬──────────────────────────────────────┘
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ │  │
+│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    │  │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
+└──────────────────────┬───────────────────────────────────────┘
                        │ HTTPS (REST API)
                        ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -28,12 +28,12 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ┌──────────────────────────────────────────────────────────────┐
 │            EXPRESS.JS + TYPESCRIPT — MODULAR MONOLITH        │
 │                                                              │
-│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐│
-│  │ Auth Module│  │Resume Module│  │    AI Module           ││
-│  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)││
-│  │  - JWT     │  │  - Templates│  │  - ATS Check           ││
-│  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         ││
-│  └────────────┘  └─────────────┘  └────────────────────────┘│
+│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │ 
+│  │ Auth Module│  │Resume Module│  │    AI Module           │ │
+│  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)│ │
+│  │  - JWT     │  │  - Templates│  │  - ATS Check           │ │
+│  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         │ │
+│  └────────────┘  └─────────────┘  └────────────────────────┘ │
 └──────────────────────┬───────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┬──────────────┐
@@ -216,7 +216,7 @@ Student                  Frontend                Backend                Redis   
 | JWT Access Token         | Short-lived (15 min), stored in httpOnly cookie       |
 | JWT Refresh Token        | Long-lived (7 days), stored in httpOnly secure cookie |
 | CSRF Protection          | SameSite=Strict cookie attribute                      |
-| Helmet.js                | Security headers (XSS, HSTS, etc.)                   |
+| Helmet.js                | Security headers (XSS, HSTS, etc.)                    |
 | Input Sanitization       | `express-validator` + Prisma parameterized queries    |
 | SQL Injection Prevention | Prisma ORM never uses raw string interpolation        |
 
@@ -611,38 +611,38 @@ app.get("/health", async (_req: Request, res: Response) => {
 │                      SECURITY LAYERS                       │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
-│  ┌─ LAYER 1: Network ─────────────────────────────────┐   │
-│  │  • HTTPS everywhere (TLS 1.3)                      │   │
-│  │  • Nginx rate limiting (100 req/min per IP)        │   │
-│  │  • CORS whitelist (only frontend domain)           │   │
-│  │  • DDoS protection (Cloudflare / uni firewall)     │   │
-│  └────────────────────────────────────────────────────┘   │
+│  ┌─ LAYER 1: Network ─────────────────────────────────┐    │
+│  │  • HTTPS everywhere (TLS 1.3)                      │    │
+│  │  • Nginx rate limiting (100 req/min per IP)        │    │
+│  │  • CORS whitelist (only frontend domain)           │    │
+│  │  • DDoS protection (Cloudflare / uni firewall)     │    │
+│  └────────────────────────────────────────────────────┘    │
 │                                                            │
-│  ┌─ LAYER 2: Application ─────────────────────────────┐   │
-│  │  • Helmet.js (security headers)                    │   │
-│  │  • express-rate-limit (per-route limits)           │   │
-│  │  • Input validation (express-validator)            │   │
-│  │  • SQL injection: impossible (Prisma parameterized)│   │
-│  │  • XSS prevention (DOMPurify on frontend)         │   │
-│  │  • CSRF tokens (SameSite=Strict cookies)          │   │
-│  └────────────────────────────────────────────────────┘   │
+│  ┌─ LAYER 2: Application ─────────────────────────────┐    │
+│  │  • Helmet.js (security headers)                    │    │
+│  │  • express-rate-limit (per-route limits)           │    │
+│  │  • Input validation (express-validator)            │    │
+│  │  • SQL injection: impossible (Prisma parameterized)│    │
+│  │  • XSS prevention (DOMPurify on frontend)          │    │
+│  │  • CSRF tokens (SameSite=Strict cookies)           │    │
+│  └────────────────────────────────────────────────────┘    │
 │                                                            │
-│  ┌─ LAYER 3: Authentication ──────────────────────────┐   │
-│  │  • JWT access tokens (15 min TTL, httpOnly cookie) │   │
-│  │  • Refresh tokens (7 day TTL, httpOnly, Secure)    │   │
-│  │  • OTP hashed with bcrypt before storage           │   │
-│  │  • Brute-force protection (3 attempts, 15 min lock)│   │
-│  └────────────────────────────────────────────────────┘   │
+│  ┌─ LAYER 3: Authentication ──────────────────────────┐    │
+│  │  • JWT access tokens (15 min TTL, httpOnly cookie) │    │ 
+│  │  • Refresh tokens (7 day TTL, httpOnly, Secure)    │    │
+│  │  • OTP hashed with bcrypt before storage           │    │
+│  │  • Brute-force protection (3 attempts, 15 min lock)│    │
+│  └────────────────────────────────────────────────────┘    │
 │                                                            │
-│  ┌─ LAYER 4: Data ────────────────────────────────────┐   │
-│  │  • PostgreSQL with SSL connections                 │   │
-│  │  • User can only access own resume (userId check)  │   │
-│  │  • Prisma: no raw queries, parameterized by default│   │
-│  │  • Cascade deletes (user deletion cleans all data) │   │
-│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │   │
-│  │  • No PII in logs (Winston sanitized transport)    │   │
-│  │  • Environment secrets in .env (never committed)   │   │
-│  └────────────────────────────────────────────────────┘   │
+│  ┌─ LAYER 4: Data ────────────────────────────────────┐    │ 
+│  │  • PostgreSQL with SSL connections                 │    │
+│  │  • User can only access own resume (userId check)  │    │
+│  │  • Prisma: no raw queries, parameterized by default│    │
+│  │  • Cascade deletes (user deletion cleans all data) │    │
+│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │    │ 
+│  │  • No PII in logs (Winston sanitized transport)    │    │
+│  │  • Environment secrets in .env (never committed)   │    │
+│  └────────────────────────────────────────────────────┘    │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```

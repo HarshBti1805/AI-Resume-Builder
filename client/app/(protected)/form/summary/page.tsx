@@ -21,7 +21,7 @@ const item = {
 
 export default function SummaryPage() {
   const router = useRouter();
-  const { step5, updateStep5, saveStep5 } = useResumeStore();
+  const { step5, updateStep5, saveAllSteps } = useResumeStore();
   const [hobbyInput, setHobbyInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
@@ -61,7 +61,7 @@ export default function SummaryPage() {
   const handleFinish = async () => {
     setIsFinishing(true);
     try {
-      await saveStep5();
+      await saveAllSteps();
       router.push("/templates");
     } catch {
       // saveError is set in store; layout shows it

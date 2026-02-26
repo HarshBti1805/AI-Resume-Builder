@@ -7,7 +7,7 @@ const OTP_TTL = 300; // 5 minutes
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TTL = 900; // 15 minutes
 const RATE_LIMIT_TTL = 3600; // 1 hour
-const MAX_OTP_REQUESTS = 3; // 3 OTPs per hour per email
+const MAX_OTP_REQUESTS = 10; // 10 OTPs per hour per email
 
 const generateOtp = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -32,8 +32,10 @@ export const storeOtp = async (email: string): Promise<string> => {
   // Check rate limit (max OTP requests per hour)
   const requestCount = await redis.get(rateKey);
   if (requestCount && parseInt(requestCount) >= MAX_OTP_REQUESTS) {
+    const ttl = await redis.ttl(rateKey);
+    const minutes = ttl > 0 ? Math.ceil(ttl / 60) : 60;
     throw new AppError(
-      "Too many OTP requests. Try again later.",
+      `Too many OTP requests. Try again in ${minutes} minutes.`,
       429,
       "OTP_RATE_LIMITED"
     );
@@ -116,7 +118,12 @@ export const verifyOtp = async (
     );
   }
 
-  // OTP valid — clean up
-  await redis.del(key);
+  // OTP valid — do NOT delete here; caller must delete after full flow succeeds.
+  // This allows retry if DB/network fails after verification.
   return true;
+};
+
+/** Call after successful login to invalidate the OTP (one-time use). */
+export const deleteOtp = async (email: string): Promise<void> => {
+  await redis.del(`otp:${email}`);
 };

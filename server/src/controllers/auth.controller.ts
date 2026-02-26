@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../config/prisma";
 import { env } from "../config/env";
-import { storeOtp, verifyOtp } from "../services/otp.service";
+import { storeOtp, verifyOtp, deleteOtp } from "../services/otp.service";
 import { sendOtpEmail } from "../services/email.service";
 import { AppError } from "../utils/AppError";
 import logger from "../utils/logger";
@@ -115,6 +115,9 @@ export const verifyOtpAndLogin = async (
     });
 
     logger.info("User logged in", { userId: user.id, email: user.email });
+
+    // Invalidate OTP now that login succeeded (one-time use)
+    await deleteOtp(email);
 
     res.json({
       success: true,

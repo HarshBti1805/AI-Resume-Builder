@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "node node_modules/ts-node-dev/lib/bin.js --respawn --transpile-only src/server.ts",
     "build": "tsc && npx prisma generate",
     "start": "node dist/server.js",
     "prisma:generate": "npx prisma generate",
