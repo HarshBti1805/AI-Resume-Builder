@@ -62,7 +62,7 @@ export default function SummaryPage() {
     setIsFinishing(true);
     try {
       await saveAllSteps();
-      router.push("/templates");
+      router.push("/preview");
     } catch {
       // saveError is set in store; layout shows it
     } finally {
@@ -235,8 +235,8 @@ export default function SummaryPage() {
               Almost done!
             </h3>
             <p className="font-manrope mt-1 text-sm text-muted-foreground">
-              After this step, you&apos;ll choose a template, preview your
-              resume, and download the PDF.
+              After this step, you&apos;ll preview your resume and download the
+              PDF. You can still change the template anytime.
             </p>
           </div>
         </motion.div>
@@ -258,7 +258,7 @@ export default function SummaryPage() {
             disabled={isFinishing}
             className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50"
           >
-            {isFinishing ? "Saving…" : "Choose template →"}
+            {isFinishing ? "Saving…" : "Preview & Download →"}
           </button>
         </motion.div>
       </form>

@@ -12,12 +12,15 @@ import {
   setTemplate,
   deleteResume,
 } from "../controllers/resume.controller";
-import { getPreview } from "../controllers/preview.controller";
+import { getPreview, postPreviewLive } from "../controllers/preview.controller";
 import { downloadPdf } from "../controllers/pdf.controller";
 
 const router = Router();
 
 router.use(authenticate);
+
+// ── Live preview (must be before /:id to avoid param conflict) ──
+router.post("/preview-live", postPreviewLive);
 
 // ── CRUD ──────────────────────────────────────
 router.post("/", createResume);

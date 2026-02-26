@@ -309,7 +309,7 @@ export default function PreviewPage() {
               {/* Actions */}
               <div className="flex items-center gap-2">
                 <Link
-                  href="/templates"
+                  href="/templates/select"
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
                 >
                   Change template
@@ -610,7 +610,7 @@ export default function PreviewPage() {
             className="mt-8 flex items-center justify-between border-t border-border/40 pt-6"
           >
             <Link
-              href="/templates"
+              href="/templates/select"
               className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               ← Change template

@@ -26,8 +26,8 @@ export function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   if (isAuthRoute && isAuthenticated) {
-    const formUrl = new URL("/form/personal", request.url);
-    return NextResponse.redirect(formUrl);
+    const selectUrl = new URL("/templates/select", request.url);
+    return NextResponse.redirect(selectUrl);
   }
 
   return NextResponse.next();

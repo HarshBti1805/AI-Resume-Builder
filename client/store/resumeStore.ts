@@ -125,6 +125,7 @@ export interface ResumeStore {
   saveAllSteps: () => Promise<void>;
 
   setTemplate: (template: TemplateType) => Promise<void>;
+  setTemplateLocal: (template: TemplateType) => void;
   setPhotoUrl: (url: string) => void;
   setAtsScore: (score: number) => void;
   setCurrentStep: (step: number) => void;
@@ -458,6 +459,10 @@ export const useResumeStore = create<ResumeStore>()(
           const { resumeId } = get();
           if (!resumeId) return;
           await api.put(`/resume/${resumeId}/template`, { template });
+          set({ selectedTemplate: template });
+        },
+
+        setTemplateLocal: (template: TemplateType) => {
           set({ selectedTemplate: template });
         },
 
