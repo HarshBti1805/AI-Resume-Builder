@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -184,18 +184,68 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
 
 export default function TemplateSelectPage() {
   const router = useRouter();
-  const { selectedTemplate, setTemplateLocal } = useResumeStore();
+  const {
+    resumeId,
+    initResume,
+    loadResume,
+    selectedTemplate,
+    setTemplate,
+  } = useResumeStore();
   const [selected, setSelected] = useState<TemplateType>(
     (selectedTemplate as TemplateType) || "CLASSIC"
   );
+  const [isReady, setIsReady] = useState(false);
+  const [isContinuing, setIsContinuing] = useState(false);
+
+  // Ensure we have a resume so we can persist the selected template
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const currentResumeId = useResumeStore.getState().resumeId;
+      if (currentResumeId) {
+        try {
+          await loadResume(currentResumeId);
+        } catch {
+          try {
+            await initResume();
+          } catch {
+            // auth / network
+          }
+        }
+      } else {
+        try {
+          await initResume();
+        } catch {
+          // auth / network
+        }
+      }
+      if (!cancelled) {
+        const template = useResumeStore.getState().selectedTemplate as TemplateType | null;
+        setSelected(template || "CLASSIC");
+        setIsReady(true);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [initResume, loadResume]);
 
   const handleSelect = (id: TemplateType) => {
     setSelected(id);
   };
 
-  const handleContinue = () => {
-    setTemplateLocal(selected);
-    router.push("/form/personal");
+  const handleContinue = async () => {
+    if (!useResumeStore.getState().resumeId) return;
+    setIsContinuing(true);
+    try {
+      await setTemplate(selected);
+      router.push("/form/personal");
+    } catch {
+      // show error or keep user on page
+    } finally {
+      setIsContinuing(false);
+    }
   };
 
   const selectedInfo = templates.find((t) => t.id === selected)!;
@@ -341,9 +391,10 @@ export default function TemplateSelectPage() {
           >
             <button
               onClick={handleContinue}
-              className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
+              disabled={!isReady || isContinuing}
+              className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50 disabled:pointer-events-none"
             >
-              Continue to form →
+              {isContinuing ? "Saving…" : "Continue to form →"}
             </button>
           </motion.div>
         </motion.div>

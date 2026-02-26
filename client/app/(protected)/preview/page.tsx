@@ -5,7 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useResumeStore } from "@/store/resumeStore";
+import type { TemplateType } from "@/store/resumeStore";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+const TEMPLATE_OPTIONS: { value: TemplateType; label: string }[] = [
+  { value: "CLASSIC", label: "Classic" },
+  { value: "MODERN", label: "Modern" },
+  { value: "MINIMAL", label: "Minimal" },
+  { value: "ACADEMIC", label: "Academic" },
+  { value: "TECHNICAL", label: "Technical" },
+];
 
 /* ─────────────────────────────────────────────
    Animation variants
@@ -107,9 +116,10 @@ function AtsScoreRing({ score, max }: { score: number; max: number }) {
    ───────────────────────────────────────────── */
 export default function PreviewPage() {
   const router = useRouter();
-  const { resumeId, selectedTemplate } = useResumeStore();
+  const { resumeId, selectedTemplate, setTemplate, loadResume } = useResumeStore();
 
   // States
+  const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string>("");
   const [isLoadingPreview, setIsLoadingPreview] = useState(true);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -159,6 +169,26 @@ export default function PreviewPage() {
   useEffect(() => {
     fetchPreview();
   }, [fetchPreview]);
+
+  // Keep store in sync with API when viewing preview (e.g. after refresh)
+  useEffect(() => {
+    if (resumeId) {
+      loadResume(resumeId).catch(() => {});
+    }
+  }, [resumeId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTemplateChange = async (template: TemplateType) => {
+    if (!resumeId) return;
+    setIsUpdatingTemplate(true);
+    try {
+      await setTemplate(template);
+      await fetchPreview();
+    } catch {
+      setPreviewError("Failed to update template");
+    } finally {
+      setIsUpdatingTemplate(false);
+    }
+  };
 
   /* ─── Write HTML into iframe ─── */
   useEffect(() => {
@@ -257,10 +287,6 @@ export default function PreviewPage() {
     }
   }, [resumeId, router]);
 
-  const templateLabel =
-    selectedTemplate?.charAt(0).toUpperCase() +
-    (selectedTemplate?.slice(1).toLowerCase() || "");
-
   return (
     <div className="relative min-h-screen overflow-hidden">
       <ThemeToggle />
@@ -296,23 +322,39 @@ export default function PreviewPage() {
           {/* ─── Action bar ─── */}
           <motion.div variants={item} className="mb-6">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/50 px-5 py-3.5 backdrop-blur-sm">
-              {/* Template label */}
+              {/* Template dropdown (persists to API and refetches preview) */}
               <div className="flex items-center gap-3">
                 <span className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   Template
                 </span>
-                <span className="rounded-full border border-border/50 bg-muted/30 px-3 py-0.5 font-space-grotesk text-xs font-medium text-foreground">
-                  {templateLabel || "Classic"}
-                </span>
+                <select
+                  value={selectedTemplate || "CLASSIC"}
+                  onChange={(e) =>
+                    handleTemplateChange(e.target.value as TemplateType)
+                  }
+                  disabled={isUpdatingTemplate || isLoadingPreview}
+                  className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-1.5 text-xs text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                >
+                  {TEMPLATE_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+                {isUpdatingTemplate && (
+                  <span className="font-manrope text-[10px] text-muted-foreground">
+                    Updating…
+                  </span>
+                )}
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-2">
                 <Link
-                  href="/templates/select"
+                  href="/form/summary"
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
                 >
-                  Change template
+                  Edit form
                 </Link>
 
                 <button
@@ -610,10 +652,10 @@ export default function PreviewPage() {
             className="mt-8 flex items-center justify-between border-t border-border/40 pt-6"
           >
             <Link
-              href="/templates/select"
+              href="/form/summary"
               className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              ← Change template
+              ← Edit form
             </Link>
             <button
               onClick={handleDownload}
