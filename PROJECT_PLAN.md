@@ -1301,7 +1301,7 @@ chitkara-cv/
 
 ## 17. Implementation Roadmap
 
-**Current state:** The 7 improvements described in **IMPROVEMENTS.md** have been implemented: template selection before form, live side-by-side preview, template switching during form, IDE-like editing room (section reorder, style controls, custom sections), extended AI (improve bullet, add keywords, generate bullets, refine resume), resume upload & parse, bullet-point project/experience descriptions, categorized skills, hobbies with descriptions, and enhanced achievements. The user flow is: **Auth → Start (Upload | Scratch) → Template Select → Multi-Step Form (with live preview) → Editing Room → Preview / Download**.
+**Current state:** The 7 improvements described in **IMPROVEMENTS.md** have been implemented: template selection before form, live side-by-side preview, template switching during form, IDE-like editing room (section reorder, style controls, custom sections), extended AI (improve bullet, add keywords, generate bullets, refine resume), resume upload & parse, bullet-point project/experience descriptions, categorized skills, hobbies with descriptions, and enhanced achievements. The user flow is: **Auth (login → OTP verify) → Start page (`/start` — upload resume or start from scratch) → Template Select → Multi-Step Form (with live preview) → Editing Room → Preview / Download**. After successful OTP verification, users are redirected to `/start` so they see the start page immediately.
 
 ### Phase 1 — Foundation (Week 1-2)
 

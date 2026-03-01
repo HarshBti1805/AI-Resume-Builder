@@ -66,8 +66,7 @@ chitkara-cv/
 │   │   │   │   ├── experience/   # Step 4: Experience & Achievements (bullets)
 │   │   │   │   └── summary/      # Step 5: Hobbies & Summary
 │   │   │   ├── editor/           # IDE-like editing room
-│   │   │   ├── templates/        # Legacy
-│   │   │   └── preview/         # Preview, edit & download
+│   │   │   └── preview/          # Preview, edit & download PDF
 │   │   └── page.tsx              # Landing page
 │   ├── components/
 │   │   ├── ui/                   # shadcn/ui components
@@ -332,7 +331,7 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 1. Landing Page
    └──▶ 2. Enter University Email
          └──▶ 3. Verify OTP
-               └──▶ 4. Start Choice
+               └──▶ 4. Start page (/start) — Upload existing resume or Start from scratch
                      ├── [Upload Existing Resume] → Parse (PDF/DOCX) → Pre-fill → Template Select
                      └── [Start from Scratch]      → Template Select
                            └──▶ 5. Multi-Step Form (split-screen with live preview)
