@@ -67,9 +67,21 @@ export const getResume = async (
     const resume = await prisma.resume.findUnique({
       where: { id },
       include: {
-        projects: { orderBy: { sortOrder: "asc" } },
-        internships: { orderBy: { sortOrder: "asc" } },
+        projects: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
+        internships: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
         achievements: { orderBy: { sortOrder: "asc" } },
+        skillCategories: { orderBy: { sortOrder: "asc" } },
+        hobbyItems: { orderBy: { sortOrder: "asc" } },
+        customSections: {
+          orderBy: { sortOrder: "asc" },
+          include: { items: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 
@@ -104,9 +116,21 @@ export const getMyResume = async (
       where: { userId },
       orderBy: { updatedAt: "desc" },
       include: {
-        projects: { orderBy: { sortOrder: "asc" } },
-        internships: { orderBy: { sortOrder: "asc" } },
+        projects: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
+        internships: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
         achievements: { orderBy: { sortOrder: "asc" } },
+        skillCategories: { orderBy: { sortOrder: "asc" } },
+        hobbyItems: { orderBy: { sortOrder: "asc" } },
+        customSections: {
+          orderBy: { sortOrder: "asc" },
+          include: { items: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 
@@ -251,9 +275,8 @@ export const saveStep3 = async (
   try {
     const userId = req.user!.id;
     const id = getParam(req, "id");
-    const { version, skills, projects } = req.body;
+    const { version, skillCategories, projects } = req.body;
 
-    // Verify ownership
     const resume = await prisma.resume.findFirst({
       where: { id, userId },
     });
@@ -270,48 +293,84 @@ export const saveStep3 = async (
       );
     }
 
-    // Use a transaction to update skills + replace projects atomically
     await prisma.$transaction(async (tx) => {
-      // Update skills on resume
+      // Flatten skill categories into legacy skills[] for backward compat
+      const flatSkills: string[] = [];
+      if (Array.isArray(skillCategories)) {
+        for (const cat of skillCategories) {
+          if (Array.isArray(cat.skills)) flatSkills.push(...cat.skills);
+        }
+      }
+
       await tx.resume.update({
         where: { id },
         data: {
-          skills: skills ?? [],
+          skills: flatSkills,
           currentStep: Math.max(3, resume.currentStep),
           version: { increment: 1 },
         },
       });
 
-      // Delete existing projects and recreate
+      // Replace skill categories
+      await tx.skillCategory.deleteMany({ where: { resumeId: id } });
+      if (Array.isArray(skillCategories) && skillCategories.length > 0) {
+        await tx.skillCategory.createMany({
+          data: skillCategories.map(
+            (cat: { name: string; skills?: string[] }, i: number) => ({
+              resumeId: id,
+              name: cat.name,
+              skills: cat.skills ?? [],
+              sortOrder: i,
+            })
+          ),
+        });
+      }
+
+      // Replace projects (with nested bullets)
+      await tx.projectBullet.deleteMany({
+        where: { project: { resumeId: id } },
+      });
       await tx.project.deleteMany({ where: { resumeId: id } });
 
       if (projects && projects.length > 0) {
-        await tx.project.createMany({
-          data: projects.map(
-            (
-              p: {
-                title: string;
-                description: string;
-                techStack?: string[];
-                liveUrl?: string;
-                repoUrl?: string;
-                startDate?: string;
-                endDate?: string;
-              },
-              index: number
-            ) => ({
+        for (let i = 0; i < projects.length; i++) {
+          const p = projects[i] as {
+            title: string;
+            subtitle?: string;
+            description?: string;
+            techStack?: string[];
+            liveUrl?: string;
+            repoUrl?: string;
+            startDate?: string;
+            endDate?: string;
+            bullets?: { text: string }[];
+          };
+
+          const project = await tx.project.create({
+            data: {
               resumeId: id,
               title: p.title,
-              description: p.description,
+              subtitle: p.subtitle || null,
+              description: p.description || "",
               techStack: p.techStack ?? [],
               liveUrl: p.liveUrl || null,
               repoUrl: p.repoUrl || null,
               startDate: p.startDate ? new Date(p.startDate) : null,
               endDate: p.endDate ? new Date(p.endDate) : null,
-              sortOrder: index,
-            })
-          ),
-        });
+              sortOrder: i,
+            },
+          });
+
+          if (Array.isArray(p.bullets) && p.bullets.length > 0) {
+            await tx.projectBullet.createMany({
+              data: p.bullets.map((b, bi) => ({
+                projectId: project.id,
+                text: b.text,
+                sortOrder: bi,
+              })),
+            });
+          }
+        }
       }
     });
 
@@ -360,32 +419,45 @@ export const saveStep4 = async (
         },
       });
 
-      // Replace internships
+      // Replace internships (with nested bullets)
+      await tx.internshipBullet.deleteMany({
+        where: { internship: { resumeId: id } },
+      });
       await tx.internship.deleteMany({ where: { resumeId: id } });
 
       if (internships && internships.length > 0) {
-        await tx.internship.createMany({
-          data: internships.map(
-            (
-              i: {
-                company: string;
-                role: string;
-                description?: string;
-                startDate?: string;
-                endDate?: string;
-              },
-              index: number
-            ) => ({
+        for (let i = 0; i < internships.length; i++) {
+          const inp = internships[i] as {
+            company: string;
+            role: string;
+            description?: string;
+            startDate?: string;
+            endDate?: string;
+            bullets?: { text: string }[];
+          };
+
+          const internship = await tx.internship.create({
+            data: {
               resumeId: id,
-              company: i.company,
-              role: i.role,
-              description: i.description || "",
-              startDate: i.startDate ? new Date(i.startDate) : null,
-              endDate: i.endDate ? new Date(i.endDate) : null,
-              sortOrder: index,
-            })
-          ),
-        });
+              company: inp.company,
+              role: inp.role,
+              description: inp.description || "",
+              startDate: inp.startDate ? new Date(inp.startDate) : null,
+              endDate: inp.endDate ? new Date(inp.endDate) : null,
+              sortOrder: i,
+            },
+          });
+
+          if (Array.isArray(inp.bullets) && inp.bullets.length > 0) {
+            await tx.internshipBullet.createMany({
+              data: inp.bullets.map((b, bi) => ({
+                internshipId: internship.id,
+                text: b.text,
+                sortOrder: bi,
+              })),
+            });
+          }
+        }
       }
 
       // Replace achievements
@@ -398,6 +470,7 @@ export const saveStep4 = async (
               a: {
                 title: string;
                 description?: string;
+                link?: string;
                 type?: string;
               },
               index: number
@@ -405,6 +478,7 @@ export const saveStep4 = async (
               resumeId: id,
               title: a.title,
               description: a.description || null,
+              link: a.link || null,
               type: (a.type as any) || "OTHER",
               sortOrder: index,
             })
@@ -431,26 +505,56 @@ export const saveStep5 = async (
   try {
     const userId = req.user!.id;
     const id = getParam(req, "id");
-    const { version, summary, hobbies } = req.body;
+    const { version, summary, hobbyItems } = req.body;
 
-    const updated = await prisma.resume.updateMany({
-      where: { id, userId, version: version ?? undefined },
-      data: {
-        summary,
-        hobbies: hobbies ?? [],
-        currentStep: 5,
-        status: "COMPLETED",
-        version: { increment: 1 },
-      },
+    const resume = await prisma.resume.findFirst({
+      where: { id, userId },
     });
 
-    if (updated.count === 0) {
+    if (!resume) {
+      throw new AppError("Resume not found", 404, "NOT_FOUND");
+    }
+
+    if (version && resume.version !== version) {
       throw new AppError(
-        "Resume not found or was modified elsewhere. Please refresh.",
+        "Resume was modified elsewhere. Please refresh.",
         409,
         "VERSION_CONFLICT"
       );
     }
+
+    await prisma.$transaction(async (tx) => {
+      // Keep legacy hobbies[] in sync
+      const legacyHobbies: string[] = Array.isArray(hobbyItems)
+        ? hobbyItems.map((h: { name: string }) => h.name)
+        : [];
+
+      await tx.resume.update({
+        where: { id },
+        data: {
+          summary,
+          hobbies: legacyHobbies,
+          currentStep: 5,
+          status: "COMPLETED",
+          version: { increment: 1 },
+        },
+      });
+
+      // Replace hobby items
+      await tx.hobby.deleteMany({ where: { resumeId: id } });
+      if (Array.isArray(hobbyItems) && hobbyItems.length > 0) {
+        await tx.hobby.createMany({
+          data: hobbyItems.map(
+            (h: { name: string; description?: string }, i: number) => ({
+              resumeId: id,
+              name: h.name,
+              description: h.description || null,
+              sortOrder: i,
+            })
+          ),
+        });
+      }
+    });
 
     res.json({ success: true, message: "Step 5 saved. Resume completed!" });
   } catch (err) {
@@ -499,6 +603,206 @@ export const setTemplate = async (
     }
 
     res.json({ success: true, message: `Template set to ${template}` });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// PUT /api/resume/:id/sections/order
+// Reorder sections and/or update section titles (custom labels)
+// Body: { sectionOrder?: string[], sectionTitles?: Record<string, string> }
+// ─────────────────────────────────────────────
+
+export const updateSectionOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { sectionOrder, sectionTitles } = req.body;
+
+    const data: Record<string, unknown> = {};
+    if (sectionOrder !== undefined) data.sectionOrder = sectionOrder;
+    if (sectionTitles !== undefined && typeof sectionTitles === "object") data.sectionTitles = sectionTitles;
+
+    if (Object.keys(data).length === 0) {
+      res.json({ success: true, message: "Nothing to update" });
+      return;
+    }
+
+    const updated = await prisma.resume.updateMany({
+      where: { id, userId },
+      data,
+    });
+
+    if (updated.count === 0) {
+      throw new AppError("Resume not found", 404, "NOT_FOUND");
+    }
+
+    res.json({ success: true, message: "Sections updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// PUT /api/resume/:id/styles
+// Update font, color, spacing settings
+// ─────────────────────────────────────────────
+
+export const updateStyles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { fontFamily, fontSize, headingSize, accentColor, lineSpacing, marginSize, sectionDivider } = req.body;
+
+    const data: Record<string, unknown> = {};
+    if (fontFamily !== undefined) data.fontFamily = fontFamily;
+    if (fontSize !== undefined) data.fontSize = parseInt(fontSize);
+    if (headingSize !== undefined) data.headingSize = parseInt(headingSize);
+    if (accentColor !== undefined) data.accentColor = accentColor;
+    if (lineSpacing !== undefined) data.lineSpacing = parseFloat(lineSpacing);
+    if (marginSize !== undefined) data.marginSize = marginSize;
+    if (sectionDivider !== undefined) data.sectionDivider = sectionDivider;
+
+    const updated = await prisma.resume.updateMany({
+      where: { id, userId },
+      data,
+    });
+
+    if (updated.count === 0) {
+      throw new AppError("Resume not found", 404, "NOT_FOUND");
+    }
+
+    res.json({ success: true, message: "Styles updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/resume/:id/sections/custom
+// Create a custom section
+// ─────────────────────────────────────────────
+
+export const createCustomSection = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { title, items } = req.body;
+
+    const resume = await prisma.resume.findFirst({ where: { id, userId } });
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    const existing = await prisma.customSection.count({ where: { resumeId: id } });
+
+    const section = await prisma.customSection.create({
+      data: {
+        resumeId: id,
+        title: title || "Custom Section",
+        sortOrder: existing,
+        items: items && items.length > 0
+          ? {
+              create: items.map((item: { text: string }, i: number) => ({
+                text: item.text,
+                sortOrder: i,
+              })),
+            }
+          : undefined,
+      },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    res.status(201).json({ success: true, data: { section } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// PATCH /api/resume/:id/sections/custom/:sId
+// Update a custom section
+// ─────────────────────────────────────────────
+
+export const updateCustomSection = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const sId = String(req.params.sId);
+    const { title, items } = req.body;
+
+    const resume = await prisma.resume.findFirst({ where: { id, userId } });
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    await prisma.$transaction(async (tx) => {
+      if (title !== undefined) {
+        await tx.customSection.update({
+          where: { id: sId },
+          data: { title },
+        });
+      }
+
+      if (Array.isArray(items)) {
+        await tx.customSectionItem.deleteMany({ where: { sectionId: sId } });
+        if (items.length > 0) {
+          await tx.customSectionItem.createMany({
+            data: items.map((item: { text: string }, i: number) => ({
+              sectionId: sId,
+              text: item.text,
+              sortOrder: i,
+            })),
+          });
+        }
+      }
+    });
+
+    const section = await prisma.customSection.findUnique({
+      where: { id: sId },
+      include: { items: { orderBy: { sortOrder: "asc" } } },
+    });
+
+    res.json({ success: true, data: { section } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// DELETE /api/resume/:id/sections/custom/:sId
+// Delete a custom section
+// ─────────────────────────────────────────────
+
+export const deleteCustomSection = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const sId = req.params.sId;
+
+    const resume = await prisma.resume.findFirst({ where: { id, userId } });
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    await prisma.customSection.delete({ where: { id: String(sId) } });
+
+    res.json({ success: true, message: "Custom section deleted" });
   } catch (err) {
     next(err);
   }

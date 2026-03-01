@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useResumeStore } from "@/store/resumeStore";
+import type { HobbyItem } from "@/store/resumeStore";
 
 const container = {
   hidden: { opacity: 0 },
@@ -22,40 +23,53 @@ const item = {
 export default function SummaryPage() {
   const router = useRouter();
   const { step5, updateStep5, saveAllSteps } = useResumeStore();
-  const [hobbyInput, setHobbyInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
+  const hobbyItems = step5.hobbyItems || [];
+
   const addHobby = () => {
-    const trimmed = hobbyInput.trim();
-    if (trimmed && !step5.hobbies.includes(trimmed)) {
-      updateStep5({ hobbies: [...step5.hobbies, trimmed] });
-      setHobbyInput("");
-    }
+    updateStep5({
+      hobbyItems: [...hobbyItems, { name: "", description: "" }],
+    });
   };
 
-  const removeHobby = (hobby: string) => {
-    updateStep5({ hobbies: step5.hobbies.filter((h) => h !== hobby) });
+  const updateHobby = (index: number, field: keyof HobbyItem, value: string) => {
+    updateStep5({
+      hobbyItems: hobbyItems.map((h, i) =>
+        i === index ? { ...h, [field]: value } : h
+      ),
+    });
   };
 
-  const handleHobbyKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addHobby();
-    }
+  const removeHobby = (index: number) => {
+    updateStep5({
+      hobbyItems: hobbyItems.filter((_, i) => i !== index),
+    });
   };
 
   const handleGenerateSummary = async () => {
+    const { resumeId } = useResumeStore.getState();
+    if (!resumeId) return;
     setIsGenerating(true);
-    // TODO: call POST /api/ai/generate-summary with resume data
-    // For now, simulate a delay
-    setTimeout(() => {
-      updateStep5({
-        summary:
-          "Motivated Computer Science student at Chitkara University with hands-on experience in full-stack development. Built multiple production-ready applications using React, Node.js, and PostgreSQL. Passionate about building tools that solve real problems and eager to contribute to impactful engineering teams.",
+    try {
+      const API_BASE =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+      const res = await fetch(`${API_BASE}/ai/generate-summary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ resumeId }),
       });
+      const data = await res.json();
+      if (data.success && data.data?.summary) {
+        updateStep5({ summary: data.data.summary });
+      }
+    } catch {
+      // silently fail
+    } finally {
       setIsGenerating(false);
-    }, 1500);
+    }
   };
 
   const handleFinish = async () => {
@@ -63,6 +77,18 @@ export default function SummaryPage() {
     try {
       await saveAllSteps();
       router.push("/preview");
+    } catch {
+      // saveError is set in store; layout shows it
+    } finally {
+      setIsFinishing(false);
+    }
+  };
+
+  const handleOpenEditor = async () => {
+    setIsFinishing(true);
+    try {
+      await saveAllSteps();
+      router.push("/editor");
     } catch {
       // saveError is set in store; layout shows it
     } finally {
@@ -80,7 +106,7 @@ export default function SummaryPage() {
           Summary & Hobbies
         </h1>
         <p className="font-manrope mt-2 text-sm leading-relaxed text-muted-foreground">
-          The professional summary sits at the top of your resume — it&apos;s
+          The professional summary sits at the top of your resume &mdash; it&apos;s
           the first thing recruiters read. Use AI to generate one, or write your
           own. Add hobbies to show personality.
         </p>
@@ -102,7 +128,7 @@ export default function SummaryPage() {
               {isGenerating ? (
                 <>
                   <span className="inline-block h-3 w-3 animate-spin rounded-full border border-foreground/30 border-t-foreground" />
-                  Generating…
+                  Generating&hellip;
                 </>
               ) : (
                 <>
@@ -151,7 +177,6 @@ export default function SummaryPage() {
             )}
           </div>
 
-          {/* AI tip */}
           <div className="mt-4 rounded-xl border border-primary/15 bg-primary/[0.03] px-4 py-3">
             <p className="font-manrope text-xs leading-relaxed text-muted-foreground">
               <span className="font-space-grotesk font-semibold text-foreground">
@@ -167,47 +192,73 @@ export default function SummaryPage() {
 
         {/* ─── Hobbies ─── */}
         <motion.div variants={item}>
-          <h3 className="font-space-grotesk mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
-            Hobbies & Interests
-          </h3>
-          <p className="font-manrope mb-3 text-xs text-muted-foreground">
-            Optional but recommended. Shows personality beyond academics. Press
-            Enter to add.
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={hobbyInput}
-              onChange={(e) => setHobbyInput(e.target.value)}
-              onKeyDown={handleHobbyKeyDown}
-              placeholder="e.g. Open-source contributing, Chess, Photography"
-              className="font-manrope flex-1 rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-            />
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <h3 className="font-space-grotesk text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
+                Hobbies & Interests
+              </h3>
+              <p className="font-manrope mt-1 text-xs text-muted-foreground">
+                Optional but recommended. Add a short description for context.
+              </p>
+            </div>
             <button
               type="button"
               onClick={addHobby}
-              className="rounded-xl bg-foreground/10 px-4 py-3 font-manrope text-sm font-medium text-foreground transition-colors hover:bg-foreground/15"
+              className="font-manrope rounded-lg bg-foreground/10 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
             >
-              Add
+              + Add hobby
             </button>
           </div>
-          {step5.hobbies.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {step5.hobbies.map((hobby) => (
-                <span
-                  key={hobby}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 font-manrope text-xs text-foreground"
+
+          <AnimatePresence mode="popLayout">
+            <div className="flex flex-col gap-3">
+              {hobbyItems.map((hobby, index) => (
+                <motion.div
+                  key={index}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-start gap-3 rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm"
                 >
-                  {hobby}
+                  <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-start sm:gap-3">
+                    <input
+                      type="text"
+                      value={hobby.name}
+                      onChange={(e) =>
+                        updateHobby(index, "name", e.target.value)
+                      }
+                      placeholder="Hobby name"
+                      className="font-manrope w-full rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-1/3"
+                    />
+                    <input
+                      type="text"
+                      value={hobby.description || ""}
+                      onChange={(e) =>
+                        updateHobby(index, "description", e.target.value)
+                      }
+                      placeholder="Brief description (optional)"
+                      className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => removeHobby(hobby)}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => removeHobby(index)}
+                    className="mt-2 text-xs text-muted-foreground transition-colors hover:text-red-500"
                   >
                     ×
                   </button>
-                </span>
+                </motion.div>
               ))}
+            </div>
+          </AnimatePresence>
+
+          {hobbyItems.length === 0 && (
+            <div className="mt-2 rounded-xl border border-dashed border-border/50 p-4 text-center">
+              <p className="font-manrope text-xs text-muted-foreground/60">
+                No hobbies added yet. Click &quot;+ Add hobby&quot; to start.
+              </p>
             </div>
           )}
         </motion.div>
@@ -244,7 +295,7 @@ export default function SummaryPage() {
         {/* ─── Navigation ─── */}
         <motion.div
           variants={item}
-          className="flex items-center justify-between border-t border-border/40 pt-6"
+          className="flex flex-col gap-3 border-t border-border/40 pt-6 sm:flex-row sm:items-center sm:justify-between"
         >
           <Link
             href="/form/experience"
@@ -252,14 +303,24 @@ export default function SummaryPage() {
           >
             ← Experience
           </Link>
-          <button
-            type="button"
-            onClick={handleFinish}
-            disabled={isFinishing}
-            className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50"
-          >
-            {isFinishing ? "Saving…" : "Preview & Download →"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleOpenEditor}
+              disabled={isFinishing}
+              className="font-manrope inline-flex h-11 items-center justify-center rounded-xl border border-border bg-transparent px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-foreground/20 disabled:opacity-50"
+            >
+              {isFinishing ? "Saving…" : "Edit in editor"}
+            </button>
+            <button
+              type="button"
+              onClick={handleFinish}
+              disabled={isFinishing}
+              className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30 disabled:opacity-50"
+            >
+              {isFinishing ? "Saving\u2026" : "Preview & Download \u2192"}
+            </button>
+          </div>
         </motion.div>
       </form>
     </motion.div>

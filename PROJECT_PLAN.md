@@ -12,10 +12,14 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ┌──────────────────────────────────────────────────────────────┐
 │                        CLIENT LAYER                          │
 │                   Next.js (App Router)                       │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
-│  │Auth Flow │  │Multi-Step│  │ Template │  │Preview/Edit/ │  │
-│  │ (OTP)    │  │  Form    │  │ Selector │  │  Download    │  │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────────┘  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐  ┌──────────┐  │
+│  │Auth Flow │  │  Start   │  │Template Select│  │Multi-Step│  │
+│  │ (OTP)    │  │Upload/   │  │ (before form) │  │  Form +  │  │
+│  └──────────┘  │ Scratch  │  └──────────────┘  │Live Prev.│  │
+│                └──────────┘         │           └──────────┘  │
+│  ┌──────────────────────────────────┴──────────────────────┐  │
+│  │  Editing Room (IDE-like)  │  Preview / Download         │  │
+│  └─────────────────────────────────────────────────────────┘  │
 └──────────────────────┬───────────────────────────────────────┘
                        │ HTTPS (REST API)
                        ▼
@@ -31,9 +35,11 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 │  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │ 
 │  │ Auth Module│  │Resume Module│  │    AI Module           │ │
 │  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)│ │
-│  │  - JWT     │  │  - Templates│  │  - ATS Check           │ │
-│  │  - Session │  │  - PDF Gen  │  │  - Summary Gen         │ │
-│  └────────────┘  └─────────────┘  └────────────────────────┘ │
+│  │  - JWT     │  │  - Templates│  │  - Summary / Bullets   │ │
+│  │  - Session │  │  - PDF Gen  │  │  - ATS Check / Refine  │ │
+│  └────────────┘  │  - Upload   │  │  - Improve / Keywords  │ │
+│                  │  - Parse    │  └────────────────────────┘ │
+│                  └─────────────┘                              │
 └──────────────────────┬───────────────────────────────────────┘
                        │
         ┌──────────────┼──────────────┬──────────────┐
@@ -403,6 +409,8 @@ enum AchievementType {
 }
 ```
 
+**Note:** The live codebase may include schema extensions from **IMPROVEMENTS.md**: e.g. `ProjectBullet` / `InternshipBullet` (replacing single `description`), `SkillCategory`, `Hobby` (name + description), `CustomSection` / `CustomSectionItem`, and on `Resume`: `sectionOrder`, `fontFamily`, `fontSize`, `accentColor`, `lineSpacing`, `marginSize`, `sectionDivider`, `origin`, `originalFileUrl`. See `server/prisma/schema.prisma` and IMPROVEMENTS.md for the full extended schema.
+
 ### Prisma Client Singleton — `server/src/config/prisma.ts`
 
 ```typescript
@@ -493,10 +501,19 @@ POST   /api/auth/logout           → Invalidate refresh token
 ```
 POST   /api/resume                → Create new resume (returns resumeId)
 GET    /api/resume/:id            → Get resume data with all relations
+GET    /api/resume/me             → Get current user's resume list / latest
 PATCH  /api/resume/:id/step/:step → Save a specific step (auto-save)
 PUT    /api/resume/:id/template   → Set selected template
+PUT    /api/resume/:id/sections/order   → Reorder sections (editor)
+PUT    /api/resume/:id/styles     → Update font, color, spacing (editor)
+POST   /api/resume/:id/sections/custom → Add custom section
+PATCH  /api/resume/:id/sections/custom/:sId → Update custom section
+DELETE /api/resume/:id/sections/custom/:sId → Delete custom section
 GET    /api/resume/:id/preview    → Get rendered HTML preview
+POST   /api/resume/:id/preview-live → Live preview (Zustand payload)
 POST   /api/resume/:id/download   → Generate & download PDF
+POST   /api/resume/upload-parse   → Upload PDF/DOCX, return parsed data (pre-fill)
+DELETE /api/resume/:id            → Delete resume
 ```
 
 ### AI Routes (Protected — JWT + Rate Limited)
@@ -505,6 +522,10 @@ POST   /api/resume/:id/download   → Generate & download PDF
 POST   /api/ai/generate-summary   → Generate professional summary from resume data
 POST   /api/ai/enhance-text       → Improve a bullet point / description
 POST   /api/ai/ats-check          → Run ATS compatibility check
+POST   /api/ai/improve-bullet    → Improve single bullet (action verbs, metrics)
+POST   /api/ai/add-keywords       → Add ATS keywords to text
+POST   /api/ai/generate-bullets   → Generate bullets from project description
+POST   /api/ai/refine-resume      → Full resume analysis & suggestions
 ```
 
 ### Upload Routes (Protected)
@@ -1172,26 +1193,38 @@ chitkara-cv/
 │   │   │   ├── login/page.tsx
 │   │   │   └── verify/page.tsx
 │   │   ├── (protected)/
+│   │   │   ├── start/page.tsx       # Upload existing resume | Start from scratch
+│   │   │   ├── templates/
+│   │   │   │   └── select/page.tsx  # Template selection (before form)
 │   │   │   ├── form/
-│   │   │   │   ├── layout.tsx       # Stepper layout
+│   │   │   │   ├── layout.tsx       # Stepper + split-screen live preview
 │   │   │   │   ├── personal/page.tsx
 │   │   │   │   ├── academic/page.tsx
 │   │   │   │   ├── skills/page.tsx
 │   │   │   │   ├── experience/page.tsx
 │   │   │   │   └── summary/page.tsx
-│   │   │   ├── templates/page.tsx
+│   │   │   ├── editor/page.tsx      # IDE-like editing room (sections, bullets, styles)
+│   │   │   ├── templates/page.tsx   # Legacy / redirect
 │   │   │   └── preview/page.tsx
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 │   ├── components/
 │   │   ├── ui/
 │   │   ├── form/
+│   │   ├── editor/
+│   │   │   ├── AIButton.tsx         # Per-field AI (Improve, Add Keywords, etc.)
+│   │   │   ├── BulletEditor.tsx     # Drag-and-drop bullet points
+│   │   │   ├── CustomSectionEditor.tsx
+│   │   │   ├── SectionList.tsx      # Reorderable sections
+│   │   │   └── StyleControls.tsx    # Font, size, accent, spacing
 │   │   ├── templates/
 │   │   │   ├── ClassicTemplate.tsx
 │   │   │   ├── ModernTemplate.tsx
 │   │   │   ├── MinimalTemplate.tsx
 │   │   │   ├── AcademicTemplate.tsx
 │   │   │   └── TechnicalTemplate.tsx
+│   │   ├── preview/
+│   │   │   └── LivePreview.tsx      # Side-by-side and editor preview
 │   │   ├── theme-toggle.tsx
 │   │   ├── theme-provider.tsx
 │   │   └── common/
@@ -1199,7 +1232,7 @@ chitkara-cv/
 │   │   └── useAutoSave.ts         # Debounced auto-save hook (resume steps)
 │   ├── store/
 │   │   ├── authStore.ts          # Auth state (user, sendOtp, verifyOtp, logout)
-│   │   └── resumeStore.ts
+│   │   └── resumeStore.ts        # Form + editor state (sections, styles, prefillFromParsed)
 │   ├── lib/
 │   │   ├── api.ts
 │   │   └── validators.ts
@@ -1267,6 +1300,8 @@ chitkara-cv/
 ---
 
 ## 17. Implementation Roadmap
+
+**Current state:** The 7 improvements described in **IMPROVEMENTS.md** have been implemented: template selection before form, live side-by-side preview, template switching during form, IDE-like editing room (section reorder, style controls, custom sections), extended AI (improve bullet, add keywords, generate bullets, refine resume), resume upload & parse, bullet-point project/experience descriptions, categorized skills, hobbies with descriptions, and enhanced achievements. The user flow is: **Auth → Start (Upload | Scratch) → Template Select → Multi-Step Form (with live preview) → Editing Room → Preview / Download**.
 
 ### Phase 1 — Foundation (Week 1-2)
 

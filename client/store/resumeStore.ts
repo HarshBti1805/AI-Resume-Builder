@@ -6,10 +6,17 @@ import api from "../lib/api";
 // Types
 // ─────────────────────────────────────────────
 
+export interface Bullet {
+  id?: string;
+  text: string;
+}
+
 export interface Project {
   id?: string;
   title: string;
+  subtitle?: string;
   description: string;
+  bullets: Bullet[];
   techStack: string[];
   liveUrl?: string;
   repoUrl?: string;
@@ -22,6 +29,7 @@ export interface Internship {
   company: string;
   role: string;
   description: string;
+  bullets: Bullet[];
   startDate?: string;
   endDate?: string;
 }
@@ -30,7 +38,20 @@ export interface Achievement {
   id?: string;
   title: string;
   description?: string;
-  type?: "COMPETITION" | "CERTIFICATION" | "HACKATHON" | "PUBLICATION" | "OTHER";
+  link?: string;
+  type?: "COMPETITION" | "CERTIFICATION" | "HACKATHON" | "PUBLICATION" | "COMMUNITY" | "OTHER";
+}
+
+export interface SkillCategory {
+  id?: string;
+  name: string;
+  skills: string[];
+}
+
+export interface HobbyItem {
+  id?: string;
+  name: string;
+  description?: string;
 }
 
 export interface Step1Data {
@@ -61,7 +82,7 @@ export interface Step2Data {
 }
 
 export interface Step3Data {
-  skills: string[];
+  skillCategories: SkillCategory[];
   projects: Project[];
 }
 
@@ -72,7 +93,28 @@ export interface Step4Data {
 
 export interface Step5Data {
   summary: string;
-  hobbies: string[];
+  hobbyItems: HobbyItem[];
+}
+
+export interface CustomSectionItem {
+  id?: string;
+  text: string;
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  items: CustomSectionItem[];
+}
+
+export interface EditorStyles {
+  fontFamily: string;
+  fontSize: number;
+  headingSize: number;
+  accentColor: string;
+  lineSpacing: number;
+  marginSize: string;
+  sectionDivider: string;
 }
 
 export type TemplateType =
@@ -107,6 +149,12 @@ export interface ResumeStore {
   step4: Step4Data;
   step5: Step5Data;
 
+  // Editor-only (for live preview; not persisted to localStorage)
+  customSections: CustomSection[];
+  editorStyles: EditorStyles;
+  sectionOrder: string[];
+  sectionTitles: Record<string, string>;  // e.g. { experience: "Companies", education: "Academic" }
+
   // ── Actions ──
   initResume: () => Promise<string>;
   loadResume: (id: string) => Promise<void>;
@@ -129,6 +177,14 @@ export interface ResumeStore {
   setPhotoUrl: (url: string) => void;
   setAtsScore: (score: number) => void;
   setCurrentStep: (step: number) => void;
+
+  setCustomSections: (sections: CustomSection[]) => void;
+  setEditorStyles: (styles: Partial<EditorStyles>) => void;
+  setSectionOrder: (order: string[]) => void;
+  setSectionTitles: (titles: Record<string, string>) => void;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  prefillFromParsed: (parsed: any) => void;
 
   reset: () => void;
 }
@@ -164,9 +220,19 @@ const defaultStep2: Step2Data = {
   coursework: [],
 };
 
-const defaultStep3: Step3Data = { skills: [], projects: [] };
+const defaultStep3: Step3Data = { skillCategories: [], projects: [] };
 const defaultStep4: Step4Data = { internships: [], achievements: [] };
-const defaultStep5: Step5Data = { summary: "", hobbies: [] };
+const defaultStep5: Step5Data = { summary: "", hobbyItems: [] };
+
+const defaultEditorStyles: EditorStyles = {
+  fontFamily: "Georgia",
+  fontSize: 11,
+  headingSize: 14,
+  accentColor: "#000000",
+  lineSpacing: 1.15,
+  marginSize: "normal",
+  sectionDivider: "line",
+};
 
 // ─────────────────────────────────────────────
 // Store
@@ -195,6 +261,11 @@ export const useResumeStore = create<ResumeStore>()(
         step3: defaultStep3,
         step4: defaultStep4,
         step5: defaultStep5,
+
+        customSections: [],
+        editorStyles: defaultEditorStyles,
+        sectionOrder: [],
+        sectionTitles: {},
 
         // ── Init / Load ──────────────────────────────────────────
 
@@ -250,29 +321,49 @@ export const useResumeStore = create<ResumeStore>()(
               coursework: r.coursework ?? [],
             },
             step3: {
-              skills: r.skills ?? [],
-              projects: (r.projects ?? []).map((p: Project & { sortOrder?: number }) => ({
-                id: p.id,
-                title: p.title,
-                description: p.description,
-                techStack: p.techStack ?? [],
-                liveUrl: p.liveUrl ?? "",
-                repoUrl: p.repoUrl ?? "",
-                startDate: p.startDate
-                  ? new Date(p.startDate).toISOString().split("T")[0]
-                  : "",
-                endDate: p.endDate
-                  ? new Date(p.endDate).toISOString().split("T")[0]
-                  : "",
-              })),
+              skillCategories: (r.skillCategories ?? []).map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (c: any) => ({
+                  id: c.id,
+                  name: c.name,
+                  skills: c.skills ?? [],
+                })
+              ),
+              projects: (r.projects ?? []).map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (p: any) => ({
+                  id: p.id,
+                  title: p.title,
+                  subtitle: p.subtitle ?? "",
+                  description: p.description ?? "",
+                  bullets: (p.bullets ?? []).map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (b: any) => ({ id: b.id, text: b.text })
+                  ),
+                  techStack: p.techStack ?? [],
+                  liveUrl: p.liveUrl ?? "",
+                  repoUrl: p.repoUrl ?? "",
+                  startDate: p.startDate
+                    ? new Date(p.startDate).toISOString().split("T")[0]
+                    : "",
+                  endDate: p.endDate
+                    ? new Date(p.endDate).toISOString().split("T")[0]
+                    : "",
+                })
+              ),
             },
             step4: {
               internships: (r.internships ?? []).map(
-                (i: Internship & { sortOrder?: number }) => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (i: any) => ({
                   id: i.id,
                   company: i.company,
                   role: i.role,
                   description: i.description ?? "",
+                  bullets: (i.bullets ?? []).map(
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (b: any) => ({ id: b.id, text: b.text })
+                  ),
                   startDate: i.startDate
                     ? new Date(i.startDate).toISOString().split("T")[0]
                     : "",
@@ -282,18 +373,52 @@ export const useResumeStore = create<ResumeStore>()(
                 })
               ),
               achievements: (r.achievements ?? []).map(
-                (a: Achievement & { sortOrder?: number }) => ({
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (a: any) => ({
                   id: a.id,
                   title: a.title,
                   description: a.description ?? "",
+                  link: a.link ?? "",
                   type: a.type ?? "OTHER",
                 })
               ),
             },
             step5: {
               summary: r.summary ?? "",
-              hobbies: r.hobbies ?? [],
+              hobbyItems: (r.hobbyItems ?? []).map(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (h: any) => ({
+                  id: h.id,
+                  name: h.name,
+                  description: h.description ?? "",
+                })
+              ),
             },
+            customSections: (r.customSections ?? []).map(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (cs: any) => ({
+                id: cs.id,
+                title: cs.title ?? "Custom Section",
+                items: (cs.items ?? []).map((it: { id?: string; text: string }) => ({
+                  id: it.id,
+                  text: it.text ?? "",
+                })),
+              })
+            ),
+            editorStyles: {
+              fontFamily: r.fontFamily ?? defaultEditorStyles.fontFamily,
+              fontSize: r.fontSize ?? defaultEditorStyles.fontSize,
+              headingSize: r.headingSize ?? defaultEditorStyles.headingSize,
+              accentColor: r.accentColor ?? defaultEditorStyles.accentColor,
+              lineSpacing: r.lineSpacing ?? defaultEditorStyles.lineSpacing,
+              marginSize: r.marginSize ?? defaultEditorStyles.marginSize,
+              sectionDivider: r.sectionDivider ?? defaultEditorStyles.sectionDivider,
+            },
+            sectionOrder: Array.isArray(r.sectionOrder) ? r.sectionOrder : [],
+            sectionTitles:
+              r.sectionTitles && typeof r.sectionTitles === "object"
+                ? (r.sectionTitles as Record<string, string>)
+                : {},
           });
         },
 
@@ -368,13 +493,14 @@ export const useResumeStore = create<ResumeStore>()(
           const { resumeId, version, step3, currentStep } = get();
           if (!resumeId) return;
           set({ isSaving: true, saveError: null });
-          // Filter out empty projects (no title and no description)
           const projectsToSave = step3.projects.filter(
-            (p) => (p.title ?? "").trim() || (p.description ?? "").trim()
+            (p) =>
+              (p.title ?? "").trim() ||
+              (p.bullets && p.bullets.some((b) => b.text.trim()))
           );
           try {
             await api.patch(`/resume/${resumeId}/step/3`, {
-              skills: step3.skills,
+              skillCategories: step3.skillCategories,
               projects: projectsToSave,
               version,
               currentStep: Math.max(3, currentStep),
@@ -424,7 +550,8 @@ export const useResumeStore = create<ResumeStore>()(
           set({ isSaving: true, saveError: null });
           try {
             await api.patch(`/resume/${resumeId}/step/5`, {
-              ...step5,
+              summary: step5.summary,
+              hobbyItems: step5.hobbyItems,
               version,
             });
             set((s) => ({
@@ -474,6 +601,98 @@ export const useResumeStore = create<ResumeStore>()(
         setAtsScore: (score) => set({ atsScore: score }),
 
         setCurrentStep: (step) => set({ currentStep: step }),
+
+        setCustomSections: (sections) => set({ customSections: sections }),
+        setEditorStyles: (styles) =>
+          set((s) => ({
+            editorStyles: { ...s.editorStyles, ...styles },
+          })),
+        setSectionOrder: (order) => set({ sectionOrder: order }),
+        setSectionTitles: (titles) => set({ sectionTitles: titles }),
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        prefillFromParsed: (parsed: any) => {
+          const step1: Partial<Step1Data> = {};
+          if (parsed.fullName) step1.fullName = parsed.fullName;
+          if (parsed.phone) step1.phone = parsed.phone;
+          if (parsed.contactEmail) step1.contactEmail = parsed.contactEmail;
+          if (parsed.city) step1.city = parsed.city;
+          if (parsed.state) step1.state = parsed.state;
+          if (parsed.linkedin) step1.linkedin = parsed.linkedin;
+          if (parsed.github) step1.github = parsed.github;
+          if (parsed.portfolio) step1.portfolio = parsed.portfolio;
+
+          const step2: Partial<Step2Data> = {};
+          if (parsed.university) step2.university = parsed.university;
+          if (parsed.stream) step2.stream = parsed.stream;
+          if (parsed.branch) step2.branch = parsed.branch;
+          if (parsed.batchStart) step2.batchStart = String(parsed.batchStart);
+          if (parsed.batchEnd) step2.batchEnd = String(parsed.batchEnd);
+          if (parsed.cgpa) step2.cgpa = String(parsed.cgpa);
+
+          const step3: Partial<Step3Data> = {};
+          if (parsed.skillCategories?.length > 0) {
+            step3.skillCategories = parsed.skillCategories.map(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (c: any) => ({
+                name: c.name || "General",
+                skills: c.skills || [],
+              })
+            );
+          }
+          if (parsed.projects?.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            step3.projects = parsed.projects.map((p: any) => ({
+              title: p.title || "",
+              subtitle: "",
+              description: "",
+              bullets: (p.bullets || []).map((t: string) => ({ text: t })),
+              techStack: p.techStack || [],
+              liveUrl: "",
+              repoUrl: "",
+            }));
+          }
+
+          const step4: Partial<Step4Data> = {};
+          if (parsed.internships?.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            step4.internships = parsed.internships.map((i: any) => ({
+              company: i.company || "",
+              role: i.role || "",
+              description: "",
+              bullets: (i.bullets || []).map((t: string) => ({ text: t })),
+              startDate: i.startDate || "",
+              endDate: i.endDate || "",
+            }));
+          }
+          if (parsed.achievements?.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            step4.achievements = parsed.achievements.map((a: any) => ({
+              title: a.title || "",
+              description: a.description || "",
+              link: a.link || "",
+              type: a.type || "OTHER",
+            }));
+          }
+
+          const step5: Partial<Step5Data> = {};
+          if (parsed.summary) step5.summary = parsed.summary;
+          if (parsed.hobbyItems?.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            step5.hobbyItems = parsed.hobbyItems.map((h: any) => ({
+              name: h.name || "",
+              description: h.description || "",
+            }));
+          }
+
+          set({
+            step1: { ...get().step1, ...step1 },
+            step2: { ...get().step2, ...step2 },
+            step3: { ...get().step3, ...step3 },
+            step4: { ...get().step4, ...step4 },
+            step5: { ...get().step5, ...step5 },
+          });
+        },
 
         reset: () =>
           set({

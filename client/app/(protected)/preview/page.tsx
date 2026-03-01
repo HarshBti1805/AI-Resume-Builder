@@ -356,6 +356,12 @@ export default function PreviewPage() {
                 >
                   Edit form
                 </Link>
+                <Link
+                  href="/editor"
+                  className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
+                >
+                  Edit in editor
+                </Link>
 
                 <button
                   onClick={handleAtsCheck}
@@ -649,14 +655,22 @@ export default function PreviewPage() {
           {/* ─── Navigation ─── */}
           <motion.div
             variants={item}
-            className="mt-8 flex items-center justify-between border-t border-border/40 pt-6"
+            className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-6"
           >
-            <Link
-              href="/form/summary"
-              className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              ← Edit form
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/form/summary"
+                className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                ← Edit form
+              </Link>
+              <Link
+                href="/editor"
+                className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Edit in editor
+              </Link>
+            </div>
             <button
               onClick={handleDownload}
               disabled={isDownloading || isLoadingPreview}

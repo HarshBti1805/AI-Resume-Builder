@@ -6,32 +6,32 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: "Segoe UI", "Roboto", Arial, sans-serif;
-    font-size: 9.5pt;
+    font-family: "{{fontFamily}}", Arial, sans-serif;
+    font-size: {{fontSize}}pt;
     color: #1f2937;
     background: #fff;
-    padding: 28px 44px;
-    line-height: 1.5;
+    {{#if (eq marginSize "compact")}}padding: 20px 36px;{{else}}{{#if (eq marginSize "wide")}}padding: 40px 56px;{{else}}padding: 28px 44px;{{/if}}{{/if}}
+    line-height: {{lineSpacing}};
   }
 
   /* ── Header ── */
-  .header { border-left: 4px solid #0f766e; padding-left: 14px; margin-bottom: 20px; }
-  h1 { font-size: 22pt; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
-  .header-sub { font-size: 10pt; color: #0f766e; font-weight: 600; margin-bottom: 6px; }
+  .header { border-left: 4px solid {{accentColor}}; padding-left: 14px; margin-bottom: 20px; }
+  h1 { font-size: {{headingSize}}pt; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+  .header-sub { font-size: 10pt; color: {{accentColor}}; font-weight: 600; margin-bottom: 6px; }
   .contact { font-size: 8.5pt; color: #6b7280; display: flex; flex-wrap: wrap; gap: 0 16px; }
-  .contact a { color: #0f766e; text-decoration: none; }
+  .contact a { color: {{accentColor}}; text-decoration: none; }
 
   /* ── Section ── */
   .section { margin-bottom: 15px; }
   .section-title {
-    font-size: 9pt;
+    font-size: {{headingSize}}pt;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 1.2px;
-    color: #0f766e;
+    color: {{accentColor}};
     margin-bottom: 8px;
     padding-bottom: 3px;
-    border-bottom: 1.5px solid #ccfbf1;
+    {{#if (eq sectionDivider "none")}}border-bottom: none;{{else}}{{#if (eq sectionDivider "double")}}border-bottom: 3px double {{accentColor}};{{else}}{{#if (eq sectionDivider "dotted")}}border-bottom: 2px dotted {{accentColor}};{{else}}border-bottom: 1.5px solid {{accentColor}};{{/if}}{{/if}}{{/if}}
   }
 
   /* ── Skills – grouped by category ── */
@@ -52,7 +52,7 @@
   /* ── Projects (prominent) ── */
   .project-card {
     border: 1px solid #e5e7eb;
-    border-left: 3px solid #0f766e;
+    border-left: 3px solid {{accentColor}};
     border-radius: 4px;
     padding: 8px 12px;
     margin-bottom: 8px;
@@ -71,7 +71,7 @@
   }
   .proj-desc { font-size: 9pt; color: #4b5563; margin-top: 4px; }
   .proj-links { font-size: 8pt; color: #6b7280; margin-top: 4px; }
-  .proj-links a { color: #0f766e; text-decoration: none; margin-right: 10px; }
+  .proj-links a { color: {{accentColor}}; text-decoration: none; margin-right: 10px; }
 
   /* ── Row ── */
   .row { margin-bottom: 9px; }
@@ -83,7 +83,7 @@
 
   /* ── Achievements ── */
   .ach-item { margin-bottom: 4px; font-size: 9.5pt; }
-  .ach-badge { display: inline-block; background: #0f766e; color: #fff; font-size: 7.5pt; font-weight: 700; border-radius: 3px; padding: 1px 5px; margin-right: 5px; text-transform: uppercase; }
+  .ach-badge { display: inline-block; background: {{accentColor}}; color: #fff; font-size: 7.5pt; font-weight: 700; border-radius: 3px; padding: 1px 5px; margin-right: 5px; text-transform: uppercase; }
 
   /* ── Photo ── */
   .header-wrap { display: flex; justify-content: space-between; align-items: flex-start; }
@@ -109,29 +109,49 @@
   {{#ifVal photoUrl}}<img class="photo" src="{{photoUrl}}" alt="" />{{/ifVal}}
 </div>
 
-<!-- ── SUMMARY ── -->
-{{#ifVal summary}}
+<!-- ── SECTIONS (ordered by sectionOrder) ── -->
+{{#each sectionOrder}}
+{{#if (eq this "summary")}}
+{{#ifVal ../summary}}
 <div class="section">
-  <div class="section-title">Summary</div>
-  <div class="row-desc">{{summary}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">{{../summary}}</div>
 </div>
 {{/ifVal}}
+{{/if}}
 
-<!-- ── SKILLS (prominent for technical) ── -->
-{{#ifNotEmpty skills}}
+{{#if (eq this "skills")}}
+{{#ifNotEmpty ../skillCategories}}
 <div class="section">
-  <div class="section-title">Technical Skills</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="skills-grid">
+    {{#each ../skillCategories}}
+    <div class="skill-group">
+      <span class="skill-group-label">{{name}}</span>
+      <div class="skill-tags">
+        {{#each skills}}<span class="skill-tag">{{this}}</span>{{/each}}
+      </div>
+    </div>
+    {{/each}}
+  </div>
+</div>
+{{else}}
+{{#ifNotEmpty ../skills}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
   <div class="skill-tags">
-    {{#each skills}}<span class="skill-tag">{{this}}</span>{{/each}}
+    {{#each ../skills}}<span class="skill-tag">{{this}}</span>{{/each}}
   </div>
 </div>
 {{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── PROJECTS (prominent for technical) ── -->
-{{#ifNotEmpty projects}}
+{{#if (eq this "projects")}}
+{{#ifNotEmpty ../projects}}
 <div class="section">
-  <div class="section-title">Projects</div>
-  {{#each projects}}
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../projects}}
   <div class="project-card">
     <div class="proj-header">
       <span class="proj-title">{{title}}</span>
@@ -142,7 +162,13 @@
       {{#each techStack}}<span class="proj-tech-tag">{{this}}</span>{{/each}}
     </div>
     {{/ifNotEmpty}}
+    {{#ifNotEmpty bullets}}
+    <ul style="padding-left:18px;margin-top:4px;">
+      {{#each bullets}}<li class="proj-desc">{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
     {{#ifVal description}}<div class="proj-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
     {{#if liveUrl}}
     <div class="proj-links">
       {{#ifVal liveUrl}}<a href="{{liveUrl}}">⬡ Live Demo</a>{{/ifVal}}
@@ -153,60 +179,90 @@
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── EXPERIENCE ── -->
-{{#ifNotEmpty internships}}
+{{#if (eq this "experience")}}
+{{#ifNotEmpty ../internships}}
 <div class="section">
-  <div class="section-title">Work Experience</div>
-  {{#each internships}}
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../internships}}
   <div class="row">
     <div class="row-header">
       <span class="row-title">{{role}} · {{company}}</span>
       <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
     </div>
+    {{#ifNotEmpty bullets}}
+    <ul style="padding-left:18px;margin-top:3px;">
+      {{#each bullets}}<li class="row-desc">{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
     {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
   </div>
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── EDUCATION ── -->
-{{#ifVal university}}
+{{#if (eq this "education")}}
+{{#ifVal ../university}}
 <div class="section">
-  <div class="section-title">Education</div>
+  <div class="section-title">{{sectionTitle this}}</div>
   <div class="row">
     <div class="row-header">
-      <span class="row-title">{{university}}</span>
-      <span class="row-date">{{batchStart}} – {{batchEnd}}</span>
+      <span class="row-title">{{../university}}</span>
+      <span class="row-date">{{../batchStart}} – {{../batchEnd}}</span>
     </div>
-    <div class="row-sub">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}{{#ifVal cgpa}} · CGPA {{cgpa}}{{/ifVal}}</div>
+    <div class="row-sub">{{../stream}}{{#ifVal ../branch}}, {{../branch}}{{/ifVal}}{{#ifVal ../cgpa}} · CGPA {{../cgpa}}{{/ifVal}}</div>
   </div>
-  {{#ifVal marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{board12th}}</span><span class="row-date">{{marks12th}}%</span></div></div>{{/ifVal}}
-  {{#ifVal marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{board10th}}</span><span class="row-date">{{marks10th}}%</span></div></div>{{/ifVal}}
-  {{#ifNotEmpty coursework}}<div class="row-sub" style="margin-top:4px;">Coursework: {{join coursework ", "}}</div>{{/ifNotEmpty}}
+  {{#ifVal ../marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{../board12th}}</span><span class="row-date">{{../marks12th}}%</span></div></div>{{/ifVal}}
+  {{#ifVal ../marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{../board10th}}</span><span class="row-date">{{../marks10th}}%</span></div></div>{{/ifVal}}
+  {{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;">Coursework: {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
 </div>
 {{/ifVal}}
+{{/if}}
 
-<!-- ── ACHIEVEMENTS ── -->
-{{#ifNotEmpty achievements}}
+{{#if (eq this "achievements")}}
+{{#ifNotEmpty ../achievements}}
 <div class="section">
-  <div class="section-title">Achievements</div>
-  {{#each achievements}}
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../achievements}}
   <div class="ach-item">
     <span class="ach-badge">{{type}}</span>
-    <strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}
+    <strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}{{#ifVal link}} <a href="{{link}}" style="font-size:8pt;color:#0f766e;">[Link]</a>{{/ifVal}}
   </div>
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── HOBBIES ── -->
-{{#ifNotEmpty hobbies}}
+{{#if (eq this "hobbies")}}
+{{#ifNotEmpty ../hobbyItems}}
 <div class="section">
-  <div class="section-title">Interests</div>
-  <div class="row-desc">{{join hobbies " · "}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">
+    {{#each ../hobbyItems}}{{#if @index}} · {{/if}}{{name}}{{#ifVal description}} ({{description}}){{/ifVal}}{{/each}}
+  </div>
+</div>
+{{else}}
+{{#ifNotEmpty ../hobbies}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">{{join ../hobbies " · "}}</div>
 </div>
 {{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#with (customSectionById this)}}
+<div class="section">
+  <div class="section-title">{{title}}</div>
+  <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+    {{#each items}}<li>{{text}}</li>{{/each}}
+  </ul>
+</div>
+{{/with}}
+{{/each}}
 
 </body>
 </html>

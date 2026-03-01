@@ -23,9 +23,21 @@ export const downloadPdf = async (
     const resume = await prisma.resume.findUnique({
       where: { id },
       include: {
-        projects: { orderBy: { sortOrder: "asc" } },
-        internships: { orderBy: { sortOrder: "asc" } },
+        projects: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
+        internships: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
         achievements: { orderBy: { sortOrder: "asc" } },
+        skillCategories: { orderBy: { sortOrder: "asc" } },
+        hobbyItems: { orderBy: { sortOrder: "asc" } },
+        customSections: {
+          orderBy: { sortOrder: "asc" },
+          include: { items: { orderBy: { sortOrder: "asc" } } },
+        },
       },
     });
 

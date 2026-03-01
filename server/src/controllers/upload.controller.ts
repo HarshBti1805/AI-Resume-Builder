@@ -3,6 +3,7 @@ import prisma from "../config/prisma";
 import { AppError } from "../utils/AppError";
 import { getParam } from "../types";
 import { uploadToS3, deleteFromS3 } from "../services/storage.service";
+import { extractText, parseResumeText } from "../services/parser.service";
 import logger from "../utils/logger";
 
 // ─────────────────────────────────────────────
@@ -83,6 +84,50 @@ export const deletePhoto = async (
     logger.info("Photo deleted", { userId, resumeId, key: rawKey });
 
     res.json({ success: true, message: "Photo deleted" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/upload/resume-parse
+// Upload a PDF/DOCX resume, extract + parse with AI
+// ─────────────────────────────────────────────
+
+export const uploadAndParse = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.file) {
+      throw new AppError("No file uploaded", 400, "MISSING_FILE");
+    }
+
+    const userId = req.user!.id;
+
+    // Optionally store the file in S3
+    let fileUrl: string | null = null;
+    try {
+      const ext = req.file.originalname.split(".").pop() || "pdf";
+      const key = `resumes/${userId}/${Date.now()}.${ext}`;
+      fileUrl = await uploadToS3(key, req.file.buffer, req.file.mimetype);
+    } catch {
+      // S3 not configured; proceed without storing
+    }
+
+    const text = await extractText(req.file.buffer, req.file.mimetype);
+    const parsed = await parseResumeText(text);
+
+    logger.info("Resume parsed", { userId, fileUrl });
+
+    res.json({
+      success: true,
+      data: {
+        parsed,
+        fileUrl,
+      },
+    });
   } catch (err) {
     next(err);
   }

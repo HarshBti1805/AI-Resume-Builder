@@ -11,6 +11,11 @@ import {
   saveStep5,
   setTemplate,
   deleteResume,
+  updateSectionOrder,
+  updateStyles,
+  createCustomSection,
+  updateCustomSection,
+  deleteCustomSection,
 } from "../controllers/resume.controller";
 import { getPreview, postPreviewLive } from "../controllers/preview.controller";
 import { downloadPdf } from "../controllers/pdf.controller";
@@ -39,5 +44,12 @@ router.patch("/:id/step/5", saveStep5);
 router.put("/:id/template", setTemplate);
 router.get("/:id/preview", getPreview);
 router.post("/:id/download", downloadPdf);
+
+// ── Editor: sections & styles ─────────────────
+router.put("/:id/sections/order", updateSectionOrder);
+router.put("/:id/styles", updateStyles);
+router.post("/:id/sections/custom", createCustomSection);
+router.patch("/:id/sections/custom/:sId", updateCustomSection);
+router.delete("/:id/sections/custom/:sId", deleteCustomSection);
 
 export default router;

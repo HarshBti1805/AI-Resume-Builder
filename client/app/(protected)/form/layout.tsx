@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
 import { useResumeStore } from "@/store/resumeStore";
@@ -23,9 +23,9 @@ export default function FormLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const {
     resumeId,
-    initResume,
     loadResume,
     isSaving,
     lastSaved,
@@ -46,18 +46,14 @@ export default function FormLayout({
         try {
           await loadResume(currentResumeId);
         } catch {
-          try {
-            await initResume();
-          } catch {
-            // Auth might have expired
-          }
+          // Auth might have expired or resume missing — send to start
+          if (!cancelled) router.replace("/start");
+          return;
         }
       } else {
-        try {
-          await initResume();
-        } catch {
-          // Auth might have expired
-        }
+        // No resume yet — must choose "Start from scratch" or "Upload" on /start first
+        if (!cancelled) router.replace("/start");
+        return;
       }
       if (!cancelled) setInitDone(true);
     };
@@ -66,7 +62,7 @@ export default function FormLayout({
     return () => {
       cancelled = true;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadResume, router]);
 
   const currentStepIndex = steps.findIndex((s) => pathname.startsWith(s.href));
   const currentStep = currentStepIndex === -1 ? 0 : currentStepIndex;

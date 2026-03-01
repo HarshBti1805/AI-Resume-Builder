@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import type { Project } from "@/store/resumeStore";
+import type { Project, Bullet, SkillCategory } from "@/store/resumeStore";
 import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
@@ -19,51 +19,108 @@ const item = {
   show: { opacity: 1, y: 0 },
 };
 
+const DEFAULT_CATEGORIES = [
+  "Languages",
+  "Frameworks & Libraries",
+  "Database",
+  "DevOps",
+  "AI/ML & Generative AI",
+  "Soft Skills",
+];
+
 const emptyProject = (): Project => ({
   title: "",
+  subtitle: "",
   description: "",
+  bullets: [{ text: "" }],
   techStack: [],
   liveUrl: "",
   repoUrl: "",
 });
 
+const emptyCategory = (): SkillCategory => ({
+  name: "",
+  skills: [],
+});
+
 export default function SkillsPage() {
   const { step3, updateStep3 } = useResumeStore();
-  const [skillInput, setSkillInput] = useState("");
   const [techInputs, setTechInputs] = useState<Record<string, string>>({});
+  const [skillInputs, setSkillInputs] = useState<Record<number, string>>({});
+  const [newCategoryName, setNewCategoryName] = useState("");
 
-  // Ensure at least one project
   useEffect(() => {
     if (step3.projects.length === 0) {
       updateStep3({ projects: [emptyProject()] });
     }
   }, [step3.projects.length, updateStep3]);
 
+  useEffect(() => {
+    if (step3.skillCategories.length === 0) {
+      updateStep3({
+        skillCategories: [
+          { name: "Languages", skills: [] },
+          { name: "Frameworks & Libraries", skills: [] },
+        ],
+      });
+    }
+  }, [step3.skillCategories.length, updateStep3]);
+
+  const categories =
+    step3.skillCategories.length > 0 ? step3.skillCategories : [emptyCategory()];
   const projects = step3.projects.length > 0 ? step3.projects : [emptyProject()];
 
-  const addSkill = () => {
-    const trimmed = skillInput.trim();
-    if (trimmed && !step3.skills.includes(trimmed)) {
-      updateStep3({ skills: [...step3.skills, trimmed] });
-      setSkillInput("");
-    }
-  };
-
-  const removeSkill = (skill: string) => {
-    updateStep3({ skills: step3.skills.filter((s) => s !== skill) });
-  };
-
-  const handleSkillKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addSkill();
-    }
-  };
-
-  const addProject = () => {
+  // ── Skill categories ──
+  const addCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
     updateStep3({
-      projects: [...step3.projects, emptyProject()],
+      skillCategories: [...step3.skillCategories, { name, skills: [] }],
     });
+    setNewCategoryName("");
+  };
+
+  const removeCategory = (index: number) => {
+    updateStep3({
+      skillCategories: step3.skillCategories.filter((_, i) => i !== index),
+    });
+  };
+
+  const updateCategoryName = (index: number, name: string) => {
+    updateStep3({
+      skillCategories: step3.skillCategories.map((c, i) =>
+        i === index ? { ...c, name } : c
+      ),
+    });
+  };
+
+  const addSkillToCategory = (catIndex: number) => {
+    const value = (skillInputs[catIndex] || "").trim();
+    if (!value) return;
+    const cat = step3.skillCategories[catIndex];
+    if (cat && !cat.skills.includes(value)) {
+      updateStep3({
+        skillCategories: step3.skillCategories.map((c, i) =>
+          i === catIndex ? { ...c, skills: [...c.skills, value] } : c
+        ),
+      });
+    }
+    setSkillInputs((prev) => ({ ...prev, [catIndex]: "" }));
+  };
+
+  const removeSkillFromCategory = (catIndex: number, skill: string) => {
+    updateStep3({
+      skillCategories: step3.skillCategories.map((c, i) =>
+        i === catIndex
+          ? { ...c, skills: c.skills.filter((s) => s !== skill) }
+          : c
+      ),
+    });
+  };
+
+  // ── Projects ──
+  const addProject = () => {
+    updateStep3({ projects: [...step3.projects, emptyProject()] });
   };
 
   const removeProject = (index: number) => {
@@ -76,7 +133,7 @@ export default function SkillsPage() {
   const updateProject = (
     index: number,
     field: keyof Project,
-    value: string | string[]
+    value: string | string[] | Bullet[]
   ) => {
     updateStep3({
       projects: step3.projects.map((p, i) =>
@@ -85,6 +142,37 @@ export default function SkillsPage() {
     });
   };
 
+  // ── Project bullets ──
+  const addBullet = (projIndex: number) => {
+    const project = step3.projects[projIndex];
+    if (!project) return;
+    updateProject(projIndex, "bullets", [
+      ...project.bullets,
+      { text: "" },
+    ]);
+  };
+
+  const updateBullet = (projIndex: number, bulletIndex: number, text: string) => {
+    const project = step3.projects[projIndex];
+    if (!project) return;
+    updateProject(
+      projIndex,
+      "bullets",
+      project.bullets.map((b, i) => (i === bulletIndex ? { ...b, text } : b))
+    );
+  };
+
+  const removeBullet = (projIndex: number, bulletIndex: number) => {
+    const project = step3.projects[projIndex];
+    if (!project || project.bullets.length <= 1) return;
+    updateProject(
+      projIndex,
+      "bullets",
+      project.bullets.filter((_, i) => i !== bulletIndex)
+    );
+  };
+
+  // ── Tech stack ──
   const addTech = (index: number) => {
     const key = `proj-${index}`;
     const value = (techInputs[key] || "").trim();
@@ -117,57 +205,138 @@ export default function SkillsPage() {
           Skills & Projects
         </h1>
         <p className="font-manrope mt-2 text-sm leading-relaxed text-muted-foreground">
-          Add your technical skills and the projects that showcase them. These
-          are the most important sections for freshers — recruiters want to see
-          what you&apos;ve built.
+          Organise your skills by category and add projects with structured
+          bullet points. These are the most important sections for freshers.
         </p>
       </motion.div>
 
       <form className="flex flex-col gap-10">
-        {/* ─── Skills ─── */}
+        {/* ─── Skills by Category ─── */}
         <motion.div variants={item}>
           <h3 className="font-space-grotesk mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
             Technical skills
           </h3>
-          <p className="font-manrope mb-3 text-xs text-muted-foreground">
-            Add languages, frameworks, tools. Press Enter to add each one.
+          <p className="font-manrope mb-4 text-xs text-muted-foreground">
+            Organise skills by category (e.g. Languages, Frameworks). Press
+            Enter to add each skill.
           </p>
-          <div className="flex gap-2">
+
+          <div className="flex flex-col gap-4">
+            {categories.map((cat, catIndex) => (
+              <div
+                key={catIndex}
+                className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm"
+              >
+                <div className="mb-3 flex items-center gap-2">
+                  <select
+                    value={cat.name}
+                    onChange={(e) => updateCategoryName(catIndex, e.target.value)}
+                    className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Select category...</option>
+                    {DEFAULT_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                    {cat.name &&
+                      !DEFAULT_CATEGORIES.includes(cat.name) && (
+                        <option value={cat.name}>{cat.name}</option>
+                      )}
+                  </select>
+                  <input
+                    type="text"
+                    value={cat.name}
+                    onChange={(e) => updateCategoryName(catIndex, e.target.value)}
+                    placeholder="or type custom..."
+                    className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  {categories.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeCategory(catIndex)}
+                      className="font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={skillInputs[catIndex] || ""}
+                    onChange={(e) =>
+                      setSkillInputs((prev) => ({
+                        ...prev,
+                        [catIndex]: e.target.value,
+                      }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addSkillToCategory(catIndex);
+                      }
+                    }}
+                    placeholder={`Add ${cat.name || "skills"}...`}
+                    className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => addSkillToCategory(catIndex)}
+                    className="rounded-lg bg-foreground/10 px-3 py-2 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {cat.skills.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {cat.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/60 px-2.5 py-1 font-manrope text-xs text-foreground"
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeSkillFromCategory(catIndex, skill)
+                          }
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 flex gap-2">
             <input
               type="text"
-              value={skillInput}
-              onChange={(e) => setSkillInput(e.target.value)}
-              onKeyDown={handleSkillKeyDown}
-              placeholder="e.g. React, Python, Docker, Figma"
-              className="font-manrope flex-1 rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addCategory();
+                }
+              }}
+              placeholder="New category name..."
+              className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             <button
               type="button"
-              onClick={addSkill}
-              className="rounded-xl bg-foreground/10 px-4 py-3 font-manrope text-sm font-medium text-foreground transition-colors hover:bg-foreground/15"
+              onClick={addCategory}
+              className="rounded-lg bg-foreground/10 px-4 py-2.5 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
             >
-              Add
+              + Add category
             </button>
           </div>
-          {step3.skills.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {step3.skills.map((skill: string) => (
-                <span
-                  key={skill}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/60 px-3 py-1.5 font-manrope text-xs text-foreground"
-                >
-                  {skill}
-                  <button
-                    type="button"
-                    onClick={() => removeSkill(skill)}
-                    className="text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
         </motion.div>
 
         {/* ─── Projects ─── */}
@@ -213,36 +382,36 @@ export default function SkillsPage() {
                   </div>
 
                   <div className="flex flex-col gap-4">
-                    <div>
-                      <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Title <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={project.title}
-                        onChange={(e) =>
-                          updateProject(index, "title", e.target.value)
-                        }
-                        placeholder="Real-time Chat Application"
-                        required
-                        className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                        Description <span className="text-red-400">*</span>
-                      </label>
-                      <textarea
-                        value={project.description}
-                        onChange={(e) =>
-                          updateProject(index, "description", e.target.value)
-                        }
-                        placeholder="Built a real-time messaging app with Socket.io supporting 100+ concurrent users. Implemented message persistence with MongoDB and JWT-based authentication."
-                        rows={3}
-                        required
-                        className="font-manrope w-full resize-none rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
-                      />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Title <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={project.title}
+                          onChange={(e) =>
+                            updateProject(index, "title", e.target.value)
+                          }
+                          placeholder="Heritage Threads"
+                          required
+                          className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                          Subtitle / Tagline
+                        </label>
+                        <input
+                          type="text"
+                          value={project.subtitle || ""}
+                          onChange={(e) =>
+                            updateProject(index, "subtitle", e.target.value)
+                          }
+                          placeholder="AI-powered eCommerce platform"
+                          className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
                     </div>
 
                     {/* Tech stack tags */}
@@ -296,6 +465,51 @@ export default function SkillsPage() {
                           ))}
                         </div>
                       )}
+                    </div>
+
+                    {/* Bullet points */}
+                    <div>
+                      <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Bullet points <span className="text-red-400">*</span>
+                      </label>
+                      <p className="font-manrope mb-2 text-[11px] text-muted-foreground">
+                        3-5 bullets recommended. Start each with an action verb.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {(project.bullets || []).map((bullet, bIndex) => (
+                          <div
+                            key={bIndex}
+                            className="flex items-start gap-2"
+                          >
+                            <span className="mt-3 text-muted-foreground">•</span>
+                            <textarea
+                              value={bullet.text}
+                              onChange={(e) =>
+                                updateBullet(index, bIndex, e.target.value)
+                              }
+                              rows={2}
+                              placeholder="Engineered a scalable platform designed to..."
+                              className="font-manrope flex-1 resize-none rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            />
+                            {(project.bullets || []).length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeBullet(index, bIndex)}
+                                className="mt-2 text-xs text-muted-foreground transition-colors hover:text-red-500"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => addBullet(index)}
+                        className="mt-2 font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+                      >
+                        + Add bullet point
+                      </button>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">

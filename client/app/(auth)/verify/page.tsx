@@ -119,8 +119,8 @@ function VerifyContent() {
         rollNumber,
       });
 
-      // Verification successful — redirect to form
-      router.push("/form/personal");
+      // Verification successful — redirect to start (upload or scratch)
+      router.push("/start");
     } catch {
       // Error is set in the store — clear OTP inputs for retry
       setOtp(Array(OTP_LENGTH).fill(""));

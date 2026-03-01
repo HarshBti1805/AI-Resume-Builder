@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Routes that require authentication
-const protectedRoutes = ["/form", "/templates", "/preview"];
+const protectedRoutes = ["/form", "/templates", "/preview", "/start", "/editor"];
 
-// Routes that should redirect to /form if already authenticated
+// Routes that should redirect to /start if already authenticated
 const authRoutes = ["/login", "/verify"];
 
 export function middleware(request: NextRequest) {
@@ -26,19 +26,21 @@ export function middleware(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
   if (isAuthRoute && isAuthenticated) {
-    const selectUrl = new URL("/templates/select", request.url);
-    return NextResponse.redirect(selectUrl);
+    const startUrl = new URL("/start", request.url);
+    return NextResponse.redirect(startUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Run middleware on these paths
   matcher: [
     "/form/:path*",
     "/templates/:path*",
     "/preview/:path*",
+    "/start",
+    "/start/:path*",
+    "/editor/:path*",
     "/login",
     "/verify",
   ],

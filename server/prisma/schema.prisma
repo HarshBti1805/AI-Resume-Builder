@@ -65,13 +65,28 @@ model Resume {
   board12th        String?
   coursework       String[]       @default([])
 
-  // Step 3: Skills (array of strings)
+  // Step 3: Skills (legacy flat array kept for backward compat during migration)
   skills           String[]       @default([])
 
-  // Step 5: Hobbies & Summary
+  // Step 5: Hobbies (legacy flat array kept for backward compat during migration)
   hobbies          String[]       @default([])
   summary          String?
   aiGeneratedSummary String?
+
+  // Editor: Section ordering & styles
+  sectionOrder     String[]       @default([])
+  sectionTitles    Json?          @default("{}")  // e.g. { "experience": "Companies", "education": "Academic" }
+  fontFamily       String?        @default("Georgia")
+  fontSize         Int?           @default(11)
+  headingSize      Int?           @default(14)
+  accentColor      String?        @default("#000000")
+  lineSpacing      Float?         @default(1.15)
+  marginSize       String?        @default("normal")
+  sectionDivider   String?        @default("line")
+
+  // Resume origin
+  origin           ResumeOrigin   @default(SCRATCH)
+  originalFileUrl  String?
 
   // Metadata
   atsScore         Int?
@@ -81,10 +96,13 @@ model Resume {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  // Relations (Step 3 & 4)
+  // Relations
   projects         Project[]
   internships      Internship[]
   achievements     Achievement[]
+  skillCategories  SkillCategory[]
+  hobbyItems       Hobby[]
+  customSections   CustomSection[]
 
   @@index([userId])
   @@index([userId, status])
@@ -95,21 +113,36 @@ model Resume {
 // ─────────────────────────────────────────────
 
 model Project {
-  id          String   @id @default(uuid())
-  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  id          String          @id @default(uuid())
+  resume      Resume          @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   resumeId    String
   title       String
-  description String   @db.Text
-  techStack   String[] @default([])
+  subtitle    String?
+  description String          @db.Text
+  techStack   String[]        @default([])
   liveUrl     String?
   repoUrl     String?
   startDate   DateTime?
   endDate     DateTime?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  bullets     ProjectBullet[]
 
   @@index([resumeId])
+}
+
+model ProjectBullet {
+  id        String   @id @default(uuid())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String
+  text      String   @db.Text
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 // ─────────────────────────────────────────────
@@ -117,19 +150,33 @@ model Project {
 // ─────────────────────────────────────────────
 
 model Internship {
-  id          String   @id @default(uuid())
-  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  id          String              @id @default(uuid())
+  resume      Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   resumeId    String
   company     String
   role        String
-  description String   @db.Text
+  description String              @db.Text
   startDate   DateTime?
   endDate     DateTime?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  bullets     InternshipBullet[]
 
   @@index([resumeId])
+}
+
+model InternshipBullet {
+  id           String     @id @default(uuid())
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  internshipId String
+  text         String     @db.Text
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([internshipId])
 }
 
 // ─────────────────────────────────────────────
@@ -143,12 +190,74 @@ model Achievement {
   title       String
   description String?         @db.Text
   date        DateTime?
+  link        String?
   type        AchievementType @default(OTHER)
   sortOrder   Int             @default(0)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
   @@index([resumeId])
+}
+
+// ─────────────────────────────────────────────
+// Categorized Skills
+// ─────────────────────────────────────────────
+
+model SkillCategory {
+  id        String   @id @default(uuid())
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId  String
+  name      String
+  skills    String[] @default([])
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([resumeId])
+}
+
+// ─────────────────────────────────────────────
+// Hobbies with descriptions
+// ─────────────────────────────────────────────
+
+model Hobby {
+  id          String   @id @default(uuid())
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId    String
+  name        String
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([resumeId])
+}
+
+// ─────────────────────────────────────────────
+// Custom Sections (for Editing Room)
+// ─────────────────────────────────────────────
+
+model CustomSection {
+  id        String              @id @default(uuid())
+  resume    Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId  String
+  title     String
+  sortOrder Int                 @default(0)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  items     CustomSectionItem[]
+
+  @@index([resumeId])
+}
+
+model CustomSectionItem {
+  id        String        @id @default(uuid())
+  section   CustomSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sectionId String
+  text      String        @db.Text
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([sectionId])
 }
 
 // ─────────────────────────────────────────────
@@ -173,5 +282,11 @@ enum AchievementType {
   CERTIFICATION
   HACKATHON
   PUBLICATION
+  COMMUNITY
   OTHER
+}
+
+enum ResumeOrigin {
+  SCRATCH
+  UPLOADED
 }

@@ -6,17 +6,17 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
-    font-size: 10.5pt;
+    font-family: "{{fontFamily}}", Palatino, serif;
+    font-size: {{fontSize}}pt;
     color: #1a1a1a;
     background: #fff;
-    padding: 40px 52px;
-    line-height: 1.55;
+    {{#if (eq marginSize "compact")}}padding: 28px 40px;{{else}}{{#if (eq marginSize "wide")}}padding: 52px 64px;{{else}}padding: 40px 52px;{{/if}}{{/if}}
+    line-height: {{lineSpacing}};
   }
 
   /* ── Header ── */
   .header { margin-bottom: 20px; }
-  h1 { font-size: 21pt; font-weight: bold; margin-bottom: 4px; }
+  h1 { font-size: {{headingSize}}pt; font-weight: bold; margin-bottom: 4px; }
   .tagline { font-size: 10.5pt; color: #555; font-style: italic; margin-bottom: 8px; }
   .contact { font-size: 9pt; color: #444; }
   .contact a { color: #444; text-decoration: none; }
@@ -25,13 +25,14 @@
   /* ── Section ── */
   .section { margin-bottom: 16px; }
   .section-title {
-    font-size: 12pt;
+    font-size: {{headingSize}}pt;
     font-variant: small-caps;
     font-weight: bold;
-    border-bottom: 1.5px solid #555;
+    {{#if (eq sectionDivider "none")}}border-bottom: none;{{else}}{{#if (eq sectionDivider "double")}}border-bottom: 3px double {{accentColor}};{{else}}{{#if (eq sectionDivider "dotted")}}border-bottom: 1px dotted {{accentColor}};{{else}}border-bottom: 1.5px solid {{accentColor}};{{/if}}{{/if}}{{/if}}
     padding-bottom: 2px;
     margin-bottom: 10px;
     letter-spacing: 0.5px;
+    color: {{accentColor}};
   }
 
   /* ── Education rows ── */
@@ -84,98 +85,147 @@
   {{#ifVal photoUrl}}<img class="photo" src="{{photoUrl}}" alt="" />{{/ifVal}}
 </div>
 
-<!-- ── SUMMARY ── -->
-{{#ifVal summary}}
+<!-- ── SECTIONS (ordered by sectionOrder) ── -->
+{{#each sectionOrder}}
+{{#if (eq this "summary")}}
+{{#ifVal ../summary}}
 <div class="section">
-  <div class="section-title">Profile</div>
-  <div class="row-desc">{{summary}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">{{../summary}}</div>
 </div>
 {{/ifVal}}
+{{/if}}
 
-<!-- ── EDUCATION (first for academic template) ── -->
-{{#ifVal university}}
+{{#if (eq this "education")}}
+{{#ifVal ../university}}
 <div class="section">
-  <div class="section-title">Education</div>
+  <div class="section-title">{{sectionTitle this}}</div>
   <div class="edu-row">
-    <div class="edu-inst">{{university}} <span class="edu-year">{{batchStart}} – {{batchEnd}}</span></div>
-    <div class="edu-degree">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}</div>
-    {{#ifVal cgpa}}<div class="edu-meta">CGPA: {{cgpa}}</div>{{/ifVal}}
-    {{#ifNotEmpty coursework}}<div class="edu-meta">Relevant Coursework: {{join coursework ", "}}</div>{{/ifNotEmpty}}
+    <div class="edu-inst">{{../university}} <span class="edu-year">{{../batchStart}} – {{../batchEnd}}</span></div>
+    <div class="edu-degree">{{../stream}}{{#ifVal ../branch}}, {{../branch}}{{/ifVal}}</div>
+    {{#ifVal ../cgpa}}<div class="edu-meta">CGPA: {{../cgpa}}</div>{{/ifVal}}
+    {{#ifNotEmpty ../coursework}}<div class="edu-meta">Relevant Coursework: {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
   </div>
-  {{#ifVal marks12th}}
+  {{#ifVal ../marks12th}}
   <div class="edu-row">
-    <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{marks12th}}%</span></div>
-    {{#ifVal board12th}}<div class="edu-degree">{{board12th}}</div>{{/ifVal}}
+    <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{../marks12th}}%</span></div>
+    {{#ifVal ../board12th}}<div class="edu-degree">{{../board12th}}</div>{{/ifVal}}
   </div>
   {{/ifVal}}
-  {{#ifVal marks10th}}
+  {{#ifVal ../marks10th}}
   <div class="edu-row">
-    <div class="edu-inst">Secondary (10th) <span class="edu-year">{{marks10th}}%</span></div>
-    {{#ifVal board10th}}<div class="edu-degree">{{board10th}}</div>{{/ifVal}}
+    <div class="edu-inst">Secondary (10th) <span class="edu-year">{{../marks10th}}%</span></div>
+    {{#ifVal ../board10th}}<div class="edu-degree">{{../board10th}}</div>{{/ifVal}}
   </div>
   {{/ifVal}}
 </div>
 {{/ifVal}}
+{{/if}}
 
-<!-- ── EXPERIENCE ── -->
-{{#ifNotEmpty internships}}
+{{#if (eq this "experience")}}
+{{#ifNotEmpty ../internships}}
 <div class="section">
-  <div class="section-title">Research &amp; Work Experience</div>
-  {{#each internships}}
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../internships}}
   <div class="row">
     <div class="row-header">
       <span class="row-title">{{role}}</span>
       <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
     </div>
     <div class="row-sub">{{company}}</div>
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
     {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
   </div>
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── PROJECTS ── -->
-{{#ifNotEmpty projects}}
+{{#if (eq this "projects")}}
+{{#ifNotEmpty ../projects}}
 <div class="section">
-  <div class="section-title">Projects &amp; Research Work</div>
-  {{#each projects}}
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../projects}}
   <div class="row">
     <div class="row-header">
       <span class="row-title">{{title}}</span>
       {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
     </div>
     {{#ifNotEmpty techStack}}<div class="row-sub">{{join techStack ", "}}</div>{{/ifNotEmpty}}
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
     {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
   </div>
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── SKILLS ── -->
-{{#ifNotEmpty skills}}
+{{#if (eq this "skills")}}
+{{#ifNotEmpty ../skillCategories}}
 <div class="section">
-  <div class="section-title">Technical Competencies</div>
-  <div class="row-desc">{{join skills " · "}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../skillCategories}}
+  <div class="skills-row"><span class="skill-cat">{{name}}:</span> {{join skills ", "}}</div>
+  {{/each}}
+</div>
+{{else}}
+{{#ifNotEmpty ../skills}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">{{join ../skills " · "}}</div>
 </div>
 {{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── ACHIEVEMENTS ── -->
-{{#ifNotEmpty achievements}}
+{{#if (eq this "achievements")}}
+{{#ifNotEmpty ../achievements}}
 <div class="section">
-  <div class="section-title">Honours &amp; Achievements</div>
-  {{#each achievements}}
-  <div class="ach"><strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../achievements}}
+  <div class="ach"><strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}{{#ifVal link}} <a href="{{link}}" style="font-size:8pt;color:#444;">[Link]</a>{{/ifVal}}</div>
   {{/each}}
 </div>
 {{/ifNotEmpty}}
+{{/if}}
 
-<!-- ── HOBBIES ── -->
-{{#ifNotEmpty hobbies}}
+{{#if (eq this "hobbies")}}
+{{#ifNotEmpty ../hobbyItems}}
 <div class="section">
-  <div class="section-title">Interests</div>
-  <div class="hobbies">{{join hobbies " · "}}</div>
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="hobbies">
+    {{#each ../hobbyItems}}{{#if @index}} · {{/if}}{{name}}{{#ifVal description}} ({{description}}){{/ifVal}}{{/each}}
+  </div>
+</div>
+{{else}}
+{{#ifNotEmpty ../hobbies}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="hobbies">{{join ../hobbies " · "}}</div>
 </div>
 {{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#with (customSectionById this)}}
+<div class="section">
+  <div class="section-title">{{title}}</div>
+  <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+    {{#each items}}<li>{{text}}</li>{{/each}}
+  </ul>
+</div>
+{{/with}}
+{{/each}}
 
 </body>
 </html>

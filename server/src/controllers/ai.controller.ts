@@ -3,7 +3,14 @@ import crypto from "crypto";
 import prisma from "../config/prisma";
 import redis from "../config/redis";
 import { AppError } from "../utils/AppError";
-import { generateSummaryService, enhanceBulletService } from "../services/ai.service";
+import {
+  generateSummaryService,
+  enhanceBulletService,
+  improveBulletService,
+  addKeywordsService,
+  generateBulletsService,
+  refineFullResumeService,
+} from "../services/ai.service";
 import { atsCheckService } from "../services/ats.service";
 
 // ─────────────────────────────────────────────
@@ -141,6 +148,142 @@ export const atsCheck = async (
         lastAtsCheck: new Date(),
       },
     });
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/ai/improve-bullet
+// ─────────────────────────────────────────────
+
+export const improveBullet = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bullet, context } = req.body;
+    if (!bullet || typeof bullet !== "string") {
+      throw new AppError("bullet is required", 400, "MISSING_FIELD");
+    }
+
+    const hash = crypto
+      .createHash("sha256")
+      .update(`improve:${bullet}::${context ?? ""}`)
+      .digest("hex")
+      .slice(0, 20);
+    const cacheKey = `ai:improve:${hash}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      res.json({ success: true, data: { improved: cached } });
+      return;
+    }
+
+    const improved = await improveBulletService(bullet, context ?? "");
+    await redis.setex(cacheKey, 3600, improved);
+
+    res.json({ success: true, data: { improved } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/ai/add-keywords
+// ─────────────────────────────────────────────
+
+export const addKeywords = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { bullet, context } = req.body;
+    if (!bullet || typeof bullet !== "string") {
+      throw new AppError("bullet is required", 400, "MISSING_FIELD");
+    }
+
+    const result = await addKeywordsService(bullet, context ?? "");
+    res.json({ success: true, data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/ai/generate-bullets
+// ─────────────────────────────────────────────
+
+export const generateBullets = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { description, techStack, count } = req.body;
+    if (!description || typeof description !== "string") {
+      throw new AppError("description is required", 400, "MISSING_FIELD");
+    }
+
+    const bullets = await generateBulletsService(
+      description,
+      techStack ?? [],
+      count ?? 4
+    );
+    res.json({ success: true, data: { bullets } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/ai/refine-resume
+// ─────────────────────────────────────────────
+
+export const refineResume = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const { resumeId } = req.body;
+
+    if (!resumeId) throw new AppError("resumeId is required", 400, "MISSING_FIELD");
+
+    const resume = await prisma.resume.findFirst({
+      where: { id: resumeId, userId },
+      include: { projects: true, internships: true, achievements: true },
+    });
+
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    const result = await refineFullResumeService({
+      stream: resume.stream ?? "",
+      university: resume.university ?? "",
+      skills: resume.skills,
+      projects: resume.projects.map((p) => ({ title: p.title })),
+      internships: resume.internships.map((i) => ({
+        role: i.role,
+        company: i.company,
+      })),
+      summary: resume.summary ?? "",
+      achievements: resume.achievements.map((a) => ({ title: a.title })),
+    });
+
+    if (result.score > 0) {
+      await prisma.resume.update({
+        where: { id: resumeId },
+        data: {
+          atsScore: Math.round(result.score),
+          lastAtsCheck: new Date(),
+        },
+      });
+    }
 
     res.json({ success: true, data: result });
   } catch (err) {

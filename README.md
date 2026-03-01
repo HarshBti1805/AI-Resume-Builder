@@ -1,8 +1,8 @@
 # 📄 ChitkaraCV — University Resume Builder
 
-A structured, AI-enhanced resume builder designed to solve the lack of standardized, ATS-friendly resume templates for university students. Students fill a guided multi-step form, select from 5 pre-built templates, and download polished, ATS-compliant resumes.
+A structured, AI-enhanced resume builder designed to solve the lack of standardized, ATS-friendly resume templates for university students. Students choose a template first, fill a guided multi-step form with live preview, use an IDE-like editing room, and download polished, ATS-compliant resumes. Optionally they can upload an existing resume for AI-powered parsing and pre-fill.
 
-> **Status:** Prototype
+> **Status:** Prototype. See **IMPROVEMENTS.md** for the full improvement spec (all 7 improvements implemented).
 
 ---
 
@@ -15,9 +15,13 @@ Students in our university have no fixed resume templates, leading to inconsiste
 ## Features
 
 - **OTP-Based Auth** — Students verify via university email (`@chitkara.edu.in`)
-- **5-Step Guided Form** — Personal Details → Academics → Skills & Projects → Experience & Achievements → Hobbies & Summary
-- **5 ATS-Compliant Templates** — Classic, Modern, Minimal, Academic, Technical
-- **AI Content Generation** — Auto-generate professional summaries and enhance bullet points (OpenAI GPT)
+- **Start Choice** — Upload an existing resume (PDF/DOCX) for AI-powered parsing and pre-fill, or start from scratch
+- **Template First** — Choose one of 5 ATS-compliant templates before filling the form; switch template anytime during form or in the editing room
+- **Multi-Step Form + Live Preview** — Split-screen: form on the left, live resume preview on the right (Personal → Academic → Skills → Experience → Summary)
+- **Editing Room** — IDE-like split view: structured editor (reorder sections, edit bullets, font/style controls, custom sections) with live preview
+- **Bullet-Point Projects & Experience** — Per-bullet editing with drag-and-drop; optional subtitle/tagline per project
+- **Categorized Skills** — Organize skills by category (e.g. Languages, Frameworks, AI/ML)
+- **AI Everywhere** — Summary generation, per-bullet improve/add keywords, generate bullets from description, full resume refinement, ATS check
 - **ATS Checker** — Hybrid rule-based + AI scoring with actionable suggestions
 - **PDF Download** — Server-side PDF generation via Puppeteer
 - **Auto-Save** — Debounced saves so students never lose progress
@@ -51,18 +55,25 @@ chitkara-cv/
 │   │   │   ├── login/            # Email entry
 │   │   │   └── verify/           # OTP verification
 │   │   ├── (protected)/
+│   │   │   ├── start/            # Upload resume | Start from scratch
+│   │   │   ├── templates/
+│   │   │   │   └── select/       # Template selection (before form)
 │   │   │   ├── form/
+│   │   │   │   ├── layout.tsx    # Stepper + live preview split
 │   │   │   │   ├── personal/     # Step 1: Personal Details
 │   │   │   │   ├── academic/     # Step 2: Academic Info
-│   │   │   │   ├── skills/       # Step 3: Skills & Projects
-│   │   │   │   ├── experience/   # Step 4: Experience & Achievements
+│   │   │   │   ├── skills/       # Step 3: Skills & Projects (categorized)
+│   │   │   │   ├── experience/   # Step 4: Experience & Achievements (bullets)
 │   │   │   │   └── summary/      # Step 5: Hobbies & Summary
-│   │   │   ├── templates/        # Template selection
-│   │   │   └── preview/          # Preview, edit & download
+│   │   │   ├── editor/           # IDE-like editing room
+│   │   │   ├── templates/        # Legacy
+│   │   │   └── preview/         # Preview, edit & download
 │   │   └── page.tsx              # Landing page
 │   ├── components/
 │   │   ├── ui/                   # shadcn/ui components
 │   │   ├── form/                 # Form step components
+│   │   ├── editor/               # AIButton, BulletEditor, SectionList, StyleControls, CustomSectionEditor
+│   │   ├── preview/              # LivePreview (form + editor)
 │   │   ├── templates/            # 5 resume template components
 │   │   ├── theme-toggle.tsx      # Light/dark mode toggle
 │   │   ├── theme-provider.tsx    # Theme context provider
@@ -71,7 +82,7 @@ chitkara-cv/
 │   │   └── useAutoSave.ts        # Debounced auto-save hook (optional)
 │   ├── store/
 │   │   ├── authStore.ts          # Zustand auth state (user, OTP, logout)
-│   │   └── resumeStore.ts        # Zustand resume form state
+│   │   └── resumeStore.ts        # Form + editor state, prefillFromParsed
 │   ├── lib/
 │   │   ├── api.ts                # Axios instance
 │   │   └── validators.ts         # Zod validation schemas
@@ -135,12 +146,15 @@ chitkara-cv/
 The full schema lives in `server/prisma/schema.prisma`. Core models:
 
 - **User** — university email, auth metadata
-- **Resume** — central record per resume with personal & academic fields
-- **Project** — repeatable project entries linked to a resume
-- **Internship** — work experience entries linked to a resume
-- **Achievement** — competition wins, certifications, hackathons
+- **Resume** — central record with personal, academic, and editor fields (section order, font/style, origin)
+- **Project** — project entries with **bullet points** (ProjectBullet); title, subtitle, tech stack, URLs
+- **Internship** — experience entries with **bullet points** (InternshipBullet)
+- **Achievement** — competitions, certifications, hackathons (with type, link, description)
+- **SkillCategory** — categorized skills (e.g. Languages, Frameworks)
+- **Hobby** — name + optional description
+- **CustomSection** / **CustomSectionItem** — user-added sections in the editing room
 
-Prisma handles migrations, type-safe queries, and relationship management automatically. See the Project Plan document for the full `schema.prisma` file.
+See IMPROVEMENTS.md and PROJECT_PLAN.md for full schema details.
 
 ---
 
@@ -273,22 +287,35 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ### Resume (Protected)
 
-| Method | Endpoint                     | Description              |
-| ------ | ---------------------------- | ------------------------ |
-| POST   | `/api/resume`                | Create new resume        |
-| GET    | `/api/resume/:id`            | Get resume data          |
-| PATCH  | `/api/resume/:id/step/:step` | Save a specific form step|
-| PUT    | `/api/resume/:id/template`   | Set selected template    |
-| GET    | `/api/resume/:id/preview`    | Get rendered HTML preview|
-| POST   | `/api/resume/:id/download`   | Generate & download PDF  |
+| Method | Endpoint                                | Description                    |
+| ------ | --------------------------------------- | ------------------------------ |
+| POST   | `/api/resume`                           | Create new resume              |
+| GET    | `/api/resume/:id`                       | Get resume data                |
+| GET    | `/api/resume/me`                        | Get current user's resume(s)   |
+| PATCH  | `/api/resume/:id/step/:step`            | Save a form step               |
+| PUT    | `/api/resume/:id/template`              | Set selected template          |
+| PUT    | `/api/resume/:id/sections/order`       | Reorder sections (editor)      |
+| PUT    | `/api/resume/:id/styles`                | Update font/color/spacing      |
+| POST   | `/api/resume/:id/sections/custom`       | Add custom section             |
+| PATCH  | `/api/resume/:id/sections/custom/:sId`  | Update custom section          |
+| DELETE | `/api/resume/:id/sections/custom/:sId`  | Delete custom section          |
+| GET    | `/api/resume/:id/preview`               | Get HTML preview               |
+| POST   | `/api/resume/:id/preview-live`          | Live preview (client payload)  |
+| POST   | `/api/resume/:id/download`              | Generate & download PDF        |
+| POST   | `/api/resume/upload-parse`              | Upload PDF/DOCX, return parsed data |
+| DELETE | `/api/resume/:id`                       | Delete resume                  |
 
 ### AI (Protected + Rate Limited)
 
-| Method | Endpoint                   | Description                   |
-| ------ | -------------------------- | ----------------------------- |
-| POST   | `/api/ai/generate-summary` | Generate professional summary |
-| POST   | `/api/ai/enhance-text`     | Improve a bullet point        |
-| POST   | `/api/ai/ats-check`        | Run ATS compatibility check   |
+| Method | Endpoint                     | Description                    |
+| ------ | ---------------------------- | ------------------------------ |
+| POST   | `/api/ai/generate-summary`   | Generate professional summary  |
+| POST   | `/api/ai/enhance-text`       | Improve a bullet/description   |
+| POST   | `/api/ai/ats-check`          | Run ATS compatibility check    |
+| POST   | `/api/ai/improve-bullet`     | Improve single bullet          |
+| POST   | `/api/ai/add-keywords`       | Add ATS keywords to text       |
+| POST   | `/api/ai/generate-bullets`   | Generate bullets from description |
+| POST   | `/api/ai/refine-resume`      | Full resume analysis & suggestions |
 
 ### Upload (Protected)
 
@@ -305,15 +332,17 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 1. Landing Page
    └──▶ 2. Enter University Email
          └──▶ 3. Verify OTP
-               └──▶ 4. Multi-Step Form
-                     ├── Step 1: Personal Details (Name, DOB, Location, LinkedIn, GitHub...)
-                     ├── Step 2: Academic Info (University, Stream, CGPA, 10th/12th marks...)
-                     ├── Step 3: Skills & Projects (Skill tags, Project entries...)
-                     ├── Step 4: Experience & Achievements (Internships, Competitions...)
-                     └── Step 5: Hobbies & Summary (Interests, AI-generated summary)
-                           └──▶ 5. Select Template
-                                 └──▶ 6. Preview & Minor Edits
-                                       └──▶ 7. Download PDF
+               └──▶ 4. Start Choice
+                     ├── [Upload Existing Resume] → Parse (PDF/DOCX) → Pre-fill → Template Select
+                     └── [Start from Scratch]      → Template Select
+                           └──▶ 5. Multi-Step Form (split-screen with live preview)
+                                 ├── Step 1: Personal Details
+                                 ├── Step 2: Academic Info
+                                 ├── Step 3: Skills & Projects (bullets, categories)
+                                 ├── Step 4: Experience & Achievements
+                                 └── Step 5: Hobbies & Summary
+                                       └──▶ 6. Editing Room (sections, bullets, styles, AI)
+                                             └──▶ 7. Preview & Download PDF
 ```
 
 ---
@@ -338,9 +367,13 @@ All templates are ATS-compliant by design: single-column layouts, standard secti
 
 Collects data from all form steps and generates a 2-3 sentence professional summary using GPT-4o-mini. Students can regenerate or manually edit.
 
-### Bullet Enhancement
+### Per-Bullet & Section AI
 
-Each project and experience entry has an "Improve with AI" button that rewrites the description with strong action verbs and quantified impact.
+In the form and editing room: **Improve** (action verbs, metrics), **Add Keywords** (ATS-friendly terms), and **Generate Bullets** from a raw project description. Section-level **Refine All Bullets** and **ATS Keyword Scan** are available in the editing room.
+
+### Full Resume Refinement
+
+**Refine resume** returns structured suggestions (section, original vs improved text, reason), missing keywords, and an overall ATS score.
 
 ### ATS Checker
 
