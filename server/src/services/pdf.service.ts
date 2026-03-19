@@ -11,6 +11,7 @@ const browserPool: Pool<Browser> = genericPool.createPool(
     create: async (): Promise<Browser> =>
       puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
         args: [
           "--no-sandbox",
           "--disable-setuid-sandbox",
@@ -27,7 +28,8 @@ const browserPool: Pool<Browser> = genericPool.createPool(
   },
   {
     max: 5,
-    min: 1,
+    // Keep startup resilient on platforms where Chrome may not be present yet.
+    min: 0,
     idleTimeoutMillis: 60_000,
     acquireTimeoutMillis: 30_000,
     testOnBorrow: true,
