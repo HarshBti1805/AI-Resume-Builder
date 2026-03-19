@@ -227,7 +227,12 @@ export const saveStep2 = async (
       board12th,
       marks10th,
       board10th,
+      schoolName10th,
+      schoolName12th,
       coursework,
+      showCoursework,
+      showMarks10th,
+      showMarks12th,
     } = data;
 
     const updated = await prisma.resume.updateMany({
@@ -243,7 +248,12 @@ export const saveStep2 = async (
         board12th,
         marks10th: marks10th ? parseFloat(marks10th) : null,
         board10th,
+        schoolName12th: schoolName12th || null,
+        schoolName10th: schoolName10th || null,
         coursework: coursework ?? [],
+        showCoursework: showCoursework ?? true,
+        showMarks10th: showMarks10th ?? true,
+        showMarks12th: showMarks12th ?? true,
         currentStep: Math.max(2, data.currentStep ?? 2),
         version: { increment: 1 },
       },

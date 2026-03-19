@@ -78,7 +78,12 @@ export interface Step2Data {
   board12th: string;
   marks10th: string;
   board10th: string;
+  schoolName12th: string;
+  schoolName10th: string;
   coursework: string[];
+  showCoursework: boolean;
+  showMarks10th: boolean;
+  showMarks12th: boolean;
 }
 
 export interface Step3Data {
@@ -217,7 +222,12 @@ const defaultStep2: Step2Data = {
   board12th: "",
   marks10th: "",
   board10th: "",
+  schoolName10th: "",
+  schoolName12th: "",
   coursework: [],
+  showCoursework: true,
+  showMarks10th: true,
+  showMarks12th: true,
 };
 
 const defaultStep3: Step3Data = { skillCategories: [], projects: [] };
@@ -318,7 +328,12 @@ export const useResumeStore = create<ResumeStore>()(
               board12th: r.board12th ?? "",
               marks10th: r.marks10th ? String(r.marks10th) : "",
               board10th: r.board10th ?? "",
+              schoolName10th: r.schoolName10th ?? "",
+              schoolName12th: r.schoolName12th ?? "",
               coursework: r.coursework ?? [],
+              showCoursework: r.showCoursework ?? true,
+              showMarks10th: r.showMarks10th ?? true,
+              showMarks12th: r.showMarks12th ?? true,
             },
             step3: {
               skillCategories: (r.skillCategories ?? []).map(

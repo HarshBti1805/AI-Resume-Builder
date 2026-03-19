@@ -67,3 +67,5 @@ next-env.d.ts
 *.pem
 .cache/
 
+Obsidian.md
+.cursor/

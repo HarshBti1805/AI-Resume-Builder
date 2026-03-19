@@ -169,12 +169,19 @@
     {{else}}
     {{#ifVal description}}<div class="proj-desc">{{description}}</div>{{/ifVal}}
     {{/ifNotEmpty}}
-    {{#if liveUrl}}
+    {{#ifVal liveUrl}}
     <div class="proj-links">
-      {{#ifVal liveUrl}}<a href="{{liveUrl}}">⬡ Live Demo</a>{{/ifVal}}
+      <a href="{{liveUrl}}">⬡ Live Demo</a>
       {{#ifVal repoUrl}}<a href="{{repoUrl}}">⌬ Source Code</a>{{/ifVal}}
     </div>
-    {{/if}}
+    {{/ifVal}}
+    {{#ifVal repoUrl}}
+      {{#unless liveUrl}}
+      <div class="proj-links">
+        <a href="{{repoUrl}}">⌬ Source Code</a>
+      </div>
+      {{/unless}}
+    {{/ifVal}}
   </div>
   {{/each}}
 </div>
@@ -215,9 +222,9 @@
     </div>
     <div class="row-sub">{{../stream}}{{#ifVal ../branch}}, {{../branch}}{{/ifVal}}{{#ifVal ../cgpa}} · CGPA {{../cgpa}}{{/ifVal}}</div>
   </div>
-  {{#ifVal ../marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{../board12th}}</span><span class="row-date">{{../marks12th}}%</span></div></div>{{/ifVal}}
-  {{#ifVal ../marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{../board10th}}</span><span class="row-date">{{../marks10th}}%</span></div></div>{{/ifVal}}
-  {{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;">Coursework: {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
+  {{#if ../showMarks12th}}{{#ifVal ../marks12th}}<div class="row"><div class="row-header"><span class="row-title">12th — {{../board12th}}{{#ifVal ../schoolName12th}} ({{../schoolName12th}}){{/ifVal}}</span><span class="row-date">{{../marks12th}}%</span></div></div>{{/ifVal}}{{/if}}
+  {{#if ../showMarks10th}}{{#ifVal ../marks10th}}<div class="row"><div class="row-header"><span class="row-title">10th — {{../board10th}}{{#ifVal ../schoolName10th}} ({{../schoolName10th}}){{/ifVal}}</span><span class="row-date">{{../marks10th}}%</span></div></div>{{/ifVal}}{{/if}}
+  {{#if ../showCoursework}}{{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;">Coursework: {{join ../coursework ", "}}</div>{{/ifNotEmpty}}{{/if}}
 </div>
 {{/ifVal}}
 {{/if}}

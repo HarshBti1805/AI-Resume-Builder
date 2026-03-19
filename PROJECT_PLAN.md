@@ -295,7 +295,12 @@ model Resume {
   marks12th        Float?
   board10th        String?
   board12th        String?
+  schoolName10th  String?
+  schoolName12th  String?
   coursework       String[]       @default([])
+  showCoursework   Boolean        @default(true)
+  showMarks10th    Boolean        @default(true)
+  showMarks12th    Boolean        @default(true)
 
   // Step 3: Skills (array of strings)
   skills           String[]       @default([])

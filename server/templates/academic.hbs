@@ -49,6 +49,8 @@
   .row-date { font-size: 9pt; color: #666; }
   .row-sub { font-size: 9.5pt; color: #555; font-style: italic; margin-top: 1px; }
   .row-desc { font-size: 9.5pt; color: #333; margin-top: 3px; }
+  .proj-links { font-size: 9pt; color: #555; margin-top: 3px; }
+  .proj-links a { color: #555; text-decoration: none; }
 
   /* ── Skills ── */
   .skills-row { margin-bottom: 5px; font-size: 9.5pt; }
@@ -104,20 +106,36 @@
     <div class="edu-inst">{{../university}} <span class="edu-year">{{../batchStart}} – {{../batchEnd}}</span></div>
     <div class="edu-degree">{{../stream}}{{#ifVal ../branch}}, {{../branch}}{{/ifVal}}</div>
     {{#ifVal ../cgpa}}<div class="edu-meta">CGPA: {{../cgpa}}</div>{{/ifVal}}
-    {{#ifNotEmpty ../coursework}}<div class="edu-meta">Relevant Coursework: {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
   </div>
-  {{#ifVal ../marks12th}}
-  <div class="edu-row">
-    <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{../marks12th}}%</span></div>
-    {{#ifVal ../board12th}}<div class="edu-degree">{{../board12th}}</div>{{/ifVal}}
-  </div>
-  {{/ifVal}}
-  {{#ifVal ../marks10th}}
-  <div class="edu-row">
-    <div class="edu-inst">Secondary (10th) <span class="edu-year">{{../marks10th}}%</span></div>
-    {{#ifVal ../board10th}}<div class="edu-degree">{{../board10th}}</div>{{/ifVal}}
-  </div>
-  {{/ifVal}}
+  {{#if ../showMarks12th}}
+    {{#ifVal ../marks12th}}
+    <div class="edu-row">
+      <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{../marks12th}}%</span></div>
+      <div class="edu-degree">
+        {{#ifVal ../board12th}}{{../board12th}}{{/ifVal}}
+        {{#ifVal ../schoolName12th}}
+          {{#ifVal ../board12th}} · {{/ifVal}}{{../schoolName12th}}
+        {{/ifVal}}
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/if}}
+  {{#if ../showMarks10th}}
+    {{#ifVal ../marks10th}}
+    <div class="edu-row">
+      <div class="edu-inst">Secondary (10th) <span class="edu-year">{{../marks10th}}%</span></div>
+      <div class="edu-degree">
+        {{#ifVal ../board10th}}{{../board10th}}{{/ifVal}}
+        {{#ifVal ../schoolName10th}}
+          {{#ifVal ../board10th}} · {{/ifVal}}{{../schoolName10th}}
+        {{/ifVal}}
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/if}}
+  {{#if ../showCoursework}}{{#ifNotEmpty ../coursework}}
+  <div class="edu-meta" style="margin-top:6px;">Relevant Coursework: {{join ../coursework ", "}}</div>
+  {{/ifNotEmpty}}{{/if}}
 </div>
 {{/ifVal}}
 {{/if}}
@@ -140,6 +158,19 @@
     {{else}}
     {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
     {{/ifNotEmpty}}
+    {{#ifVal liveUrl}}
+    <div class="proj-links">
+      <a href="{{liveUrl}}">Live</a>
+      {{#ifVal repoUrl}} &nbsp;|&nbsp; <a href="{{repoUrl}}">Repo</a>{{/ifVal}}
+    </div>
+    {{/ifVal}}
+    {{#ifVal repoUrl}}
+      {{#unless liveUrl}}
+      <div class="proj-links">
+        <a href="{{repoUrl}}">Repo</a>
+      </div>
+      {{/unless}}
+    {{/ifVal}}
   </div>
   {{/each}}
 </div>

@@ -62,7 +62,12 @@ function assembleResumeData() {
     board12th: s.step2.board12th,
     marks10th: s.step2.marks10th ? parseFloat(s.step2.marks10th) : null,
     board10th: s.step2.board10th,
+    schoolName12th: s.step2.schoolName12th,
+    schoolName10th: s.step2.schoolName10th,
     coursework: s.step2.coursework,
+    showCoursework: s.step2.showCoursework,
+    showMarks10th: s.step2.showMarks10th,
+    showMarks12th: s.step2.showMarks12th,
     skills: flatSkills,
     skillCategories: s.step3.skillCategories.map((c, i) => ({
       ...c,

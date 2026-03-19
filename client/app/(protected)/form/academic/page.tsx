@@ -22,8 +22,8 @@ export default function AcademicPage() {
   const { step2, updateStep2 } = useResumeStore();
   const [courseInput, setCourseInput] = useState("");
 
-  const update = (field: keyof typeof step2, value: string | string[]) => {
-    updateStep2({ [field]: value });
+  const update = (field: keyof typeof step2, value: unknown) => {
+    updateStep2({ [field]: value } as any);
   };
 
   const addCourse = () => {
@@ -173,7 +173,18 @@ export default function AcademicPage() {
           <h3 className="font-space-grotesk mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
             Class XII
           </h3>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={step2.showMarks12th}
+              onChange={(e) => update("showMarks12th", e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <p className="font-manrope text-xs text-muted-foreground">
+              Show Class XII marks
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Percentage / CGPA
@@ -199,6 +210,18 @@ export default function AcademicPage() {
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
+            <div>
+              <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                School name
+              </label>
+              <input
+                type="text"
+                value={step2.schoolName12th}
+                onChange={(e) => update("schoolName12th", e.target.value)}
+                placeholder="e.g. St. Joseph School"
+                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
           </div>
         </motion.div>
 
@@ -207,7 +230,18 @@ export default function AcademicPage() {
           <h3 className="font-space-grotesk mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
             Class X
           </h3>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={step2.showMarks10th}
+              onChange={(e) => update("showMarks10th", e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <p className="font-manrope text-xs text-muted-foreground">
+              Show Class X marks
+            </p>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Percentage / CGPA
@@ -233,6 +267,18 @@ export default function AcademicPage() {
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
+            <div>
+              <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                School name
+              </label>
+              <input
+                type="text"
+                value={step2.schoolName10th}
+                onChange={(e) => update("schoolName10th", e.target.value)}
+                placeholder="e.g. St. Joseph School"
+                className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
           </div>
         </motion.div>
 
@@ -241,6 +287,17 @@ export default function AcademicPage() {
           <h3 className="font-space-grotesk mb-4 text-xs font-semibold uppercase tracking-[0.15em] text-foreground">
             Relevant coursework
           </h3>
+          <div className="mb-4 flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={step2.showCoursework}
+              onChange={(e) => update("showCoursework", e.target.checked)}
+              className="h-4 w-4 accent-primary"
+            />
+            <p className="font-manrope text-xs text-muted-foreground">
+              Show coursework section
+            </p>
+          </div>
           <p className="font-manrope mb-3 text-xs text-muted-foreground">
             Add subjects relevant to the roles you&apos;re applying for. Press
             Enter to add.

@@ -18,6 +18,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 - **Start Choice** — Upload an existing resume (PDF/DOCX) for AI-powered parsing and pre-fill, or start from scratch
 - **Template First** — Choose one of 5 ATS-compliant templates before filling the form; switch template anytime during form or in the editing room
 - **Multi-Step Form + Live Preview** — Split-screen: form on the left, live resume preview on the right (Personal → Academic → Skills → Experience → Summary)
+- **Customizable Academic Section** — toggle coursework and 10th/12th marks (and optionally add 10th/12th school names)
 - **Editing Room** — IDE-like split view: structured editor (reorder sections, edit bullets, font/style controls, custom sections) with live preview
 - **Bullet-Point Projects & Experience** — Per-bullet editing with drag-and-drop; optional subtitle/tagline per project
 - **Categorized Skills** — Organize skills by category (e.g. Languages, Frameworks, AI/ML)
@@ -26,6 +27,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 - **PDF Download** — Server-side PDF generation via Puppeteer
 - **Auto-Save** — Debounced saves so students never lose progress
 - **Profile Photo Upload** — Optional image support
+- **Flexible Live/Repo URLs** — templates render Live only, Repo only, or both per entry
 
 ---
 
