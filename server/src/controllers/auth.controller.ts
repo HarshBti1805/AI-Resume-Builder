@@ -15,7 +15,7 @@ import logger from "../utils/logger";
 export const sendOtp = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email } = req.body as { email: string };
@@ -26,7 +26,7 @@ export const sendOtp = async (
       throw new AppError(
         `Only @${env.ALLOWED_EMAIL_DOMAIN} emails are allowed`,
         400,
-        "INVALID_DOMAIN"
+        "INVALID_DOMAIN",
       );
     }
 
@@ -55,7 +55,7 @@ export const sendOtp = async (
 export const verifyOtpAndLogin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const { email, otp, name, rollNumber } = req.body as {
@@ -90,21 +90,28 @@ export const verifyOtpAndLogin = async (
     const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
       env.JWT_ACCESS_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRES_IN as unknown as jwt.SignOptions["expiresIn"] }
+      {
+        expiresIn:
+          env.JWT_ACCESS_EXPIRES_IN as unknown as jwt.SignOptions["expiresIn"],
+      },
     );
 
     const refreshToken = jwt.sign(
       { userId: user.id, email: user.email },
       env.JWT_REFRESH_SECRET,
-      { expiresIn: env.JWT_REFRESH_EXPIRES_IN as unknown as jwt.SignOptions["expiresIn"] }
+      {
+        expiresIn:
+          env.JWT_REFRESH_EXPIRES_IN as unknown as jwt.SignOptions["expiresIn"],
+      },
     );
 
-    // Set httpOnly cookies
+    // Set httpOnly cookies (session is cookie-based; Redis is used for OTP only)
+    const ACCESS_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h — align with JWT_ACCESS_EXPIRES_IN
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
 
     res.cookie("refreshToken", refreshToken, {
@@ -143,7 +150,7 @@ export const verifyOtpAndLogin = async (
 export const refresh = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     const token = req.cookies?.refreshToken;
@@ -170,14 +177,16 @@ export const refresh = async (
     const accessToken = jwt.sign(
       { userId: user.id, email: user.email },
       env.JWT_ACCESS_SECRET,
-      { expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions["expiresIn"] }
+      { expiresIn: env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions["expiresIn"] },
     );
 
+    // Issue new access token (cookie TTL aligned with JWT)
+    const ACCESS_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 15 * 60 * 1000,
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
 
     res.json({ success: true, message: "Token refreshed" });
@@ -204,10 +213,7 @@ export const refresh = async (
 // Clears both cookies
 // ─────────────────────────────────────────────
 
-export const logout = async (
-  _req: Request,
-  res: Response
-): Promise<void> => {
+export const logout = async (_req: Request, res: Response): Promise<void> => {
   res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
   res.json({ success: true, message: "Logged out successfully" });
@@ -221,7 +227,7 @@ export const logout = async (
 export const getMe = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> => {
   try {
     if (!req.user) {
