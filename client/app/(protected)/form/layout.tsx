@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { motion } from "framer-motion";
 import { useResumeStore } from "@/store/resumeStore";
 import { LivePreview } from "@/components/preview/LivePreview";
 import { TemplateSwitch } from "@/components/form/TemplateSwitch";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileButton } from "@/components/user-profile-button";
 
 const steps = [
   { id: 1, label: "Personal", href: "/form/personal" },
@@ -113,7 +114,8 @@ export default function FormLayout({
                 {saveError}
               </span>
             )}
-            <ThemeToggle className="flex h-8 w-8 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted print:hidden" />
+            <UserProfileButton inline />
+            <ThemeToggle className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted" />
           </div>
         </div>
 

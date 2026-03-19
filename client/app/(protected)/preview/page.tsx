@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useResumeStore } from "@/store/resumeStore";
 import type { TemplateType } from "@/store/resumeStore";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileButton } from "@/components/user-profile-button";
 
 const TEMPLATE_OPTIONS: { value: TemplateType; label: string }[] = [
   { value: "CLASSIC", label: "Classic" },
@@ -104,7 +105,9 @@ function AtsScoreRing({ score, max }: { score: number; max: number }) {
           </span>
         </div>
       </div>
-      <p className={`font-space-grotesk text-xs font-semibold uppercase tracking-wider ${color}`}>
+      <p
+        className={`font-space-grotesk text-xs font-semibold uppercase tracking-wider ${color}`}
+      >
         {label}
       </p>
     </div>
@@ -116,7 +119,8 @@ function AtsScoreRing({ score, max }: { score: number; max: number }) {
    ───────────────────────────────────────────── */
 export default function PreviewPage() {
   const router = useRouter();
-  const { resumeId, selectedTemplate, setTemplate, loadResume } = useResumeStore();
+  const { resumeId, selectedTemplate, setTemplate, loadResume } =
+    useResumeStore();
 
   // States
   const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
@@ -135,7 +139,8 @@ export default function PreviewPage() {
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+  const apiBase =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
   /* ─── Fetch HTML preview ─── */
   const fetchPreview = useCallback(async () => {
@@ -145,10 +150,9 @@ export default function PreviewPage() {
     setPreviewError(null);
 
     try {
-      const res = await fetch(
-        `${apiBase}/resume/${resumeId}/preview`,
-        { credentials: "include" }
-      );
+      const res = await fetch(`${apiBase}/resume/${resumeId}/preview`, {
+        credentials: "include",
+      });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
@@ -159,7 +163,7 @@ export default function PreviewPage() {
       setPreviewHtml(html);
     } catch (err) {
       setPreviewError(
-        err instanceof Error ? err.message : "Failed to load preview"
+        err instanceof Error ? err.message : "Failed to load preview",
       );
     } finally {
       setIsLoadingPreview(false);
@@ -226,9 +230,7 @@ export default function PreviewPage() {
       setAtsResult(data.data);
       setShowAtsPanel(true);
     } catch (err) {
-      setAtsError(
-        err instanceof Error ? err.message : "ATS check failed"
-      );
+      setAtsError(err instanceof Error ? err.message : "ATS check failed");
     } finally {
       setIsCheckingAts(false);
     }
@@ -242,13 +244,10 @@ export default function PreviewPage() {
     setDownloadError(null);
 
     try {
-      const res = await fetch(
-        `${apiBase}/resume/${resumeId}/download`,
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
+      const res = await fetch(`${apiBase}/resume/${resumeId}/download`, {
+        method: "POST",
+        credentials: "include",
+      });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => null);
@@ -266,9 +265,7 @@ export default function PreviewPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      setDownloadError(
-        err instanceof Error ? err.message : "Download failed"
-      );
+      setDownloadError(err instanceof Error ? err.message : "Download failed");
     } finally {
       setIsDownloading(false);
     }
@@ -289,7 +286,20 @@ export default function PreviewPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <ThemeToggle />
+      {/* ─── Navbar: no overlap with content ─── */}
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-4 border-none bg-transparent px-4">
+        <Link
+          href="/editor"
+          className="font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          ← Back to Editor
+        </Link>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <UserProfileButton inline />
+          <ThemeToggle className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted" />
+        </div>
+      </header>
 
       {/* Background layers */}
       <div
@@ -297,7 +307,7 @@ export default function PreviewPage() {
         aria-hidden
       />
 
-      <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-16 sm:px-8 sm:pt-20">
+      <main className="relative mx-auto max-w-6xl px-5 pb-24 pt-10 sm:px-8 sm:pt-12">
         <motion.div variants={container} initial="hidden" animate="show">
           {/* ─── Header ─── */}
           <motion.div variants={item} className="mb-8 text-center">
@@ -361,6 +371,12 @@ export default function PreviewPage() {
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
                 >
                   Edit in editor
+                </Link>
+                <Link
+                  href="/start"
+                  className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
+                >
+                  Upload your resume
                 </Link>
 
                 <button
@@ -553,7 +569,10 @@ export default function PreviewPage() {
                       </div>
 
                       {/* Score */}
-                      <AtsScoreRing score={atsResult.total} max={atsResult.max} />
+                      <AtsScoreRing
+                        score={atsResult.total}
+                        max={atsResult.max}
+                      />
 
                       <div className="mt-2 text-center">
                         <p className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -669,6 +688,12 @@ export default function PreviewPage() {
                 className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
               >
                 Edit in editor
+              </Link>
+              <Link
+                href="/start"
+                className="font-manrope text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Upload your resume
               </Link>
             </div>
             <button

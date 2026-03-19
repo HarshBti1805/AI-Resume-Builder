@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useResumeStore } from "@/store/resumeStore";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileButton } from "@/components/user-profile-button";
 
 const container = {
   hidden: { opacity: 0 },
@@ -86,12 +87,21 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
           <p className="mt-0.5 text-foreground/50">email@example.com</p>
         </div>
         <div className="mt-2">
-          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">Summary</p>
-          <p className="mt-0.5 text-foreground/70 line-clamp-2">Professional summary will appear here with your key skills and experience.</p>
+          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">
+            Summary
+          </p>
+          <p className="mt-0.5 text-foreground/70 line-clamp-2">
+            Professional summary will appear here with your key skills and
+            experience.
+          </p>
         </div>
         <div className="mt-2">
-          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">Skills</p>
-          <p className="mt-0.5 text-foreground/70">React · Node.js · TypeScript</p>
+          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">
+            Skills
+          </p>
+          <p className="mt-0.5 text-foreground/70">
+            React · Node.js · TypeScript
+          </p>
         </div>
         <div className="mt-auto pt-2">
           <div className="h-1 w-full rounded-full bg-foreground/10" />
@@ -107,10 +117,15 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
         </div>
         <div className="flex-1 p-4">
           <div className="mb-1.5 h-0.5 w-8 rounded-full bg-violet-500/40" />
-          <p className="text-foreground/70 line-clamp-2">Professional summary with key highlights.</p>
+          <p className="text-foreground/70 line-clamp-2">
+            Professional summary with key highlights.
+          </p>
           <div className="mt-2 flex flex-wrap gap-1">
             {["React", "Node.js", "TypeScript", "Docker"].map((s) => (
-              <span key={s} className="rounded bg-foreground/[0.06] px-1 py-0.5 text-[5px]">
+              <span
+                key={s}
+                className="rounded bg-foreground/[0.06] px-1 py-0.5 text-[5px]"
+              >
                 {s}
               </span>
             ))}
@@ -123,11 +138,15 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
         <p className="text-[10px] font-light tracking-widest">Your Name</p>
         <p className="mt-0.5 text-foreground/40">email@example.com</p>
         <div className="mt-3 border-l border-foreground/15 pl-2">
-          <p className="text-foreground/70 line-clamp-2">Professional summary with key highlights and experience.</p>
+          <p className="text-foreground/70 line-clamp-2">
+            Professional summary with key highlights and experience.
+          </p>
         </div>
         <div className="mt-auto flex gap-1">
           {["React", "Node.js", "TypeScript"].map((s) => (
-            <span key={s} className="text-[5px] text-foreground/40">{s}</span>
+            <span key={s} className="text-[5px] text-foreground/40">
+              {s}
+            </span>
           ))}
         </div>
       </div>
@@ -139,12 +158,16 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
           <p className="mt-0.5 text-foreground/50">email@example.com</p>
         </div>
         <div className="mt-2.5">
-          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-emerald-500/70">Education</p>
+          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-emerald-500/70">
+            Education
+          </p>
           <div className="mt-0.5 h-1 w-full rounded-full bg-foreground/[0.06]" />
           <div className="mt-0.5 h-1 w-4/5 rounded-full bg-foreground/[0.06]" />
         </div>
         <div className="mt-2">
-          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-emerald-500/70">Coursework</p>
+          <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-emerald-500/70">
+            Coursework
+          </p>
           <div className="mt-0.5 h-1 w-full rounded-full bg-foreground/[0.06]" />
         </div>
         <div className="mt-auto pt-2">
@@ -159,13 +182,19 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
         </div>
         <div className="flex flex-1">
           <div className="w-1/3 border-r border-foreground/10 p-2">
-            <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-amber-500/70">Skills</p>
+            <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-amber-500/70">
+              Skills
+            </p>
             {["React", "Node.js", "TypeScript", "Docker", "AWS"].map((s) => (
-              <p key={s} className="mt-0.5 text-foreground/60">{s}</p>
+              <p key={s} className="mt-0.5 text-foreground/60">
+                {s}
+              </p>
             ))}
           </div>
           <div className="flex-1 p-2">
-            <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">Projects</p>
+            <p className="text-[5px] font-bold uppercase tracking-[0.15em] text-foreground/60">
+              Projects
+            </p>
             <div className="mt-0.5 h-1 w-full rounded-full bg-foreground/[0.06]" />
             <div className="mt-0.5 h-1 w-4/5 rounded-full bg-foreground/[0.06]" />
             <div className="mt-0.5 h-1 w-3/5 rounded-full bg-foreground/[0.06]" />
@@ -184,15 +213,10 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
 
 export default function TemplateSelectPage() {
   const router = useRouter();
-  const {
-    resumeId,
-    initResume,
-    loadResume,
-    selectedTemplate,
-    setTemplate,
-  } = useResumeStore();
+  const { resumeId, initResume, loadResume, selectedTemplate, setTemplate } =
+    useResumeStore();
   const [selected, setSelected] = useState<TemplateType>(
-    (selectedTemplate as TemplateType) || "CLASSIC"
+    (selectedTemplate as TemplateType) || "CLASSIC",
   );
   const [isReady, setIsReady] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
@@ -220,7 +244,8 @@ export default function TemplateSelectPage() {
         }
       }
       if (!cancelled) {
-        const template = useResumeStore.getState().selectedTemplate as TemplateType | null;
+        const template = useResumeStore.getState()
+          .selectedTemplate as TemplateType | null;
         setSelected(template || "CLASSIC");
         setIsReady(true);
       }
@@ -252,7 +277,20 @@ export default function TemplateSelectPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <ThemeToggle />
+      {/* ─── Navbar ─── */}
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-4 border-none bg-transparent px-4">
+        <Link
+          href="/start"
+          className="font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          ← Back to Start
+        </Link>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <UserProfileButton inline />
+          <ThemeToggle className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted" />
+        </div>
+      </header>
 
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,var(--primary)/.06,transparent_70%)]"
@@ -263,7 +301,7 @@ export default function TemplateSelectPage() {
         aria-hidden
       />
 
-      <main className="relative mx-auto max-w-5xl px-5 pb-24 pt-16 sm:px-8 sm:pt-20">
+      <main className="relative mx-auto max-w-5xl px-5 pb-24 pt-10 sm:px-8 sm:pt-12">
         <motion.div variants={container} initial="hidden" animate="show">
           <motion.div variants={item} className="mb-10 text-center">
             <Link

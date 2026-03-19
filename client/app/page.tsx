@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 const container = {
   hidden: { opacity: 0 },
@@ -92,9 +91,6 @@ const stats = [
 export default function Home() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <ThemeToggle />
-
-      {/* Background layers */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_-10%,var(--primary)/.08,transparent_70%)]"
         aria-hidden

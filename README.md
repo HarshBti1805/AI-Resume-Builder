@@ -14,7 +14,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 
 ## Features
 
-- **OTP-Based Auth** — Students verify via university email (`@chitkara.edu.in`)
+- **OTP-Based Auth** — Students verify via university email (`@chitkara.edu.in`). Sessions persist for 24 hours (access token) with a 7-day refresh token; a **Log out** button is available on the start page when signed in.
 - **Start Choice** — Upload an existing resume (PDF/DOCX) for AI-powered parsing and pre-fill, or start from scratch
 - **Template First** — Choose one of 5 ATS-compliant templates before filling the form; switch template anytime during form or in the editing room
 - **Multi-Step Form + Live Preview** — Split-screen: form on the left, live resume preview on the right (Personal → Academic → Skills → Experience → Summary)
@@ -31,17 +31,17 @@ Students in our university have no fixed resume templates, leading to inconsiste
 
 ## Tech Stack
 
-| Layer        | Technology                                                 |
-| ------------ | ---------------------------------------------------------- |
+| Layer        | Technology                                                |
+| ------------ | --------------------------------------------------------- |
 | Frontend     | Next.js 14 (App Router), Tailwind CSS, shadcn/ui, Zustand |
 | Backend      | Express.js + TypeScript, Node.js 20+                      |
-| Database     | PostgreSQL + Prisma ORM                                    |
-| Cache        | Redis                                                      |
+| Database     | PostgreSQL + Prisma ORM                                   |
+| Cache        | Redis                                                     |
 | AI           | OpenAI API (GPT-4o / GPT-4o-mini)                         |
-| PDF          | Puppeteer                                                  |
-| Email        | Nodemailer                                                 |
-| File Storage | AWS S3 / MinIO                                             |
-| Deployment   | Docker, Nginx                                              |
+| PDF          | Puppeteer                                                 |
+| Email        | Nodemailer                                                |
+| File Storage | AWS S3 / MinIO                                            |
+| Deployment   | Docker, Nginx                                             |
 
 ---
 
@@ -286,35 +286,35 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ### Resume (Protected)
 
-| Method | Endpoint                                | Description                    |
-| ------ | --------------------------------------- | ------------------------------ |
-| POST   | `/api/resume`                           | Create new resume              |
-| GET    | `/api/resume/:id`                       | Get resume data                |
-| GET    | `/api/resume/me`                        | Get current user's resume(s)   |
-| PATCH  | `/api/resume/:id/step/:step`            | Save a form step               |
-| PUT    | `/api/resume/:id/template`              | Set selected template          |
-| PUT    | `/api/resume/:id/sections/order`       | Reorder sections (editor)      |
-| PUT    | `/api/resume/:id/styles`                | Update font/color/spacing      |
-| POST   | `/api/resume/:id/sections/custom`       | Add custom section             |
-| PATCH  | `/api/resume/:id/sections/custom/:sId`  | Update custom section          |
-| DELETE | `/api/resume/:id/sections/custom/:sId`  | Delete custom section          |
-| GET    | `/api/resume/:id/preview`               | Get HTML preview               |
-| POST   | `/api/resume/:id/preview-live`          | Live preview (client payload)  |
-| POST   | `/api/resume/:id/download`              | Generate & download PDF        |
-| POST   | `/api/resume/upload-parse`              | Upload PDF/DOCX, return parsed data |
-| DELETE | `/api/resume/:id`                       | Delete resume                  |
+| Method | Endpoint                               | Description                         |
+| ------ | -------------------------------------- | ----------------------------------- |
+| POST   | `/api/resume`                          | Create new resume                   |
+| GET    | `/api/resume/:id`                      | Get resume data                     |
+| GET    | `/api/resume/me`                       | Get current user's resume(s)        |
+| PATCH  | `/api/resume/:id/step/:step`           | Save a form step                    |
+| PUT    | `/api/resume/:id/template`             | Set selected template               |
+| PUT    | `/api/resume/:id/sections/order`       | Reorder sections (editor)           |
+| PUT    | `/api/resume/:id/styles`               | Update font/color/spacing           |
+| POST   | `/api/resume/:id/sections/custom`      | Add custom section                  |
+| PATCH  | `/api/resume/:id/sections/custom/:sId` | Update custom section               |
+| DELETE | `/api/resume/:id/sections/custom/:sId` | Delete custom section               |
+| GET    | `/api/resume/:id/preview`              | Get HTML preview                    |
+| POST   | `/api/resume/:id/preview-live`         | Live preview (client payload)       |
+| POST   | `/api/resume/:id/download`             | Generate & download PDF             |
+| POST   | `/api/resume/upload-parse`             | Upload PDF/DOCX, return parsed data |
+| DELETE | `/api/resume/:id`                      | Delete resume                       |
 
 ### AI (Protected + Rate Limited)
 
-| Method | Endpoint                     | Description                    |
-| ------ | ---------------------------- | ------------------------------ |
-| POST   | `/api/ai/generate-summary`   | Generate professional summary  |
-| POST   | `/api/ai/enhance-text`       | Improve a bullet/description   |
-| POST   | `/api/ai/ats-check`          | Run ATS compatibility check    |
-| POST   | `/api/ai/improve-bullet`     | Improve single bullet          |
-| POST   | `/api/ai/add-keywords`       | Add ATS keywords to text       |
-| POST   | `/api/ai/generate-bullets`   | Generate bullets from description |
-| POST   | `/api/ai/refine-resume`      | Full resume analysis & suggestions |
+| Method | Endpoint                   | Description                        |
+| ------ | -------------------------- | ---------------------------------- |
+| POST   | `/api/ai/generate-summary` | Generate professional summary      |
+| POST   | `/api/ai/enhance-text`     | Improve a bullet/description       |
+| POST   | `/api/ai/ats-check`        | Run ATS compatibility check        |
+| POST   | `/api/ai/improve-bullet`   | Improve single bullet              |
+| POST   | `/api/ai/add-keywords`     | Add ATS keywords to text           |
+| POST   | `/api/ai/generate-bullets` | Generate bullets from description  |
+| POST   | `/api/ai/refine-resume`    | Full resume analysis & suggestions |
 
 ### Upload (Protected)
 
@@ -348,13 +348,13 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ## Templates
 
-| #   | Template  | Best For                     | Layout                        |
-| --- | --------- | ---------------------------- | ----------------------------- |
-| 1   | Classic   | General purpose, traditional | Single column, serif font     |
-| 2   | Modern    | Clean, contemporary look     | Sans-serif, color accent      |
-| 3   | Minimal   | Maximum readability          | Lots of whitespace            |
-| 4   | Academic  | Research / higher-ed focused | Education-first ordering      |
-| 5   | Technical | CS / Engineering students    | Skills-prominent, project-heavy|
+| #   | Template  | Best For                     | Layout                          |
+| --- | --------- | ---------------------------- | ------------------------------- |
+| 1   | Classic   | General purpose, traditional | Single column, serif font       |
+| 2   | Modern    | Clean, contemporary look     | Sans-serif, color accent        |
+| 3   | Minimal   | Maximum readability          | Lots of whitespace              |
+| 4   | Academic  | Research / higher-ed focused | Education-first ordering        |
+| 5   | Technical | CS / Engineering students    | Skills-prominent, project-heavy |
 
 All templates are ATS-compliant by design: single-column layouts, standard section headings, system fonts, no text-in-images, proper heading hierarchy.
 
@@ -377,6 +377,7 @@ In the form and editing room: **Improve** (action verbs, metrics), **Add Keyword
 ### ATS Checker
 
 Hybrid scoring system:
+
 - **Rule-based** (40 points) — checks section completeness, contact info, skill count
 - **AI-powered** (60 points) — GPT analyzes keyword density, action verbs, professional language
 

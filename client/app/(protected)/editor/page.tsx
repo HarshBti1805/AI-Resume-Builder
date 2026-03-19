@@ -10,6 +10,7 @@ import { BulletEditor } from "@/components/editor/BulletEditor";
 import { StyleControls } from "@/components/editor/StyleControls";
 import { CustomSectionEditor } from "@/components/editor/CustomSectionEditor";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileButton } from "@/components/user-profile-button";
 import type { Bullet } from "@/store/resumeStore";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
@@ -102,20 +103,20 @@ export default function EditorPage() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* ─── Top bar ─── */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
-        <div className="flex items-center gap-4">
+      {/* ─── Navbar: fixed height, no overlap ─── */}
+      <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-border/40 bg-background px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <Link
             href="/preview"
-            className="font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             ← Back to Preview
           </Link>
-          <span className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+          <span className="hidden shrink-0 font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/50 sm:inline">
             Editing Room
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <TemplateSwitch />
           <button
             type="button"
@@ -125,7 +126,8 @@ export default function EditorPage() {
           >
             {saving ? "Saving..." : "Save"}
           </button>
-          <ThemeToggle />
+          <UserProfileButton inline />
+          <ThemeToggle className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted" />
         </div>
       </header>
 

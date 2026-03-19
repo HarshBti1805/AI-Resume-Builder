@@ -3,8 +3,11 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useResumeStore } from "@/store/resumeStore";
+import { useAuthStore } from "@/store/authStore";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserProfileButton } from "@/components/user-profile-button";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
@@ -18,11 +21,16 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, ease: "easeOut" as const },
+  },
 };
 
 export default function StartPage() {
   const router = useRouter();
+  useAuthStore();
   const { prefillFromParsed, initResume, saveAllSteps } = useResumeStore();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,14 +78,16 @@ export default function StartPage() {
           router.push("/templates/select");
         } catch (saveErr) {
           console.error("Save parsed data failed", saveErr);
-          setError("Data was parsed but saving failed. Try again or start from scratch.");
+          setError(
+            "Data was parsed but saving failed. Try again or start from scratch.",
+          );
         }
       } else {
         throw new Error("Failed to parse resume");
       }
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Upload failed. Try again."
+        err instanceof Error ? err.message : "Upload failed. Try again.",
       );
     } finally {
       setUploading(false);
@@ -86,128 +96,190 @@ export default function StartPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-6">
-      <div className="absolute right-6 top-6">
-        <ThemeToggle />
-      </div>
-
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="w-full max-w-2xl"
-      >
-        <motion.div variants={item} className="mb-10 text-center">
-          <p className="font-dm-mono text-[11px] uppercase tracking-[0.25em] text-primary/60">
-            AI Resume Builder
-          </p>
-          <h1 className="font-instrument-serif mt-2 text-3xl tracking-wide text-foreground sm:text-4xl">
-            How would you like to start?
-          </h1>
-          <p className="font-manrope mt-3 text-sm text-muted-foreground">
-            Upload an existing resume to pre-fill your data, or start fresh.
-          </p>
-        </motion.div>
-
-        <motion.div
-          variants={item}
-          className="grid gap-5 sm:grid-cols-2"
+    <div className="relative flex min-h-screen flex-col bg-background">
+      {/* ─── Navbar: aligned with content ─── */}
+      <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center justify-between gap-4 border-none bg-transparent px-4">
+        <Link
+          href="/"
+          className="font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
-          {/* Upload card */}
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={uploading}
-            className="group relative flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-border/70 bg-card/40 p-8 text-center backdrop-blur-sm transition-all hover:border-primary/40 hover:bg-primary/[0.02] disabled:opacity-50"
-          >
-            {uploading ? (
-              <div className="flex h-14 w-14 items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+          ← Back to home
+        </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          <UserProfileButton inline />
+          <ThemeToggle className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/50 text-foreground transition-colors hover:bg-muted" />
+        </div>
+      </header>
+
+      {/* ─── Middle section ─── */}
+      <div className="flex flex-1 flex-col items-center justify-center px-6">
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="w-full max-w-2xl"
+        >
+          {/* Header */}
+          <motion.div variants={item} className="mb-10 text-center">
+            <p className="font-dm-mono text-[11px] uppercase tracking-[0.25em] text-primary/60">
+              AI Resume Builder
+            </p>
+            <h1 className="font-instrument-serif mt-2 text-3xl tracking-wide text-foreground sm:text-4xl">
+              How would you like to start?
+            </h1>
+            <p className="font-manrope mt-3 text-sm text-muted-foreground">
+              Upload an existing resume to pre-fill your data, or start fresh.
+            </p>
+          </motion.div>
+
+          {/* Cards — side-by-side grid */}
+          <motion.div variants={item} className="grid gap-4 sm:grid-cols-2">
+            {/* Upload card */}
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={uploading}
+              className="group relative flex flex-col rounded-2xl border border-border/60 bg-card/60 p-7 text-left backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {/* Top row: icon + badge */}
+              <div className="mb-6 flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors duration-200 group-hover:bg-primary/15">
+                  {uploading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                  ) : (
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-primary"
+                    >
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  )}
+                </div>
+                <span className="font-dm-mono rounded-full border border-primary/20 bg-primary/[0.08] px-2.5 py-1 text-[9px] uppercase tracking-widest text-primary/80">
+                  Faster
+                </span>
               </div>
-            ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06] transition-colors group-hover:bg-primary/10">
+
+              {/* Body */}
+              <div className="flex-1">
+                <h3 className="font-space-grotesk text-base font-semibold text-foreground">
+                  {uploading ? "Parsing…" : "Upload Resume"}
+                </h3>
+                <p className="font-manrope mt-2 text-sm leading-relaxed text-muted-foreground">
+                  PDF or DOCX. AI extracts your data automatically so you skip
+                  the manual entry.
+                </p>
+              </div>
+
+              {/* Hover CTA */}
+              <div className="mt-6 flex items-center gap-1.5 font-manrope text-xs font-medium text-primary opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                Choose file
                 <svg
-                  width="28"
-                  height="28"
+                  width="13"
+                  height="13"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="1.5"
+                  strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-foreground/60 transition-colors group-hover:text-primary"
                 >
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
+                  <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </div>
-            )}
-            <div>
-              <h3 className="font-space-grotesk text-sm font-semibold text-foreground">
-                {uploading ? "Parsing..." : "Upload Existing Resume"}
-              </h3>
-              <p className="font-manrope mt-1 text-xs text-muted-foreground">
-                PDF or DOCX. AI extracts your data automatically.
-              </p>
-            </div>
-          </button>
+            </button>
 
-          {/* Scratch card */}
-          <button
-            type="button"
-            onClick={handleScratch}
-            className="group flex flex-col items-center gap-4 rounded-2xl border-2 border-border/70 bg-card/40 p-8 text-center backdrop-blur-sm transition-all hover:border-foreground/30 hover:bg-foreground/[0.02]"
-          >
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-foreground/[0.06] transition-colors group-hover:bg-foreground/10">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-foreground/60"
-              >
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="12" y1="11" x2="12" y2="17" />
-                <line x1="9" y1="14" x2="15" y2="14" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="font-space-grotesk text-sm font-semibold text-foreground">
-                Start from Scratch
-              </h3>
-              <p className="font-manrope mt-1 text-xs text-muted-foreground">
-                Fill in each section step by step with AI help.
+            {/* Scratch card */}
+            <button
+              type="button"
+              onClick={handleScratch}
+              className="group relative flex flex-col rounded-2xl border border-border/60 bg-card/60 p-7 text-left backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-foreground/30 hover:shadow-lg"
+            >
+              {/* Top row: icon + badge */}
+              <div className="mb-6 flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-foreground/[0.06] transition-colors duration-200 group-hover:bg-foreground/10">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-foreground/60"
+                  >
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="12" y1="11" x2="12" y2="17" />
+                    <line x1="9" y1="14" x2="15" y2="14" />
+                  </svg>
+                </div>
+                <span className="font-dm-mono rounded-full border border-border/50 bg-muted/60 px-2.5 py-1 text-[9px] uppercase tracking-widest text-muted-foreground">
+                  Manual
+                </span>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1">
+                <h3 className="font-space-grotesk text-base font-semibold text-foreground">
+                  Start from Scratch
+                </h3>
+                <p className="font-manrope mt-2 text-sm leading-relaxed text-muted-foreground">
+                  Fill in each section step by step with AI help along the way.
+                </p>
+              </div>
+
+              {/* Hover CTA */}
+              <div className="mt-6 flex items-center gap-1.5 font-manrope text-xs font-medium text-foreground/60 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                Get started
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </div>
+            </button>
+          </motion.div>
+
+          {/* Error */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-5 rounded-xl border border-red-200/50 bg-red-50/50 px-4 py-3 text-center dark:border-red-900/30 dark:bg-red-950/20"
+            >
+              <p className="font-manrope text-xs text-red-600 dark:text-red-400">
+                {error}
               </p>
-            </div>
-          </button>
+            </motion.div>
+          )}
         </motion.div>
 
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-5 rounded-xl border border-red-200/50 bg-red-50/50 px-4 py-3 text-center dark:border-red-900/30 dark:bg-red-950/20"
-          >
-            <p className="font-manrope text-xs text-red-600 dark:text-red-400">
-              {error}
-            </p>
-          </motion.div>
-        )}
-      </motion.div>
-
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".pdf,.docx,.doc"
-        onChange={handleFileChange}
-        className="hidden"
-      />
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".pdf,.docx,.doc"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
     </div>
   );
 }

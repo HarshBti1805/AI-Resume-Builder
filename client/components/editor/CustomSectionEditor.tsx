@@ -47,8 +47,11 @@ export function CustomSectionEditor() {
           setCustomSections(next);
           return next;
         });
-        setSectionOrder((prev) => (prev.includes(newId) ? prev : [...prev, newId]));
-        const nextOrder = useResumeStore.getState().sectionOrder ?? [];
+        const currentOrder = useResumeStore.getState().sectionOrder ?? [];
+        const nextOrder = currentOrder.includes(newId)
+          ? currentOrder
+          : [...currentOrder, newId];
+        setSectionOrder(nextOrder);
         fetch(`${API_BASE}/resume/${resumeId}/sections/order`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

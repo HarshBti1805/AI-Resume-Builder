@@ -32,7 +32,7 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 ┌──────────────────────────────────────────────────────────────┐
 │            EXPRESS.JS + TYPESCRIPT — MODULAR MONOLITH        │
 │                                                              │
-│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │ 
+│  ┌────────────┐  ┌─────────────┐  ┌────────────────────────┐ │
 │  │ Auth Module│  │Resume Module│  │    AI Module           │ │
 │  │  - OTP     │  │  - CRUD     │  │  - Content Gen (OpenAI)│ │
 │  │  - JWT     │  │  - Templates│  │  - Summary / Bullets   │ │
@@ -68,7 +68,7 @@ Students in the university lack standardized, ATS-friendly resume templates. Thi
 | Backend       | Express.js + TypeScript      | Type safety, better DX, catch errors early  |
 | Database      | PostgreSQL 15+               | Relational integrity, structured data       |
 | ORM           | Prisma                       | Type-safe queries, auto migrations, studio  |
-| Cache/Session | Redis                        | OTP storage, rate limiting, session cache   |
+| Cache/Session | Redis                        | OTP storage, rate limiting (session is cookie-based JWT; Redis is not used for session storage) |
 | File Storage  | AWS S3 / MinIO (self-hosted) | Profile photos, generated PDFs              |
 | AI            | OpenAI API (GPT-4o-mini)     | Content generation, ATS analysis            |
 | PDF Gen       | Puppeteer                    | Reliable HTML-to-PDF conversion             |
@@ -151,7 +151,7 @@ import { Request, Response, NextFunction } from "express";
 export type AsyncHandler = (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => Promise<void>;
 
 // API response shape
@@ -219,8 +219,8 @@ Student                  Frontend                Backend                Redis   
 | Email Domain Validation  | Only `@chitkara.edu.in` emails accepted               |
 | OTP Brute-force          | Max 3 attempts per OTP; lockout 15 min after failure  |
 | OTP Rate Limiting        | Max 3 OTP requests per email per hour (Redis counter) |
-| JWT Access Token         | Short-lived (15 min), stored in httpOnly cookie       |
-| JWT Refresh Token        | Long-lived (7 days), stored in httpOnly secure cookie |
+| JWT Access Token         | 24h TTL, stored in httpOnly cookie       |
+| JWT Refresh Token        | 7 days, stored in httpOnly secure cookie |
 | CSRF Protection          | SameSite=Strict cookie attribute                      |
 | Helmet.js                | Security headers (XSS, HSTS, etc.)                    |
 | Input Sanitization       | `express-validator` + Prisma parameterized queries    |
@@ -576,7 +576,11 @@ const updated = await prisma.resume.updateMany({
 });
 
 if (updated.count === 0) {
-  throw new AppError("Resume was modified. Please refresh.", 409, "VERSION_CONFLICT");
+  throw new AppError(
+    "Resume was modified. Please refresh.",
+    409,
+    "VERSION_CONFLICT",
+  );
 }
 ```
 
@@ -585,17 +589,19 @@ if (updated.count === 0) {
 ```javascript
 // ecosystem.config.js (PM2)
 module.exports = {
-  apps: [{
-    name: "chitkaracv-api",
-    script: "dist/server.js",
-    instances: "max",
-    exec_mode: "cluster",
-    max_memory_restart: "500M",
-    env: { NODE_ENV: "production" },
-    autorestart: true,
-    max_restarts: 10,
-    restart_delay: 1000,
-  }],
+  apps: [
+    {
+      name: "chitkaracv-api",
+      script: "dist/server.js",
+      instances: "max",
+      exec_mode: "cluster",
+      max_memory_restart: "500M",
+      env: { NODE_ENV: "production" },
+      autorestart: true,
+      max_restarts: 10,
+      restart_delay: 1000,
+    },
+  ],
 };
 ```
 
@@ -649,18 +655,18 @@ app.get("/health", async (_req: Request, res: Response) => {
 │  └────────────────────────────────────────────────────┘    │
 │                                                            │
 │  ┌─ LAYER 3: Authentication ──────────────────────────┐    │
-│  │  • JWT access tokens (15 min TTL, httpOnly cookie) │    │ 
+│  │  • JWT access tokens (24h TTL, httpOnly cookie) │    │
 │  │  • Refresh tokens (7 day TTL, httpOnly, Secure)    │    │
 │  │  • OTP hashed with bcrypt before storage           │    │
 │  │  • Brute-force protection (3 attempts, 15 min lock)│    │
 │  └────────────────────────────────────────────────────┘    │
 │                                                            │
-│  ┌─ LAYER 4: Data ────────────────────────────────────┐    │ 
+│  ┌─ LAYER 4: Data ────────────────────────────────────┐    │
 │  │  • PostgreSQL with SSL connections                 │    │
 │  │  • User can only access own resume (userId check)  │    │
 │  │  • Prisma: no raw queries, parameterized by default│    │
 │  │  • Cascade deletes (user deletion cleans all data) │    │
-│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │    │ 
+│  │  • S3 pre-signed URLs for photo access (1hr TTL)   │    │
 │  │  • No PII in logs (Winston sanitized transport)    │    │
 │  │  • Environment secrets in .env (never committed)   │    │
 │  └────────────────────────────────────────────────────┘    │
@@ -679,20 +685,26 @@ export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   keyGenerator: (req) => req.body.email || req.ip || "unknown",
-  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redis.call(...args),
+  }),
 });
 
 export const aiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
   keyGenerator: (req) => req.user?.id || req.ip || "unknown",
-  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redis.call(...args),
+  }),
 });
 
 export const generalLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 100,
-  store: new RedisStore({ sendCommand: (...args: string[]) => redis.call(...args) }),
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redis.call(...args),
+  }),
 });
 ```
 
@@ -781,7 +793,7 @@ const browserPool: Pool<Browser> = createPool(
     max: 5,
     min: 1,
     idleTimeoutMillis: 60000,
-  }
+  },
 );
 
 export default browserPool;
@@ -806,7 +818,9 @@ interface ResumeDataForAI {
   internships: { role: string; company: string }[];
 }
 
-export const generateSummary = async (resumeData: ResumeDataForAI): Promise<string> => {
+export const generateSummary = async (
+  resumeData: ResumeDataForAI,
+): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -831,7 +845,10 @@ export const generateSummary = async (resumeData: ResumeDataForAI): Promise<stri
   return response.choices[0].message.content ?? "";
 };
 
-export const enhanceBullet = async (rawText: string, context: string): Promise<string> => {
+export const enhanceBullet = async (
+  rawText: string,
+  context: string,
+): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -871,7 +888,9 @@ interface ResumeDataForAts {
   projects: { title: string; description: string }[];
 }
 
-export const atsCheck = async (resumeData: ResumeDataForAts): Promise<AtsResult> => {
+export const atsCheck = async (
+  resumeData: ResumeDataForAts,
+): Promise<AtsResult> => {
   const result: AtsResult = { total: 0, max: 100, issues: [], suggestions: [] };
 
   // ── Rule-based checks (40 points, instant) ──
@@ -879,7 +898,8 @@ export const atsCheck = async (resumeData: ResumeDataForAts): Promise<AtsResult>
   if (!resumeData.phone) result.issues.push("Missing phone number");
   if (!resumeData.skills.length) result.issues.push("No skills listed");
   if (!resumeData.summary) result.issues.push("No professional summary");
-  if (resumeData.projects.length < 2) result.suggestions.push("Add more projects (minimum 2)");
+  if (resumeData.projects.length < 2)
+    result.suggestions.push("Add more projects (minimum 2)");
 
   const sections = ["fullName", "cgpa", "skills", "summary"] as const;
   const filled = sections.filter((s) => {
@@ -894,7 +914,8 @@ export const atsCheck = async (resumeData: ResumeDataForAts): Promise<AtsResult>
     messages: [
       {
         role: "system",
-        content: "You are an ATS compatibility analyzer. Return ONLY valid JSON.",
+        content:
+          "You are an ATS compatibility analyzer. Return ONLY valid JSON.",
       },
       {
         role: "user",
@@ -908,7 +929,9 @@ export const atsCheck = async (resumeData: ResumeDataForAts): Promise<AtsResult>
     temperature: 0.3,
   });
 
-  const aiResult: AiAtsAnalysis = JSON.parse(response.choices[0].message.content ?? "{}");
+  const aiResult: AiAtsAnalysis = JSON.parse(
+    response.choices[0].message.content ?? "{}",
+  );
   result.total += aiResult.score;
   result.issues.push(...aiResult.issues);
   result.suggestions.push(...aiResult.suggestions);
@@ -1030,13 +1053,13 @@ const logger = winston.createLogger({
   level: process.env.NODE_ENV === "production" ? "info" : "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
-    winston.format.json()
+    winston.format.json(),
   ),
   transports: [
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.simple()
+        winston.format.simple(),
       ),
     }),
   ],
@@ -1051,7 +1074,11 @@ export default logger;
 import { Request, Response, NextFunction } from "express";
 import logger from "../utils/logger";
 
-export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
+export const requestLogger = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
   const start = Date.now();
   res.on("finish", () => {
     logger.info({
@@ -1113,7 +1140,7 @@ export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  _next: NextFunction
+  _next: NextFunction,
 ): void => {
   logger.error({
     error: err.message,
@@ -1122,7 +1149,10 @@ export const errorHandler = (
   });
 
   // Prisma: unique constraint violation
-  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+  if (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2002"
+  ) {
     res.status(409).json({
       success: false,
       error: { code: "DUPLICATE_ENTRY", message: "This record already exists" },
@@ -1131,7 +1161,10 @@ export const errorHandler = (
   }
 
   // Prisma: record not found
-  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+  if (
+    err instanceof Prisma.PrismaClientKnownRequestError &&
+    err.code === "P2025"
+  ) {
     res.status(404).json({
       success: false,
       error: { code: "NOT_FOUND", message: "Record not found" },
@@ -1301,7 +1334,7 @@ chitkara-cv/
 
 ## 17. Implementation Roadmap
 
-**Current state:** The 7 improvements described in **IMPROVEMENTS.md** have been implemented: template selection before form, live side-by-side preview, template switching during form, IDE-like editing room (section reorder, style controls, custom sections), extended AI (improve bullet, add keywords, generate bullets, refine resume), resume upload & parse, bullet-point project/experience descriptions, categorized skills, hobbies with descriptions, and enhanced achievements. The user flow is: **Auth (login → OTP verify) → Start page (`/start` — upload resume or start from scratch) → Template Select → Multi-Step Form (with live preview) → Editing Room → Preview / Download**. After successful OTP verification, users are redirected to `/start` so they see the start page immediately.
+**Current state:** The 7 improvements described in **IMPROVEMENTS.md** have been implemented: template selection before form, live side-by-side preview, template switching during form, IDE-like editing room (section reorder, style controls, custom sections), extended AI (improve bullet, add keywords, generate bullets, refine resume), resume upload & parse, bullet-point project/experience descriptions, categorized skills, hobbies with descriptions, and enhanced achievements. The user flow is: **Auth (login → OTP verify) → Start page (`/start` — upload resume or start from scratch) → Template Select → Multi-Step Form (with live preview) → Editing Room → Preview / Download**. After successful OTP verification, users are redirected to `/start` so they see the start page immediately. **Session:** Access token (and cookie) TTL is 24h, refresh token 7d; Redis is used for OTP and rate limiting only, not session storage. **UI:** Start page shows “Signed in as …” and a **Log out** button when authenticated; editor, preview, template-select, and form pages use a consistent top navbar (back link, page label, theme toggle) so the theme toggle does not overlap content.
 
 ### Phase 1 — Foundation (Week 1-2)
 
