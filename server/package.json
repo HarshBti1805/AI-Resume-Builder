@@ -6,8 +6,6 @@
     "dev": "node node_modules/ts-node-dev/lib/bin.js --respawn --transpile-only src/server.ts",
     "build": "tsc && npx prisma generate",
     "start": "node dist/server.js",
-    "test:load": "npx --yes artillery@latest run config.yml",
-    "test:stress": "npx --yes artillery@latest run config.stress.yml",
     "prisma:generate": "npx prisma generate",
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:studio": "npx prisma studio"
