@@ -68,9 +68,10 @@ next-env.d.ts
 .cache/
 
 Obsidian.md
-.cursor/
+test.js
 
-
-test.js 
+# Private planning docs/folders
+IMPROVEMENTS
 IMPROVEMENTS.md
-PROJECT_PLAN.md 
+PROJECT_PLAN
+PROJECT_PLAN.md
