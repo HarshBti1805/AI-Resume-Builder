@@ -288,23 +288,23 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 
 ### Resume (Protected)
 
-| Method | Endpoint                               | Description                         |
-| ------ | -------------------------------------- | ----------------------------------- |
-| POST   | `/api/resume`                          | Create new resume                   |
-| GET    | `/api/resume/:id`                      | Get resume data                     |
-| GET    | `/api/resume/me`                       | Get current user's resume(s)        |
-| PATCH  | `/api/resume/:id/step/:step`           | Save a form step                    |
-| PUT    | `/api/resume/:id/template`             | Set selected template               |
-| PUT    | `/api/resume/:id/sections/order`       | Reorder sections (editor)           |
-| PUT    | `/api/resume/:id/styles`               | Update font/color/spacing           |
-| POST   | `/api/resume/:id/sections/custom`      | Add custom section                  |
-| PATCH  | `/api/resume/:id/sections/custom/:sId` | Update custom section               |
-| DELETE | `/api/resume/:id/sections/custom/:sId` | Delete custom section               |
-| GET    | `/api/resume/:id/preview`              | Get HTML preview                    |
-| POST   | `/api/resume/:id/preview-live`         | Live preview (client payload)       |
-| POST   | `/api/resume/:id/download`             | Export (PDF/DOCX) with optional `fileName` (default: "{Student Name} Resume")             |
-| POST   | `/api/resume/upload-parse`             | Upload PDF/DOCX, return parsed data |
-| DELETE | `/api/resume/:id`                      | Delete resume                       |
+| Method | Endpoint                               | Description                                                                   |
+| ------ | -------------------------------------- | ----------------------------------------------------------------------------- |
+| POST   | `/api/resume`                          | Create new resume                                                             |
+| GET    | `/api/resume/:id`                      | Get resume data                                                               |
+| GET    | `/api/resume/me`                       | Get current user's resume(s)                                                  |
+| PATCH  | `/api/resume/:id/step/:step`           | Save a form step                                                              |
+| PUT    | `/api/resume/:id/template`             | Set selected template                                                         |
+| PUT    | `/api/resume/:id/sections/order`       | Reorder sections (editor)                                                     |
+| PUT    | `/api/resume/:id/styles`               | Update font/color/spacing                                                     |
+| POST   | `/api/resume/:id/sections/custom`      | Add custom section                                                            |
+| PATCH  | `/api/resume/:id/sections/custom/:sId` | Update custom section                                                         |
+| DELETE | `/api/resume/:id/sections/custom/:sId` | Delete custom section                                                         |
+| GET    | `/api/resume/:id/preview`              | Get HTML preview                                                              |
+| POST   | `/api/resume/:id/preview-live`         | Live preview (client payload)                                                 |
+| POST   | `/api/resume/:id/download`             | Export (PDF/DOCX) with optional `fileName` (default: "{Student Name} Resume") |
+| POST   | `/api/resume/upload-parse`             | Upload PDF/DOCX, return parsed data                                           |
+| DELETE | `/api/resume/:id`                      | Delete resume                                                                 |
 
 ### AI (Protected + Rate Limited)
 
@@ -495,4 +495,4 @@ This project is built for internal university use. All rights reserved.
 
 ## Team
 
-Built by students of **Chitkara University** as a prototype to standardize resume quality across the campus.
+Built by **Harsh** for students at Chitkara University
