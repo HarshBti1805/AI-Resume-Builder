@@ -24,41 +24,96 @@ export const generateSummary = async (
 ): Promise<void> => {
   try {
     const userId = req.user!.id;
-    const { resumeId } = req.body;
+    const { resumeId, data } = req.body as {
+      resumeId?: string;
+      data?: {
+        stream?: string;
+        university?: string;
+        skills?: string[];
+        projects?: { title: string }[];
+        internships?: { role: string; company: string }[];
+      };
+    };
 
-    if (!resumeId) throw new AppError("resumeId is required", 400, "MISSING_FIELD");
+    if (!resumeId && !data) {
+      throw new AppError(
+        "resumeId is required (or provide data)",
+        400,
+        "MISSING_FIELD"
+      );
+    }
 
-    const resume = await prisma.resume.findFirst({
-      where: { id: resumeId, userId },
-      include: { projects: true, internships: true },
-    });
+    // Only hit DB if we need it for defaults / persistence.
+    // When we don't provide `data`, we still need relations for summary generation.
+    const resume = resumeId
+      ? await prisma.resume.findFirst({
+          where: { id: resumeId, userId },
+          include: { projects: true, internships: true },
+        })
+      : null;
 
-    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+    if (resumeId && !resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
 
-    // Cache key tied to resume version — invalidates automatically on edits
-    const cacheKey = `ai:summary:${resumeId}:v${resume.version}`;
+    const liveData = {
+      stream: data?.stream ?? (resume?.stream ?? ""),
+      university: data?.university ?? (resume?.university ?? ""),
+      skills: Array.isArray(data?.skills)
+        ? data!.skills.filter((s) => typeof s === "string")
+        : (resume?.skills ?? []),
+      projects: Array.isArray(data?.projects)
+        ? data!.projects
+            .filter((p) => p && typeof p.title === "string")
+            .map((p) => ({ title: p.title }))
+        : (resume?.projects ?? []).map((p) => ({ title: p.title })),
+      internships: Array.isArray(data?.internships)
+        ? data!.internships
+            .filter(
+              (i) =>
+                i &&
+                typeof i.role === "string" &&
+                typeof i.company === "string"
+            )
+            .map((i) => ({ role: i.role, company: i.company }))
+        : (resume?.internships ?? []).map((i) => ({
+            role: i.role,
+            company: i.company,
+          })),
+    };
+
+    // If live data was provided (from the UI), cache by the input hash so
+    // "Generate with AI" reflects your current unsaved edits.
+    // Otherwise, fall back to the old "resume.version" caching scheme.
+    let cacheKey: string;
+    if (data) {
+      const hash = crypto
+        .createHash("sha256")
+        .update(JSON.stringify(liveData))
+        .digest("hex")
+        .slice(0, 20);
+      cacheKey = `ai:summary:${resumeId ?? "live"}:hash:${hash}`;
+    } else {
+      // @ts-expect-error - resume is defined when data is not provided
+      cacheKey = `ai:summary:${resumeId}:v${resume.version}`;
+    }
+
     const cached = await redis.get(cacheKey);
     if (cached) {
       res.json({ success: true, data: { summary: cached } });
       return;
     }
 
-    const summary = await generateSummaryService({
-      stream: resume.stream ?? "",
-      university: resume.university ?? "",
-      skills: resume.skills,
-      projects: resume.projects,
-      internships: resume.internships,
-    });
+    const summary = await generateSummaryService(liveData);
 
     // Cache for 1 hour
     await redis.setex(cacheKey, 3600, summary);
 
-    // Persist to DB so it survives cache eviction
-    await prisma.resume.update({
-      where: { id: resumeId },
-      data: { aiGeneratedSummary: summary },
-    });
+    // Persist to DB so it survives cache eviction.
+    if (resumeId) {
+      await prisma.resume.update({
+        where: { id: resumeId },
+        data: { aiGeneratedSummary: summary },
+      });
+    }
 
     res.json({ success: true, data: { summary } });
   } catch (err) {

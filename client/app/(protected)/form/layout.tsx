@@ -41,6 +41,12 @@ export default function FormLayout({
 
     const run = async () => {
       await new Promise((r) => setTimeout(r, 50));
+      // If a save is in-flight (e.g. autosave from Academic page),
+      // wait briefly so `loadResume()` doesn't overwrite the user's
+      // just-typed academic fields with stale DB values.
+      if (useResumeStore.getState().isSaving) {
+        await new Promise((r) => setTimeout(r, 1200));
+      }
       const currentResumeId = useResumeStore.getState().resumeId;
 
       if (currentResumeId) {

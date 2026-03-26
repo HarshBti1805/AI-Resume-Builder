@@ -119,8 +119,9 @@ function AtsScoreRing({ score, max }: { score: number; max: number }) {
    ───────────────────────────────────────────── */
 export default function PreviewPage() {
   const router = useRouter();
-  const { resumeId, selectedTemplate, setTemplate, loadResume } =
+  const { resumeId, selectedTemplate, setTemplate, loadResume, step1 } =
     useResumeStore();
+  const { isSaving } = useResumeStore();
 
   // States
   const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
@@ -135,12 +136,27 @@ export default function PreviewPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
+  const [downloadFileBase, setDownloadFileBase] = useState<string>("");
+  const didInitDownloadBaseRef = useRef(false);
+
   const [showAtsPanel, setShowAtsPanel] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const apiBase =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
+  // Initialize the suggested filename once (per resume).
+  useEffect(() => {
+    if (!resumeId) return;
+    if (didInitDownloadBaseRef.current) return;
+    const suggested = step1?.fullName?.trim()
+      ? `${step1.fullName.trim()} Resume`
+      : "";
+    if (!suggested) return;
+    setDownloadFileBase(suggested);
+    didInitDownloadBaseRef.current = true;
+  }, [resumeId, step1?.fullName]);
 
   /* ─── Fetch HTML preview ─── */
   const fetchPreview = useCallback(async () => {
@@ -176,10 +192,10 @@ export default function PreviewPage() {
 
   // Keep store in sync with API when viewing preview (e.g. after refresh)
   useEffect(() => {
-    if (resumeId) {
-      loadResume(resumeId).catch(() => {});
-    }
-  }, [resumeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!resumeId) return;
+    if (isSaving) return;
+    loadResume(resumeId).catch(() => {});
+  }, [resumeId, isSaving]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTemplateChange = async (template: TemplateType) => {
     if (!resumeId) return;
@@ -246,7 +262,12 @@ export default function PreviewPage() {
     try {
       const res = await fetch(`${apiBase}/resume/${resumeId}/download`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
+        body: JSON.stringify({
+          format: "pdf",
+          fileName: downloadFileBase,
+        }),
       });
 
       if (!res.ok) {
@@ -259,7 +280,10 @@ export default function PreviewPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ChitkaraCV-Resume.pdf`;
+      const base =
+        downloadFileBase?.trim().replace(/\.(pdf|docx)$/i, "") ||
+        "Resume";
+      a.download = `${base}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -325,7 +349,7 @@ export default function PreviewPage() {
             </h1>
             <p className="font-manrope mx-auto mt-3 max-w-lg text-sm leading-relaxed text-muted-foreground">
               Review your resume below. Run an ATS check to find improvements,
-              then download the final PDF.
+              then download the final document.
             </p>
           </motion.div>
 
@@ -409,36 +433,47 @@ export default function PreviewPage() {
                   )}
                 </button>
 
-                <button
-                  onClick={handleDownload}
-                  disabled={isDownloading || isLoadingPreview}
-                  className="font-space-grotesk inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-xs font-medium text-background shadow-md transition-all hover:opacity-90 disabled:opacity-50"
-                >
-                  {isDownloading ? (
-                    <>
-                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-background/30 border-t-background" />
-                      Generating…
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                      Download PDF
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={downloadFileBase}
+                    onChange={(e) => setDownloadFileBase(e.target.value)}
+                    placeholder="Download filename"
+                    disabled={isDownloading || isLoadingPreview}
+                    className="font-manrope w-44 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-foreground outline-none transition-all placeholder:text-muted-foreground/50 focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+                  />
+
+                  <button
+                    onClick={handleDownload}
+                    disabled={isDownloading || isLoadingPreview}
+                    className="font-space-grotesk inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-xs font-medium text-background shadow-md transition-all hover:opacity-90 disabled:opacity-50"
+                  >
+                    {isDownloading ? (
+                      <>
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-background/30 border-t-background" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="7 10 12 15 17 10" />
+                          <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download PDF
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

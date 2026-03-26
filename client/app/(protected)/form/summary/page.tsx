@@ -49,17 +49,36 @@ export default function SummaryPage() {
   };
 
   const handleGenerateSummary = async () => {
-    const { resumeId } = useResumeStore.getState();
+    const { resumeId, step2, step3, step4 } = useResumeStore.getState();
     if (!resumeId) return;
     setIsGenerating(true);
     try {
       const API_BASE =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
+
+      // Use live (unsaved) form state so AI generation reflects current edits.
+      const skills =
+        (step3.skillCategories ?? []).flatMap((c) => c.skills ?? []);
+      const projects = (step3.projects ?? []).map((p) => ({ title: p.title }));
+      const internships = (step4.internships ?? []).map((i) => ({
+        role: i.role,
+        company: i.company,
+      }));
+
       const res = await fetch(`${API_BASE}/ai/generate-summary`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ resumeId }),
+        body: JSON.stringify({
+          resumeId,
+          data: {
+            stream: step2.stream,
+            university: step2.university,
+            skills,
+            projects,
+            internships,
+          },
+        }),
       });
       const data = await res.json();
       if (data.success && data.data?.summary) {

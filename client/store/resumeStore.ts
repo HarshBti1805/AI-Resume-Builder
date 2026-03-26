@@ -475,6 +475,7 @@ export const useResumeStore = create<ResumeStore>()(
             const msg =
               (err as { response?: { data?: { error?: { message?: string } } } })
                 ?.response?.data?.error?.message ?? "Save failed";
+            console.log("saveStep2 action: error", { msg, err });
             set({ isSaving: false, saveError: msg });
             throw err;
           }
@@ -485,11 +486,30 @@ export const useResumeStore = create<ResumeStore>()(
           if (!resumeId) return;
           set({ isSaving: true, saveError: null });
           try {
+            console.log("saveStep2 action: PATCH /resume/:id/step/2", {
+              resumeId,
+              schoolName10th: (step2 as any).schoolName10th,
+              schoolName12th: (step2 as any).schoolName12th,
+            });
             await api.patch(`/resume/${resumeId}/step/2`, {
               ...step2,
               version,
               currentStep: Math.max(2, currentStep),
             });
+            console.log("saveStep2 action: success", { resumeId });
+
+            // Verify DB state immediately (debugging the schoolName field issue).
+            try {
+              const rRes = await api.get(`/resume/${resumeId}`);
+              const r = rRes.data?.data?.resume;
+              console.log("saveStep2 action: DB after save", {
+                resumeId,
+                schoolName10th: r?.schoolName10th ?? null,
+                schoolName12th: r?.schoolName12th ?? null,
+              });
+            } catch (e) {
+              console.log("saveStep2 action: DB verify failed", e);
+            }
             set((s) => ({
               isSaving: false,
               lastSaved: new Date(),

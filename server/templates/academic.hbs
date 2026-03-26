@@ -36,7 +36,7 @@
   }
 
   /* ── Education rows ── */
-  .edu-row { margin-bottom: 10px; }
+  .edu-row { margin-bottom: 4px; }
   .edu-inst { font-weight: bold; font-size: 10.5pt; }
   .edu-degree { font-size: 10pt; font-style: italic; color: #333; }
   .edu-meta { font-size: 9pt; color: #555; margin-top: 1px; }
@@ -107,7 +107,7 @@
     <div class="edu-degree">{{../stream}}{{#ifVal ../branch}}, {{../branch}}{{/ifVal}}</div>
     {{#ifVal ../cgpa}}<div class="edu-meta">CGPA: {{../cgpa}}</div>{{/ifVal}}
   </div>
-  {{#if ../showMarks12th}}
+  {{#unless (eq ../showMarks12th false)}}
     {{#ifVal ../marks12th}}
     <div class="edu-row">
       <div class="edu-inst">Senior Secondary (12th) <span class="edu-year">{{../marks12th}}%</span></div>
@@ -119,8 +119,8 @@
       </div>
     </div>
     {{/ifVal}}
-  {{/if}}
-  {{#if ../showMarks10th}}
+  {{/unless}}
+  {{#unless (eq ../showMarks10th false)}}
     {{#ifVal ../marks10th}}
     <div class="edu-row">
       <div class="edu-inst">Secondary (10th) <span class="edu-year">{{../marks10th}}%</span></div>
@@ -132,10 +132,10 @@
       </div>
     </div>
     {{/ifVal}}
-  {{/if}}
-  {{#if ../showCoursework}}{{#ifNotEmpty ../coursework}}
-  <div class="edu-meta" style="margin-top:6px;">Relevant Coursework: {{join ../coursework ", "}}</div>
-  {{/ifNotEmpty}}{{/if}}
+    {{/unless}}
+  {{#unless (eq ../showCoursework false)}}{{#ifNotEmpty ../coursework}}
+  <div class="edu-meta" style="margin-top:3px;">Relevant Coursework: {{join ../coursework ", "}}</div>
+  {{/ifNotEmpty}}{{/unless}}
 </div>
 {{/ifVal}}
 {{/if}}

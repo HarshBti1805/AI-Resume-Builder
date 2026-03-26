@@ -149,7 +149,7 @@
       {{#ifVal ../cgpa}} · CGPA {{../cgpa}}{{/ifVal}}
     </div>
   </div>
-  {{#if ../showMarks12th}}
+  {{#unless (eq ../showMarks12th false)}}
     {{#ifVal ../marks12th}}
     <div class="row">
       <div class="row-header">
@@ -158,8 +158,8 @@
       </div>
     </div>
     {{/ifVal}}
-  {{/if}}
-  {{#if ../showMarks10th}}
+  {{/unless}}
+  {{#unless (eq ../showMarks10th false)}}
     {{#ifVal ../marks10th}}
     <div class="row">
       <div class="row-header">
@@ -168,10 +168,10 @@
       </div>
     </div>
     {{/ifVal}}
-  {{/if}}
-  {{#if ../showCoursework}}
+  {{/unless}}
+  {{#unless (eq ../showCoursework false)}}
     {{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;"><strong>Coursework:</strong> {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
-  {{/if}}
+  {{/unless}}
 </div>
 {{/ifVal}}
 {{/if}}

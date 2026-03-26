@@ -235,6 +235,18 @@ export const saveStep2 = async (
       showMarks12th,
     } = data;
 
+    // Console log is guaranteed to show up even if winston config changes.
+    console.log(
+      `saveStep2 academic school names: resumeId=${id} schoolName10th=${
+        schoolName10th ?? "null"
+      } schoolName12th=${schoolName12th ?? "null"}`
+    );
+    logger.info(
+      `saveStep2 academic school names: resumeId=${id} schoolName10th=${
+        schoolName10th ?? "null"
+      } schoolName12th=${schoolName12th ?? "null"}`
+    );
+
     const updated = await prisma.resume.updateMany({
       where: { id, userId, version: version ?? undefined },
       data: {

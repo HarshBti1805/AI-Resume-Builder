@@ -516,7 +516,7 @@ PATCH  /api/resume/:id/sections/custom/:sId → Update custom section
 DELETE /api/resume/:id/sections/custom/:sId → Delete custom section
 GET    /api/resume/:id/preview    → Get rendered HTML preview
 POST   /api/resume/:id/preview-live → Live preview (Zustand payload)
-POST   /api/resume/:id/download   → Generate & download PDF
+POST   /api/resume/:id/download   → Generate & download (PDF/DOCX) with optional `fileName` (default: `{Student Name} Resume`)
 POST   /api/resume/upload-parse   → Upload PDF/DOCX, return parsed data (pre-fill)
 DELETE /api/resume/:id            → Delete resume
 ```
@@ -754,7 +754,7 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?schema=public&connection_limit=
 
 ---
 
-## 11. PDF Generation Pipeline
+## 11. Resume Export Pipeline
 
 ```
 Resume Data (from PostgreSQL via Prisma)
@@ -772,11 +772,11 @@ Puppeteer loads HTML
        ├── Sets A4 page size
        ├── Waits for fonts/images to load
        │
-       ▼
-page.pdf({ format: 'A4', printBackground: true })
+       ├── Generate PDF: page.pdf({ format: 'A4', printBackground: true })
        │
+       └── Generate DOCX (DOCX converter / server-side renderer)
        ▼
-Upload to S3 + return download URL
+Upload to S3 + return download URL (use requested filename or default `{Student Name} Resume`)
 ```
 
 ### Puppeteer Pool (Avoid Cold Starts)

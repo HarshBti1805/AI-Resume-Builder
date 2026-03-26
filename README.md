@@ -24,7 +24,7 @@ Students in our university have no fixed resume templates, leading to inconsiste
 - **Categorized Skills** — Organize skills by category (e.g. Languages, Frameworks, AI/ML)
 - **AI Everywhere** — Summary generation, per-bullet improve/add keywords, generate bullets from description, full resume refinement, ATS check
 - **ATS Checker** — Hybrid rule-based + AI scoring with actionable suggestions
-- **PDF Download** — Server-side PDF generation via Puppeteer
+- **Resume Export** — Server-side PDF/DOCX export via Puppeteer (PDF) + server DOCX conversion, with configurable filename (default: "{Student Name} Resume")
 - **Auto-Save** — Debounced saves so students never lose progress
 - **Profile Photo Upload** — Optional image support
 - **Flexible Live/Repo URLs** — templates render Live only, Repo only, or both per entry
@@ -302,7 +302,7 @@ This starts the frontend, backend, PostgreSQL, and Redis containers together.
 | DELETE | `/api/resume/:id/sections/custom/:sId` | Delete custom section               |
 | GET    | `/api/resume/:id/preview`              | Get HTML preview                    |
 | POST   | `/api/resume/:id/preview-live`         | Live preview (client payload)       |
-| POST   | `/api/resume/:id/download`             | Generate & download PDF             |
+| POST   | `/api/resume/:id/download`             | Export (PDF/DOCX) with optional `fileName` (default: "{Student Name} Resume")             |
 | POST   | `/api/resume/upload-parse`             | Upload PDF/DOCX, return parsed data |
 | DELETE | `/api/resume/:id`                      | Delete resume                       |
 

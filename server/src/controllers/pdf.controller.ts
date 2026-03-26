@@ -4,14 +4,21 @@ import { AppError } from "../utils/AppError";
 import { getParam } from "../types";
 import { renderTemplate } from "../services/template.service";
 import { generatePdf } from "../services/pdf.service";
+import { generateDocx } from "../services/docx.service";
 import logger from "../utils/logger";
 
 // ─────────────────────────────────────────────
 // POST /api/resume/:id/download
-// Renders template → Puppeteer PDF → streams to client
+// Renders template → (PDF|DOCX) → streams to client
 // ─────────────────────────────────────────────
 
-export const downloadPdf = async (
+const sanitizeFileBase = (value: string): string => {
+  const trimmed = (value ?? "").trim();
+  const safe = trimmed.replace(/[^a-z0-9\s_-]/gi, "_").replace(/\s+/g, " ").trim();
+  return safe.length > 0 ? safe : "resume";
+};
+
+export const downloadResume = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -19,6 +26,10 @@ export const downloadPdf = async (
   try {
     const userId = req.user!.id;
     const id = getParam(req, "id");
+    const { format, fileName } = (req.body ?? {}) as {
+      format?: "pdf" | "docx" | string;
+      fileName?: string;
+    };
 
     const resume = await prisma.resume.findUnique({
       where: { id },
@@ -45,23 +56,44 @@ export const downloadPdf = async (
     if (resume.userId !== userId)
       throw new AppError("Not authorized", 403, "FORBIDDEN");
 
+    const outputFormat =
+      format && String(format).toLowerCase() === "docx" ? "docx" : "pdf";
+
     const templateName = resume.selectedTemplate ?? "CLASSIC";
     const html = await renderTemplate(templateName, resume);
-    const pdfBuffer = await generatePdf(html);
 
-    // Safe filename from student's name
-    const safeName = (resume.fullName ?? "resume")
-      .replace(/[^a-z0-9]/gi, "_")
-      .toLowerCase();
-    const filename = `${safeName}_resume.pdf`;
+    // Default: "{Student Name} Resume"
+    const defaultBase = `${resume.fullName ?? "Resume"} Resume`;
+    const base = sanitizeFileBase(fileName ? fileName : defaultBase);
 
-    logger.info("PDF generated", { userId, resumeId: id, template: templateName });
+    const filename = `${base}.${outputFormat}`;
+    const contentType =
+      outputFormat === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/pdf";
 
-    res.setHeader("Content-Type", "application/pdf");
+    let outBuffer: Buffer;
+    if (outputFormat === "docx") {
+      outBuffer = await generateDocx(html);
+    } else {
+      outBuffer = await generatePdf(html);
+    }
+
+    logger.info("Resume exported", {
+      userId,
+      resumeId: id,
+      template: templateName,
+      format: outputFormat,
+    });
+
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.setHeader("Content-Length", pdfBuffer.length);
-    res.send(pdfBuffer);
+    res.setHeader("Content-Length", outBuffer.length);
+    res.send(outBuffer);
   } catch (err) {
     next(err);
   }
 };
+
+// Backwards-compatible name (some older routes/components may still import it)
+export const downloadPdf = downloadResume;

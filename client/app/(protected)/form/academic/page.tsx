@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useResumeStore } from "@/store/resumeStore";
@@ -19,10 +19,48 @@ const item = {
 };
 
 export default function AcademicPage() {
-  const { step2, updateStep2 } = useResumeStore();
+  const { step2, updateStep2, saveStep2, resumeId, isSaving, loadResume } =
+    useResumeStore();
   const [courseInput, setCourseInput] = useState("");
 
+  const didEditRef = useRef(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(isSaving);
+
+  useEffect(() => {
+    isSavingRef.current = isSaving;
+  }, [isSaving]);
+
+  const saveStep2SafeOnce = async () => {
+    if (!resumeId) return;
+    // Snapshot so we can re-apply the user's current edits after a reload.
+    const snapshot = { ...step2 };
+    try {
+      // Helps confirm autosave trigger.
+      console.log("Academic autosave: calling saveStep2", {
+        schoolName10th: (snapshot as any).schoolName10th,
+        schoolName12th: (snapshot as any).schoolName12th,
+      });
+      await saveStep2();
+      return;
+    } catch {
+      // Best-effort recovery: reload to sync version, then re-apply edits and retry once.
+      try {
+        await loadResume(resumeId);
+        updateStep2(snapshot as any);
+        console.log("Academic autosave: retry after loadResume", {
+          schoolName10th: (snapshot as any).schoolName10th,
+          schoolName12th: (snapshot as any).schoolName12th,
+        });
+        await saveStep2();
+      } catch {
+        // Let FormLayout show the latest store saveError.
+      }
+    }
+  };
+
   const update = (field: keyof typeof step2, value: unknown) => {
+    didEditRef.current = true;
     updateStep2({ [field]: value } as any);
   };
 
@@ -35,6 +73,7 @@ export default function AcademicPage() {
   };
 
   const removeCourse = (course: string) => {
+    didEditRef.current = true;
     update("coursework", step2.coursework.filter((c) => c !== course));
   };
 
@@ -44,6 +83,54 @@ export default function AcademicPage() {
       addCourse();
     }
   };
+
+  // Persist academic details while typing.
+  // This keeps `/editor`, `/preview`, and downloads in sync with what the user sees.
+  useEffect(() => {
+    if (!resumeId) return;
+    if (!didEditRef.current) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      // Avoid overlapping saves; if one is running, skip this tick.
+      if (isSavingRef.current) return;
+      void saveStep2SafeOnce();
+    }, 1200);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    resumeId,
+    isSaving,
+    step2.university,
+    step2.stream,
+    step2.branch,
+    step2.batchStart,
+    step2.batchEnd,
+    step2.cgpa,
+    step2.marks12th,
+    step2.board12th,
+    step2.schoolName12th,
+    step2.marks10th,
+    step2.board10th,
+    step2.schoolName10th,
+    step2.coursework,
+    step2.showCoursework,
+    step2.showMarks10th,
+    step2.showMarks12th,
+  ]);
+
+  // Best-effort final save on navigation away.
+  useEffect(() => {
+    return () => {
+      if (!resumeId) return;
+      if (!didEditRef.current) return;
+      void saveStep2().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeId]);
 
   return (
     <motion.div variants={container} initial="hidden" animate="show">
@@ -219,6 +306,11 @@ export default function AcademicPage() {
                 value={step2.schoolName12th}
                 onChange={(e) => update("schoolName12th", e.target.value)}
                 placeholder="e.g. St. Joseph School"
+                onBlur={() => {
+                  if (!resumeId) return;
+                  if (!didEditRef.current) return;
+                  void saveStep2SafeOnce();
+                }}
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
@@ -276,6 +368,11 @@ export default function AcademicPage() {
                 value={step2.schoolName10th}
                 onChange={(e) => update("schoolName10th", e.target.value)}
                 placeholder="e.g. St. Joseph School"
+                onBlur={() => {
+                  if (!resumeId) return;
+                  if (!didEditRef.current) return;
+                  void saveStep2SafeOnce();
+                }}
                 className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>

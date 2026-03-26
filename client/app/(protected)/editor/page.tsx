@@ -31,6 +31,7 @@ export default function EditorPage() {
     updateStep4,
     updateStep5,
     saveAllSteps,
+    isSaving,
   } = useResumeStore();
 
   const [activeSection, setActiveSection] = useState("summary");
@@ -45,6 +46,9 @@ export default function EditorPage() {
       const currentResumeId = useResumeStore.getState().resumeId;
       if (currentResumeId) {
         try {
+          if (useResumeStore.getState().isSaving) {
+            await new Promise((r) => setTimeout(r, 1200));
+          }
           await loadResume(currentResumeId);
         } catch {
           await initResume();
@@ -58,7 +62,7 @@ export default function EditorPage() {
     return () => {
       cancelled = true;
     };
-  }, [loadResume, initResume]);
+  }, [loadResume, initResume, isSaving]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
