@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { FormNavLink } from "@/components/form/FormNavLink";
+import { isStep3Complete } from "@/lib/formStepGating";
 import type { Project, Bullet, SkillCategory } from "@/store/resumeStore";
 import { useResumeStore } from "@/store/resumeStore";
 
@@ -43,6 +45,14 @@ const emptyCategory = (): SkillCategory => ({
   skills: [],
 });
 
+const CUSTOM_CATEGORY = "__custom__";
+
+function categorySelectValue(name: string): string {
+  if (!name) return "";
+  if (DEFAULT_CATEGORIES.includes(name)) return name;
+  return CUSTOM_CATEGORY;
+}
+
 export default function SkillsPage() {
   const { step3, updateStep3 } = useResumeStore();
   const [techInputs, setTechInputs] = useState<Record<string, string>>({});
@@ -69,6 +79,7 @@ export default function SkillsPage() {
   const categories =
     step3.skillCategories.length > 0 ? step3.skillCategories : [emptyCategory()];
   const projects = step3.projects.length > 0 ? step3.projects : [emptyProject()];
+  const canContinue = isStep3Complete(step3);
 
   // ── Skill categories ──
   const addCategory = () => {
@@ -217,105 +228,156 @@ export default function SkillsPage() {
             Technical skills
           </h3>
           <p className="font-manrope mb-4 text-xs text-muted-foreground">
-            Organise skills by category (e.g. Languages, Frameworks). Press
-            Enter to add each skill.
+            Pick a category, then add skills one at a time (Enter or Add).
+            Use <span className="text-foreground/80">Custom category</span> for
+            anything not listed.
           </p>
 
           <div className="flex flex-col gap-4">
-            {categories.map((cat, catIndex) => (
-              <div
-                key={catIndex}
-                className="rounded-xl border border-border/60 bg-card/40 p-4 backdrop-blur-sm"
-              >
-                <div className="mb-3 flex items-center gap-2">
-                  <select
-                    value={cat.name}
-                    onChange={(e) => updateCategoryName(catIndex, e.target.value)}
-                    className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm font-medium text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option value="">Select category...</option>
-                    {DEFAULT_CATEGORIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                    {cat.name &&
-                      !DEFAULT_CATEGORIES.includes(cat.name) && (
-                        <option value={cat.name}>{cat.name}</option>
-                      )}
-                  </select>
-                  <input
-                    type="text"
-                    value={cat.name}
-                    onChange={(e) => updateCategoryName(catIndex, e.target.value)}
-                    placeholder="or type custom..."
-                    className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  {categories.length > 1 && (
+            {categories.map((cat, catIndex) => {
+              const sel = categorySelectValue(cat.name);
+              const showCustomName =
+                sel === CUSTOM_CATEGORY ||
+                (!!cat.name && !DEFAULT_CATEGORIES.includes(cat.name));
+
+              return (
+                <div
+                  key={cat.id ?? `skill-cat-${catIndex}`}
+                  className="rounded-xl border border-border/60 bg-card/40 p-4 shadow-sm backdrop-blur-sm sm:p-5"
+                >
+                  <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <label className="font-dm-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80">
+                        Category
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <select
+                          value={sel}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === CUSTOM_CATEGORY) {
+                              updateCategoryName(
+                                catIndex,
+                                DEFAULT_CATEGORIES.includes(cat.name)
+                                  ? ""
+                                  : cat.name
+                              );
+                            } else {
+                              updateCategoryName(catIndex, v);
+                            }
+                          }}
+                          className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm font-medium text-foreground outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 sm:max-w-xs"
+                        >
+                          <option value="">Select category…</option>
+                          {DEFAULT_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                          <option value={CUSTOM_CATEGORY}>
+                            Custom category…
+                          </option>
+                        </select>
+                        {showCustomName && (
+                          <input
+                            type="text"
+                            value={
+                              DEFAULT_CATEGORIES.includes(cat.name)
+                                ? ""
+                                : cat.name
+                            }
+                            onChange={(e) =>
+                              updateCategoryName(catIndex, e.target.value)
+                            }
+                            placeholder="Name your category"
+                            className="font-manrope min-w-0 flex-1 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    {categories.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeCategory(catIndex)}
+                        className="shrink-0 self-end font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500 sm:self-center"
+                      >
+                        Remove category
+                      </button>
+                    )}
+                  </div>
+
+                  <label className="mb-1.5 block font-dm-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80">
+                    Skills in{" "}
+                    <span className="text-foreground/90">
+                      {cat.name || "this category"}
+                    </span>
+                  </label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      value={skillInputs[catIndex] || ""}
+                      onChange={(e) =>
+                        setSkillInputs((prev) => ({
+                          ...prev,
+                          [catIndex]: e.target.value,
+                        }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          addSkillToCategory(catIndex);
+                        }
+                      }}
+                      placeholder="e.g. TypeScript, React, PostgreSQL…"
+                      className="font-manrope min-w-0 flex-1 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
                     <button
                       type="button"
-                      onClick={() => removeCategory(catIndex)}
-                      className="font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
+                      onClick={() => addSkillToCategory(catIndex)}
+                      className="h-10 shrink-0 rounded-xl bg-foreground/10 px-4 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15 sm:h-auto sm:self-stretch sm:py-2.5"
                     >
-                      Remove
+                      Add skill
                     </button>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={skillInputs[catIndex] || ""}
-                    onChange={(e) =>
-                      setSkillInputs((prev) => ({
-                        ...prev,
-                        [catIndex]: e.target.value,
-                      }))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addSkillToCategory(catIndex);
-                      }
-                    }}
-                    placeholder={`Add ${cat.name || "skills"}...`}
-                    className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => addSkillToCategory(catIndex)}
-                    className="rounded-lg bg-foreground/10 px-3 py-2 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
-                  >
-                    Add
-                  </button>
-                </div>
-
-                {cat.skills.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {cat.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-card/60 px-2.5 py-1 font-manrope text-xs text-foreground"
-                      >
-                        {skill}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            removeSkillFromCategory(catIndex, skill)
-                          }
-                          className="text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
                   </div>
-                )}
-              </div>
-            ))}
+
+                  <div
+                    className={`mt-3 min-h-[2.5rem] rounded-xl border border-dashed border-border/50 bg-muted/15 px-3 py-2.5 ${
+                      cat.skills.length === 0
+                        ? "flex items-center"
+                        : "flex flex-wrap gap-2"
+                    }`}
+                  >
+                    {cat.skills.length === 0 ? (
+                      <p className="font-manrope text-[11px] text-muted-foreground/70">
+                        No skills yet — add keywords recruiters search for.
+                      </p>
+                    ) : (
+                      cat.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-3 py-1 font-manrope text-xs text-foreground"
+                        >
+                          <span className="truncate">{skill}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removeSkillFromCategory(catIndex, skill)
+                            }
+                            className="shrink-0 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+                            aria-label={`Remove ${skill}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
             <input
               type="text"
               value={newCategoryName}
@@ -326,13 +388,13 @@ export default function SkillsPage() {
                   addCategory();
                 }
               }}
-              placeholder="New category name..."
-              className="font-manrope flex-1 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              placeholder="Another category name (optional)"
+              className="font-manrope min-w-0 flex-1 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
             <button
               type="button"
               onClick={addCategory}
-              className="rounded-lg bg-foreground/10 px-4 py-2.5 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
+              className="h-10 shrink-0 rounded-xl bg-foreground/10 px-4 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15 sm:h-auto sm:py-2.5"
             >
               + Add category
             </button>
@@ -358,13 +420,12 @@ export default function SkillsPage() {
             <div className="flex flex-col gap-4">
               {projects.map((project, index) => (
                 <motion.div
-                  key={index}
-                  layout
+                  key={project.id ?? `project-${index}`}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.25 }}
-                  className="rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur-sm"
+                  className="rounded-2xl border border-border/60 bg-card/40 p-5 shadow-sm backdrop-blur-sm"
                 >
                   <div className="mb-4 flex items-center justify-between">
                     <span className="font-dm-mono text-[11px] uppercase tracking-widest text-muted-foreground/60">
@@ -468,47 +529,53 @@ export default function SkillsPage() {
                     </div>
 
                     {/* Bullet points */}
-                    <div>
+                    <div className="min-w-0">
                       <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         Bullet points <span className="text-red-400">*</span>
                       </label>
-                      <p className="font-manrope mb-2 text-[11px] text-muted-foreground">
+                      <p className="font-manrope mb-3 text-[11px] text-muted-foreground">
                         3-5 bullets recommended. Start each with an action verb.
                       </p>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-3">
                         {(project.bullets || []).map((bullet, bIndex) => (
                           <div
-                            key={bIndex}
-                            className="flex items-start gap-2"
+                            key={bullet.id ?? `b-${index}-${bIndex}`}
+                            className="flex min-w-0 items-start gap-2 sm:gap-3"
                           >
-                            <span className="mt-3 text-muted-foreground">•</span>
+                            <span
+                              className="mt-[0.85rem] w-5 shrink-0 select-none text-right font-dm-mono text-[11px] font-medium tabular-nums text-muted-foreground sm:mt-[0.9rem] sm:w-6"
+                              aria-hidden
+                            >
+                              {bIndex + 1}.
+                            </span>
                             <textarea
                               value={bullet.text}
                               onChange={(e) =>
                                 updateBullet(index, bIndex, e.target.value)
                               }
-                              rows={2}
-                              placeholder="Engineered a scalable platform designed to..."
-                              className="font-manrope flex-1 resize-none rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                              rows={3}
+                              placeholder="Engineered a scalable platform designed to…"
+                              className="font-manrope min-h-[5.5rem] min-w-0 flex-1 resize-y rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                             />
-                            {(project.bullets || []).length > 1 && (
+                            {(project.bullets || []).length > 1 ? (
                               <button
                                 type="button"
                                 onClick={() => removeBullet(index, bIndex)}
-                                className="mt-2 text-xs text-muted-foreground transition-colors hover:text-red-500"
+                                className="mt-2 shrink-0 font-manrope text-xs text-muted-foreground transition-colors hover:text-red-500"
+                                aria-label="Remove bullet"
                               >
                                 ×
                               </button>
-                            )}
+                            ) : null}
                           </div>
                         ))}
                       </div>
                       <button
                         type="button"
                         onClick={() => addBullet(index)}
-                        className="mt-2 font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-foreground/10 px-3 py-2 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
                       >
-                        + Add bullet point
+                        + Add bullet
                       </button>
                     </div>
 
@@ -560,12 +627,13 @@ export default function SkillsPage() {
           >
             ← Academics
           </Link>
-          <Link
+          <FormNavLink
             href="/form/experience"
+            enabled={canContinue}
             className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
           >
             Next: Experience →
-          </Link>
+          </FormNavLink>
         </motion.div>
       </form>
     </motion.div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { FormNavLink } from "@/components/form/FormNavLink";
+import { isStep1Complete } from "@/lib/formStepGating";
 import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
@@ -19,6 +20,7 @@ const item = {
 
 export default function PersonalPage() {
   const { step1, updateStep1 } = useResumeStore();
+  const canContinue = isStep1Complete(step1);
 
   const update = (field: keyof typeof step1, value: string) => {
     updateStep1({ [field]: value });
@@ -189,12 +191,13 @@ export default function PersonalPage() {
           variants={item}
           className="flex items-center justify-end border-t border-border/40 pt-6"
         >
-          <Link
+          <FormNavLink
             href="/form/academic"
+            enabled={canContinue}
             className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
           >
             Next: Academics →
-          </Link>
+          </FormNavLink>
         </motion.div>
       </form>
     </motion.div>

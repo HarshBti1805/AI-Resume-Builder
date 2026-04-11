@@ -9,6 +9,7 @@ import { LivePreview } from "@/components/preview/LivePreview";
 import { TemplateSwitch } from "@/components/form/TemplateSwitch";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserProfileButton } from "@/components/user-profile-button";
+import { getMaxAllowedFormStepIndex } from "@/lib/formStepGating";
 
 const steps = [
   { id: 1, label: "Personal", href: "/form/personal" },
@@ -32,6 +33,10 @@ export default function FormLayout({
     lastSaved,
     saveError,
     setCurrentStep,
+    step1,
+    step2,
+    step3,
+    step4,
   } = useResumeStore();
   const [initDone, setInitDone] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
@@ -74,6 +79,20 @@ export default function FormLayout({
   const currentStepIndex = steps.findIndex((s) => pathname.startsWith(s.href));
   const currentStep = currentStepIndex === -1 ? 0 : currentStepIndex;
   const progress = ((currentStep + 1) / steps.length) * 100;
+
+  const maxAllowedStepIndex = getMaxAllowedFormStepIndex(
+    step1,
+    step2,
+    step3,
+    step4
+  );
+
+  useEffect(() => {
+    if (!initDone) return;
+    if (currentStep > maxAllowedStepIndex) {
+      router.replace(steps[maxAllowedStepIndex].href);
+    }
+  }, [initDone, currentStep, maxAllowedStepIndex, router]);
 
   useEffect(() => {
     setCurrentStep(currentStep + 1);
@@ -176,58 +195,74 @@ export default function FormLayout({
                     {steps.map((step, i) => {
                       const isActive = i === currentStep;
                       const isCompleted = i < currentStep;
+                      const canOpen = i <= maxAllowedStepIndex;
+
+                      const rowInner = (
+                        <>
+                          <span
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-dm-mono text-[11px] font-medium transition-all ${
+                              isActive
+                                ? "bg-foreground text-background"
+                                : isCompleted
+                                  ? "bg-foreground/15 text-foreground"
+                                  : "bg-muted/60 text-muted-foreground/60"
+                            }`}
+                          >
+                            {isCompleted ? (
+                              <svg
+                                width="12"
+                                height="12"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                                className="text-foreground"
+                              >
+                                <path
+                                  d="M2 6L5 9L10 3"
+                                  stroke="currentColor"
+                                  strokeWidth="1.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            ) : (
+                              step.id
+                            )}
+                          </span>
+                          <span
+                            className={`font-manrope text-sm transition-colors ${
+                              isActive
+                                ? "font-medium text-foreground"
+                                : isCompleted
+                                  ? "text-foreground/70"
+                                  : "text-muted-foreground/60"
+                            }`}
+                          >
+                            {step.label}
+                          </span>
+                        </>
+                      );
 
                       return (
                         <li key={step.id}>
-                          <Link
-                            href={step.href}
-                            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
-                              isActive
-                                ? "bg-foreground/[0.06]"
-                                : "hover:bg-foreground/[0.03]"
-                            }`}
-                          >
-                            <span
-                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-dm-mono text-[11px] font-medium transition-all ${
+                          {canOpen ? (
+                            <Link
+                              href={step.href}
+                              className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all ${
                                 isActive
-                                  ? "bg-foreground text-background"
-                                  : isCompleted
-                                    ? "bg-foreground/15 text-foreground"
-                                    : "bg-muted/60 text-muted-foreground/60"
+                                  ? "bg-foreground/[0.06]"
+                                  : "hover:bg-foreground/[0.03]"
                               }`}
                             >
-                              {isCompleted ? (
-                                <svg
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 12 12"
-                                  fill="none"
-                                  className="text-foreground"
-                                >
-                                  <path
-                                    d="M2 6L5 9L10 3"
-                                    stroke="currentColor"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              ) : (
-                                step.id
-                              )}
-                            </span>
+                              {rowInner}
+                            </Link>
+                          ) : (
                             <span
-                              className={`font-manrope text-sm transition-colors ${
-                                isActive
-                                  ? "font-medium text-foreground"
-                                  : isCompleted
-                                    ? "text-foreground/70"
-                                    : "text-muted-foreground/60"
-                              }`}
+                              title="Complete the previous sections before opening this step."
+                              className="group flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 opacity-45"
                             >
-                              {step.label}
+                              {rowInner}
                             </span>
-                          </Link>
+                          )}
                         </li>
                       );
                     })}
@@ -241,22 +276,33 @@ export default function FormLayout({
                   {steps.map((step, i) => {
                     const isActive = i === currentStep;
                     const isCompleted = i < currentStep;
+                    const canOpen = i <= maxAllowedStepIndex;
+                    const chipClass = `flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${
+                      isActive
+                        ? "bg-foreground text-background"
+                        : isCompleted
+                          ? "bg-foreground/10 text-foreground"
+                          : "bg-muted/50 text-muted-foreground/60"
+                    }`;
 
-                    return (
+                    return canOpen ? (
                       <Link
                         key={step.id}
                         href={step.href}
-                        className={`flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-xs font-medium transition-all ${
-                          isActive
-                            ? "bg-foreground text-background"
-                            : isCompleted
-                              ? "bg-foreground/10 text-foreground"
-                              : "bg-muted/50 text-muted-foreground/60"
-                        }`}
+                        className={chipClass}
                       >
                         <span className="font-dm-mono">{step.id}</span>
                         <span className="font-manrope">{step.label}</span>
                       </Link>
+                    ) : (
+                      <span
+                        key={step.id}
+                        title="Complete the previous sections first."
+                        className={`${chipClass} cursor-not-allowed opacity-45`}
+                      >
+                        <span className="font-dm-mono">{step.id}</span>
+                        <span className="font-manrope">{step.label}</span>
+                      </span>
                     );
                   })}
                 </div>

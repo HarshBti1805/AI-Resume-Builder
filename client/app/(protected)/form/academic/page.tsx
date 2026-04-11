@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { FormNavLink } from "@/components/form/FormNavLink";
+import { isStep2Complete } from "@/lib/formStepGating";
 import { useResumeStore } from "@/store/resumeStore";
 
 const container = {
@@ -22,6 +24,7 @@ export default function AcademicPage() {
   const { step2, updateStep2, saveStep2, resumeId, isSaving, loadResume } =
     useResumeStore();
   const [courseInput, setCourseInput] = useState("");
+  const canContinue = isStep2Complete(step2);
 
   const didEditRef = useRef(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -448,12 +451,13 @@ export default function AcademicPage() {
           >
             ← Personal
           </Link>
-          <Link
+          <FormNavLink
             href="/form/skills"
+            enabled={canContinue}
             className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
           >
             Next: Skills & Projects →
-          </Link>
+          </FormNavLink>
         </motion.div>
       </form>
     </motion.div>

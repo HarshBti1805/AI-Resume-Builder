@@ -3,6 +3,8 @@
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { FormNavLink } from "@/components/form/FormNavLink";
+import { isStep4Complete } from "@/lib/formStepGating";
 import type { Internship, Achievement, Bullet } from "@/store/resumeStore";
 import { useResumeStore } from "@/store/resumeStore";
 
@@ -54,6 +56,7 @@ export default function ExperiencePage() {
     step4.internships.length > 0 ? step4.internships : [emptyInternship()];
   const achievements =
     step4.achievements.length > 0 ? step4.achievements : [emptyAchievement()];
+  const canContinue = isStep4Complete(step4);
 
   // ── Internships ──
   const addInternship = () =>
@@ -428,12 +431,13 @@ export default function ExperiencePage() {
           >
             ← Skills & Projects
           </Link>
-          <Link
+          <FormNavLink
             href="/form/summary"
+            enabled={canContinue}
             className="font-space-grotesk inline-flex h-11 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-medium text-background shadow-md transition-all hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-foreground/30"
           >
             Next: Summary →
-          </Link>
+          </FormNavLink>
         </motion.div>
       </form>
     </motion.div>
