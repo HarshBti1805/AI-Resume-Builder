@@ -45,12 +45,15 @@
   .row-sub { font-size: 9.5pt; color: #444; margin-top: 1px; }
   .row-desc { font-size: 9.5pt; margin-top: 3px; color: #333; }
 
-  /* ── Skills ── */
-  .skills-list { font-size: 9.5pt; color: #333; }
+  /* ── Skills: same 10.5pt as 10th/12th row-title; tighter gap than edu-row (8px) ── */
+  .skills-line { margin-bottom: 5px; font-size: 10.5pt; font-weight: normal; color: #1a1a1a; }
+  .skills-line strong { font-weight: bold; }
+  .skills-line:last-child { margin-bottom: 0; }
 
   /* ── Projects ── */
   .project-item { margin-bottom: 8px; }
   .project-title { font-weight: bold; }
+  .project-subtitle { font-style: italic; font-weight: normal; }
   .project-tech { font-size: 8.5pt; color: #555; }
   .project-links { font-size: 8.5pt; color: #555; margin-top: 1px; }
   .project-links a { color: #555; }
@@ -145,14 +148,14 @@
 <div class="section">
   <div class="section-title">{{sectionTitle this}}</div>
   {{#each ../skillCategories}}
-  <div class="skills-list"><strong>{{name}}:</strong> {{join skills ", "}}</div>
+  <div class="skills-line"><strong>{{name}}:</strong> {{join skills ", "}}</div>
   {{/each}}
 </div>
 {{else}}
 {{#ifNotEmpty ../skills}}
 <div class="section">
   <div class="section-title">{{sectionTitle this}}</div>
-  <div class="skills-list">{{join ../skills " • "}}</div>
+  <div class="skills-line">{{join ../skills " • "}}</div>
 </div>
 {{/ifNotEmpty}}
 {{/ifNotEmpty}}
@@ -188,7 +191,7 @@
   {{#each ../projects}}
   <div class="project-item">
     <div class="row-header">
-      <span class="project-title">{{title}}</span>
+      <span class="project-title">{{title}}{{#ifVal subtitle}} - <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
       {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
     </div>
     {{#ifNotEmpty techStack}}<div class="project-tech">{{join techStack " • "}}</div>{{/ifNotEmpty}}

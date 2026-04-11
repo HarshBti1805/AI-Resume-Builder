@@ -174,7 +174,7 @@ export interface ResumeStore {
   saveStep2: () => Promise<void>;
   saveStep3: () => Promise<void>;
   saveStep4: () => Promise<void>;
-  saveStep5: () => Promise<void>;
+  saveStep5: (options?: { markComplete?: boolean }) => Promise<void>;
   saveAllSteps: () => Promise<void>;
 
   setTemplate: (template: TemplateType) => Promise<void>;
@@ -579,22 +579,25 @@ export const useResumeStore = create<ResumeStore>()(
           }
         },
 
-        saveStep5: async () => {
+        saveStep5: async (options?: { markComplete?: boolean }) => {
           const { resumeId, version, step5 } = get();
           if (!resumeId) return;
+          const markComplete = options?.markComplete === true;
           set({ isSaving: true, saveError: null });
           try {
             await api.patch(`/resume/${resumeId}/step/5`, {
               summary: step5.summary,
               hobbyItems: step5.hobbyItems,
               version,
+              markComplete,
             });
             set((s) => ({
               isSaving: false,
               lastSaved: new Date(),
               version: s.version + 1,
-              status: "COMPLETED",
-              currentStep: 5,
+              ...(markComplete
+                ? { status: "COMPLETED" as const, currentStep: 5 }
+                : {}),
             }));
           } catch (err: unknown) {
             const msg =
@@ -612,7 +615,7 @@ export const useResumeStore = create<ResumeStore>()(
           await saveStep2();
           await saveStep3();
           await saveStep4();
-          await saveStep5();
+          await saveStep5({ markComplete: true });
         },
 
         // ── Template ─────────────────────────────────────────────

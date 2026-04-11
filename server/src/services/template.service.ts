@@ -102,6 +102,30 @@ Handlebars.registerHelper(
   }
 );
 
+/** Internships with at least one field filled — omit empty placeholders from resume output. */
+function internshipsWithUserContent(raw: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((item: Record<string, unknown>) => {
+    const company = String(item.company ?? "").trim();
+    const role = String(item.role ?? "").trim();
+    const description = String(item.description ?? "").trim();
+    const startDate = String(item.startDate ?? "").trim();
+    const endDate = String(item.endDate ?? "").trim();
+    const bullets = Array.isArray(item.bullets) ? item.bullets : [];
+    const hasBullet = bullets.some((b) =>
+      String((b as { text?: string })?.text ?? "").trim().length > 0
+    );
+    return (
+      company.length > 0 ||
+      role.length > 0 ||
+      description.length > 0 ||
+      hasBullet ||
+      startDate.length > 0 ||
+      endDate.length > 0
+    );
+  });
+}
+
 // ── Main export ───────────────────────────────
 
 export const renderTemplate = async (
@@ -110,6 +134,7 @@ export const renderTemplate = async (
   resumeData: Record<string, any>
 ): Promise<string> => {
   const data = { ...resumeData };
+  data.internships = internshipsWithUserContent(data.internships);
   const defaultOrder = [
     "summary",
     "education",

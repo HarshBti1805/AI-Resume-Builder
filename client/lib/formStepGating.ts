@@ -4,7 +4,6 @@ import type {
   Step3Data,
   Step4Data,
   Achievement,
-  Internship,
   Project,
 } from "@/store/resumeStore";
 
@@ -56,21 +55,6 @@ export function isStep3Complete(s: Step3Data): boolean {
   return projects.every((p) => !projectHasAnyContent(p) || isProjectComplete(p));
 }
 
-function internshipHasAnyContent(i: Internship): boolean {
-  return (
-    trim(i.company).length > 0 ||
-    trim(i.role).length > 0 ||
-    trim(i.description).length > 0 ||
-    trim(i.startDate).length > 0 ||
-    trim(i.endDate).length > 0 ||
-    (i.bullets ?? []).some((b) => trim(b.text).length > 0)
-  );
-}
-
-function isInternshipComplete(i: Internship): boolean {
-  return trim(i.company).length > 0 && trim(i.role).length > 0;
-}
-
 function achievementHasAnyContent(a: Achievement): boolean {
   return (
     trim(a.title).length > 0 ||
@@ -84,9 +68,7 @@ function isAchievementComplete(a: Achievement): boolean {
 }
 
 export function isStep4Complete(s: Step4Data): boolean {
-  for (const i of s.internships ?? []) {
-    if (internshipHasAnyContent(i) && !isInternshipComplete(i)) return false;
-  }
+  // Internships are optional — never block navigation on work experience rows.
   for (const a of s.achievements ?? []) {
     if (achievementHasAnyContent(a) && !isAchievementComplete(a)) return false;
   }

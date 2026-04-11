@@ -59,6 +59,7 @@
   }
   .proj-header { display: flex; justify-content: space-between; align-items: baseline; }
   .proj-title { font-weight: 700; font-size: 10pt; color: #0f172a; }
+  .project-subtitle { font-style: italic; font-weight: 500; color: #475569; }
   .proj-date { font-size: 8.5pt; color: #9ca3af; }
   .proj-tech { margin-top: 3px; display: flex; flex-wrap: wrap; gap: 3px; }
   .proj-tech-tag {
@@ -154,7 +155,7 @@
   {{#each ../projects}}
   <div class="project-card">
     <div class="proj-header">
-      <span class="proj-title">{{title}}</span>
+      <span class="proj-title">{{title}}{{#ifVal subtitle}} - <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
       {{#ifVal startDate}}<span class="proj-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
     </div>
     {{#ifNotEmpty techStack}}

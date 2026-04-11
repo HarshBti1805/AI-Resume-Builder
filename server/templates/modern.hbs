@@ -66,6 +66,7 @@
   .project-tech { font-size: 8.5pt; color: #666; margin-top: 1px; }
   .project-links { font-size: 8.5pt; margin-top: 2px; }
   .project-links a { color: {{accentColor}}; text-decoration: none; margin-right: 10px; }
+  .project-subtitle { font-style: italic; font-weight: 500; color: #555; }
 
   /* ── Achievements ── */
   .ach-item { display: flex; gap: 6px; margin-bottom: 4px; font-size: 9.5pt; }
@@ -206,7 +207,7 @@
   {{#each ../projects}}
   <div class="row">
     <div class="row-header">
-      <span class="row-title">{{title}}</span>
+      <span class="row-title">{{title}}{{#ifVal subtitle}} - <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
       {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
     </div>
     {{#ifNotEmpty techStack}}<div class="project-tech">{{join techStack " · "}}</div>{{/ifNotEmpty}}

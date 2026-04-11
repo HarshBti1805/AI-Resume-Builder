@@ -306,12 +306,6 @@ export default function SkillsPage() {
                     )}
                   </div>
 
-                  <label className="mb-1.5 block font-dm-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/80">
-                    Skills in{" "}
-                    <span className="text-foreground/90">
-                      {cat.name || "this category"}
-                    </span>
-                  </label>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <input
                       type="text"
@@ -441,6 +435,24 @@ export default function SkillsPage() {
                       </button>
                     )}
                   </div>
+
+                  {(project.title?.trim() || project.subtitle?.trim()) && (
+                    <p className="mb-4 font-manrope text-sm leading-snug text-foreground">
+                      {project.title?.trim() && (
+                        <span className="font-semibold">{project.title.trim()}</span>
+                      )}
+                      {project.title?.trim() && project.subtitle?.trim() && (
+                        <span className="font-normal text-muted-foreground/60">
+                          {" - "}
+                        </span>
+                      )}
+                      {project.subtitle?.trim() && (
+                        <span className="font-normal italic text-muted-foreground">
+                          {project.subtitle.trim()}
+                        </span>
+                      )}
+                    </p>
+                  )}
 
                   <div className="flex flex-col gap-4">
                     <div className="grid gap-4 sm:grid-cols-2">

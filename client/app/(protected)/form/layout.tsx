@@ -10,6 +10,7 @@ import { TemplateSwitch } from "@/components/form/TemplateSwitch";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserProfileButton } from "@/components/user-profile-button";
 import { getMaxAllowedFormStepIndex } from "@/lib/formStepGating";
+import { useDebouncedStepPersist } from "@/hooks/useDebouncedStepPersist";
 
 const steps = [
   { id: 1, label: "Personal", href: "/form/personal" },
@@ -33,10 +34,15 @@ export default function FormLayout({
     lastSaved,
     saveError,
     setCurrentStep,
+    saveStep1,
+    saveStep3,
+    saveStep4,
+    saveStep5,
     step1,
     step2,
     step3,
     step4,
+    step5,
   } = useResumeStore();
   const [initDone, setInitDone] = useState(false);
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
@@ -75,6 +81,13 @@ export default function FormLayout({
       cancelled = true;
     };
   }, [loadResume, router]);
+
+  // Persist all steps to the API while editing (step2 already autosaves on Academic).
+  // Without this, refresh runs loadResume() and overwrites the store with stale empty step1/3/4/5.
+  useDebouncedStepPersist(initDone, resumeId, step1, saveStep1, 1200);
+  useDebouncedStepPersist(initDone, resumeId, step3, saveStep3, 1200);
+  useDebouncedStepPersist(initDone, resumeId, step4, saveStep4, 1200);
+  useDebouncedStepPersist(initDone, resumeId, step5, saveStep5, 1200);
 
   const currentStepIndex = steps.findIndex((s) => pathname.startsWith(s.href));
   const currentStep = currentStepIndex === -1 ? 0 : currentStepIndex;

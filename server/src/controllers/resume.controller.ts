@@ -527,7 +527,12 @@ export const saveStep5 = async (
   try {
     const userId = req.user!.id;
     const id = getParam(req, "id");
-    const { version, summary, hobbyItems } = req.body;
+    const { version, summary, hobbyItems, markComplete } = req.body as {
+      version?: number;
+      summary?: string;
+      hobbyItems?: { name: string; description?: string }[];
+      markComplete?: boolean;
+    };
 
     const resume = await prisma.resume.findFirst({
       where: { id, userId },
@@ -551,13 +556,14 @@ export const saveStep5 = async (
         ? hobbyItems.map((h: { name: string }) => h.name)
         : [];
 
+      const completed = markComplete === true;
       await tx.resume.update({
         where: { id },
         data: {
           summary,
           hobbies: legacyHobbies,
           currentStep: 5,
-          status: "COMPLETED",
+          ...(completed ? { status: "COMPLETED" as const } : {}),
           version: { increment: 1 },
         },
       });

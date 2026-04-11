@@ -197,7 +197,7 @@ export default function ExperiencePage() {
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Company <span className="text-red-400">*</span>
+                          Company
                         </label>
                         <input
                           type="text"
@@ -206,13 +206,12 @@ export default function ExperiencePage() {
                             updateInternship(index, "company", e.target.value)
                           }
                           placeholder="Google"
-                          required
                           className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
                       <div>
                         <label className="mb-1.5 block font-manrope text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          Role <span className="text-red-400">*</span>
+                          Role
                         </label>
                         <input
                           type="text"
@@ -221,7 +220,6 @@ export default function ExperiencePage() {
                             updateInternship(index, "role", e.target.value)
                           }
                           placeholder="Software Engineering Intern"
-                          required
                           className="font-manrope w-full rounded-xl border border-border bg-muted/40 px-4 py-3 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                         />
                       </div>
