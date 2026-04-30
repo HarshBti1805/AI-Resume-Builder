@@ -25,7 +25,7 @@ const item = {
   },
 };
 
-type TemplateType = "CLASSIC" | "MODERN" | "MINIMAL" | "ACADEMIC" | "TECHNICAL";
+type TemplateType = "CLASSIC" | "MODERN" | "MINIMAL" | "ACADEMIC" | "TECHNICAL" | "COMPACT" | "ELEGANT";
 
 interface TemplateInfo {
   id: TemplateType;
@@ -75,6 +75,22 @@ const templates: TemplateInfo[] = [
       "Highlights skills and projects prominently. Built for CS, IT, and engineering students.",
     tags: ["Skills-forward", "Projects", "Engineering"],
     accent: "ring-amber-500/50",
+  },
+  {
+    id: "COMPACT",
+    name: "Compact",
+    description:
+      "Two-column layout with a colored sidebar for contact and skills. Packs maximum info without clutter.",
+    tags: ["Sidebar", "Two-column", "Space-efficient"],
+    accent: "ring-cyan-500/50",
+  },
+  {
+    id: "ELEGANT",
+    name: "Elegant",
+    description:
+      "Centered serif layout with ornamental diamond dividers and spaced-letter headings. Refined and literary.",
+    tags: ["Serif", "Centered", "Ornamental"],
+    accent: "ring-stone-400/50",
   },
 ];
 
@@ -199,6 +215,65 @@ function TemplateMiniPreview({ template }: { template: TemplateType }) {
             <div className="mt-0.5 h-1 w-4/5 rounded-full bg-foreground/[0.06]" />
             <div className="mt-0.5 h-1 w-3/5 rounded-full bg-foreground/[0.06]" />
           </div>
+        </div>
+      </div>
+    ),
+    COMPACT: (
+      <div className="flex h-full text-[6px] leading-[1.6]">
+        <div className="w-[30%] bg-cyan-500/10 border-r-2 border-cyan-500/30 p-2 flex flex-col gap-2">
+          <div>
+            <p className="text-[8px] font-extrabold text-cyan-600/80 leading-tight">Your Name</p>
+            <p className="text-foreground/40 text-[5px]">B.Tech CS</p>
+          </div>
+          <div>
+            <p className="text-[4.5px] font-bold uppercase tracking-widest text-cyan-600/70 border-b border-cyan-500/20 pb-0.5 mb-0.5">Contact</p>
+            <p className="text-foreground/50">email@ex.com</p>
+            <p className="text-foreground/50">LinkedIn</p>
+          </div>
+          <div>
+            <p className="text-[4.5px] font-bold uppercase tracking-widest text-cyan-600/70 border-b border-cyan-500/20 pb-0.5 mb-0.5">Skills</p>
+            <p className="text-foreground/50">React · Node.js</p>
+            <p className="text-foreground/50">TypeScript</p>
+          </div>
+        </div>
+        <div className="flex-1 p-2 flex flex-col gap-1.5">
+          <div>
+            <p className="text-[4.5px] font-extrabold uppercase tracking-widest text-cyan-600/70 border-b border-cyan-500/20 pb-0.5 mb-0.5">Education</p>
+            <div className="h-1 w-full rounded-full bg-foreground/[0.06]" />
+            <div className="mt-0.5 h-1 w-4/5 rounded-full bg-foreground/[0.06]" />
+          </div>
+          <div>
+            <p className="text-[4.5px] font-extrabold uppercase tracking-widest text-cyan-600/70 border-b border-cyan-500/20 pb-0.5 mb-0.5">Projects</p>
+            <div className="h-1 w-full rounded-full bg-foreground/[0.06]" />
+            <div className="mt-0.5 h-1 w-3/4 rounded-full bg-foreground/[0.06]" />
+            <div className="mt-0.5 h-1 w-full rounded-full bg-foreground/[0.06]" />
+          </div>
+        </div>
+      </div>
+    ),
+    ELEGANT: (
+      <div className="flex h-full flex-col p-4 text-[6px] leading-[1.6]">
+        <div className="text-center mb-2">
+          <p className="text-[9px] font-normal tracking-[4px] uppercase text-foreground/80">Your Name</p>
+          <p className="text-foreground/40 italic text-[5.5px]">B.Tech · Computer Science</p>
+          <div className="flex items-center justify-center gap-1 my-1">
+            <div className="h-px w-8 bg-stone-400/40" />
+            <span className="text-stone-400/60 text-[5px]">◆</span>
+            <div className="h-px w-8 bg-stone-400/40" />
+          </div>
+          <p className="text-foreground/40 text-[5px]">email@example.com</p>
+        </div>
+        <div className="mt-1">
+          <p className="text-[5px] font-normal uppercase tracking-[3px] text-stone-500/70 text-center">Education</p>
+          <div className="h-px w-full bg-stone-400/20 my-0.5" />
+          <div className="h-1 w-full rounded-full bg-foreground/[0.06]" />
+          <div className="mt-0.5 h-1 w-3/4 rounded-full bg-foreground/[0.06]" />
+        </div>
+        <div className="mt-1.5">
+          <p className="text-[5px] font-normal uppercase tracking-[3px] text-stone-500/70 text-center">Projects</p>
+          <div className="h-px w-full bg-stone-400/20 my-0.5" />
+          <div className="h-1 w-full rounded-full bg-foreground/[0.06]" />
+          <div className="mt-0.5 h-1 w-4/5 rounded-full bg-foreground/[0.06]" />
         </div>
       </div>
     ),

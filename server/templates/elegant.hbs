@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>{{fullName}} — Resume</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Lato:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* Body: clean sans-serif for readability */
+  body {
+    font-family: "Lato", "{{fontFamily}}", Arial, sans-serif;
+    font-size: {{fontSize}}pt;
+    color: #2c2c2c;
+    background: #fff;
+    {{#if (eq marginSize "compact")}}padding: 28px 44px;{{else}}{{#if (eq marginSize "wide")}}padding: 52px 68px;{{else}}padding: 40px 56px;{{/if}}{{/if}}
+    line-height: {{lineSpacing}};
+  }
+
+  /* Header name: elegant serif */
+  .header { text-align: center; margin-bottom: 22px; }
+  .header h1 {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: {{headingSize}}pt;
+    font-weight: 400;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #111;
+    margin-bottom: 6px;
+  }
+  .header .degree {
+    font-family: "Lato", Arial, sans-serif;
+    font-size: 9.5pt;
+    font-weight: 300;
+    color: #666;
+    font-style: italic;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+  /* Thin ornamental rule with diamond */
+  .ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: {{accentColor}};
+  }
+  .ornament-line { flex: 1; max-width: 80px; height: 1px; background: {{accentColor}}; }
+  .ornament-diamond { font-size: 8pt; }
+  .contact-row {
+    font-size: 8.5pt;
+    color: #666;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 3px 16px;
+  }
+  .contact-row a { color: #666; text-decoration: none; }
+  .contact-row span::after { content: ""; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 16px; }
+  .section-title {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: {{sectionHeadingSize headingSize}}pt;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: {{accentColor}};
+    text-align: center;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .section-title::before,
+  .section-title::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 25%;
+    height: 1px;
+    background: {{accentColor}};
+    opacity: 0.4;
+  }
+  .section-title::before { left: 0; }
+  .section-title::after { right: 0; }
+
+  /* ── Row ── */
+  .row { margin-bottom: 9px; }
+  .row-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .row-title { font-family: "Lato", Arial, sans-serif; font-weight: 700; font-size: 10pt; letter-spacing: 0.2px; }
+  .project-subtitle { font-style: italic; font-weight: 400; color: #666; }
+  .row-date { font-family: "Lato", Arial, sans-serif; font-weight: 300; font-size: 8.5pt; color: #888; font-style: italic; }
+  .row-sub { font-family: "Lato", Arial, sans-serif; font-weight: 300; font-size: 9pt; color: #666; margin-top: 1px; }
+  .row-desc { font-family: "Lato", Arial, sans-serif; font-size: 9pt; color: #444; margin-top: 3px; }
+  ul.row-desc { padding-left: 18px; }
+  ul.row-desc li { margin-bottom: 2px; }
+
+  /* ── Skills ── */
+  .skills-row { font-family: "Lato", Arial, sans-serif; font-size: 9.5pt; margin-bottom: 4px; }
+  .skills-row em { color: {{accentColor}}; font-style: normal; font-weight: 700; }
+
+  /* ── Projects ── */
+  .proj-tech { font-family: "Lato", Arial, sans-serif; font-weight: 300; font-size: 8.5pt; color: #888; font-style: italic; margin-top: 2px; }
+  .proj-links { font-size: 8.5pt; margin-top: 2px; }
+  .proj-links a { color: {{accentColor}}; text-decoration: none; margin-right: 10px; }
+
+  /* ── Achievements ── */
+  .ach-item { font-family: "Lato", Arial, sans-serif; font-size: 9.5pt; margin-bottom: 4px; text-indent: -14px; padding-left: 14px; }
+  .ach-item::before { content: "◆ "; color: {{accentColor}}; font-size: 6pt; vertical-align: middle; }
+
+  /* ── Hobbies: editorial small-caps line ── */
+  .hobbies-editorial {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-size: 10pt;
+    font-variant: small-caps;
+    letter-spacing: 2.5px;
+    color: #555;
+    text-align: center;
+    line-height: 1.9;
+  }
+  .hobbies-sep { color: {{accentColor}}; opacity: 0.6; margin: 0 8px; font-variant: normal; font-size: 7pt; }
+
+  /* ── Divider between sections ── */
+  .section-divider {
+    {{#if (eq sectionDivider "none")}}display:none;{{else}}{{#if (eq sectionDivider "double")}}border-top: 2px double {{accentColor}};{{else}}{{#if (eq sectionDivider "dotted")}}border-top: 1px dotted {{accentColor}};{{else}}border-top: 1px solid {{accentColor}};{{/if}}{{/if}}{{/if}}
+    opacity: 0.25;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <h1>{{fullName}}</h1>
+  {{#ifVal stream}}<div class="degree">{{stream}}{{#ifVal branch}} · {{branch}}{{/ifVal}}</div>{{/ifVal}}
+  <div class="ornament">
+    <div class="ornament-line"></div>
+    <div class="ornament-diamond">◆</div>
+    <div class="ornament-line"></div>
+  </div>
+  <div class="contact-row">
+    {{#ifVal contactEmail}}<span>{{contactEmail}}</span>{{/ifVal}}
+    {{#ifVal phone}}<span>{{phone}}</span>{{/ifVal}}
+    {{#ifVal city}}<span>{{city}}{{#ifVal state}}, {{state}}{{/ifVal}}</span>{{/ifVal}}
+    {{#ifVal linkedin}}<a href="{{linkedin}}">LinkedIn</a>{{/ifVal}}
+    {{#ifVal github}}<a href="{{github}}">GitHub</a>{{/ifVal}}
+    {{#ifVal portfolio}}<a href="{{portfolio}}">Portfolio</a>{{/ifVal}}
+  </div>
+</div>
+
+{{#each sectionOrder}}
+{{#if (eq this "summary")}}
+{{#ifVal ../summary}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc" style="text-align:center;font-style:italic;color:#555;">{{../summary}}</div>
+</div>
+{{/ifVal}}
+{{/if}}
+
+{{#if (eq this "education")}}
+{{#ifVal ../university}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{../university}}</span>
+      <span class="row-date">{{../batchStart}} – {{../batchEnd}}</span>
+    </div>
+    <div class="row-sub">{{../stream}}{{#ifVal ../branch}} · {{../branch}}{{/ifVal}}{{#ifVal ../cgpa}} · CGPA {{../cgpa}}{{/ifVal}}</div>
+  </div>
+  {{#unless (eq ../showMarks12th false)}}
+    {{#ifVal ../marks12th}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">12th Grade{{#ifVal ../board12th}} · {{../board12th}}{{/ifVal}}{{#ifVal ../schoolName12th}} ({{../schoolName12th}}){{/ifVal}}</span>
+        <span class="row-date">{{../marks12th}}%</span>
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/unless}}
+  {{#unless (eq ../showMarks10th false)}}
+    {{#ifVal ../marks10th}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">10th Grade{{#ifVal ../board10th}} · {{../board10th}}{{/ifVal}}{{#ifVal ../schoolName10th}} ({{../schoolName10th}}){{/ifVal}}</span>
+        <span class="row-date">{{../marks10th}}%</span>
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/unless}}
+  {{#unless (eq ../showCoursework false)}}
+    {{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;"><strong>Coursework:</strong> {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
+  {{/unless}}
+</div>
+{{/ifVal}}
+{{/if}}
+
+{{#if (eq this "skills")}}
+{{#ifNotEmpty ../skillCategories}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../skillCategories}}
+  <div class="skills-row"><em>{{name}}:</em> {{join skills ", "}}</div>
+  {{/each}}
+</div>
+{{else}}
+{{#ifNotEmpty ../skills}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="skills-row" style="text-align:center;">{{join ../skills " · "}}</div>
+</div>
+{{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "experience")}}
+{{#ifNotEmpty ../internships}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../internships}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{role}} · {{company}}</span>
+      <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
+    </div>
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "projects")}}
+{{#ifNotEmpty ../projects}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../projects}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{title}}{{#ifVal subtitle}} — <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
+      {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
+    </div>
+    {{#ifNotEmpty techStack}}<div class="proj-tech">{{join techStack " · "}}</div>{{/ifNotEmpty}}
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
+    {{#ifVal liveUrl}}<div class="proj-links"><a href="{{liveUrl}}">Live</a>{{#ifVal repoUrl}}<a href="{{repoUrl}}">Repo</a>{{/ifVal}}</div>{{/ifVal}}
+    {{#ifVal repoUrl}}{{#unless liveUrl}}<div class="proj-links"><a href="{{repoUrl}}">Repo</a></div>{{/unless}}{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "achievements")}}
+{{#ifNotEmpty ../achievements}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../achievements}}
+  <div class="ach-item"><strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}{{#ifVal link}} <a href="{{link}}" style="font-size:8pt;color:#888;">[Link]</a>{{/ifVal}}</div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "hobbies")}}
+{{#ifNotEmpty ../hobbyItems}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="hobbies-editorial">
+    {{#each ../hobbyItems}}{{#if @index}}<span class="hobbies-sep">◆</span>{{/if}}{{name}}{{/each}}
+  </div>
+</div>
+{{else}}
+{{#ifNotEmpty ../hobbies}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="hobbies-editorial">
+    {{#each ../hobbies}}{{#if @index}}<span class="hobbies-sep">◆</span>{{/if}}{{this}}{{/each}}
+  </div>
+</div>
+{{/ifNotEmpty}}
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#with (customSectionById this)}}
+<div class="section-divider"></div>
+<div class="section">
+  <div class="section-title">{{title}}</div>
+  <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+    {{#each items}}<li>{{text}}</li>{{/each}}
+  </ul>
+</div>
+{{/with}}
+{{/each}}
+
+</body>
+</html>

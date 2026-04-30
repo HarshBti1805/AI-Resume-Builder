@@ -15,7 +15,13 @@ const TEMPLATE_OPTIONS: { value: TemplateType; label: string }[] = [
   { value: "MINIMAL", label: "Minimal" },
   { value: "ACADEMIC", label: "Academic" },
   { value: "TECHNICAL", label: "Technical" },
+  { value: "COMPACT", label: "Compact" },
+  { value: "ELEGANT", label: "Elegant" },
 ];
+
+/** A4 width at 96 DPI — must match PDF (Puppeteer) layout width so line breaks match download. */
+const PREVIEW_A4_W = 794;
+const PREVIEW_A4_H = 1123;
 
 /* ─────────────────────────────────────────────
    Animation variants
@@ -141,6 +147,9 @@ export default function PreviewPage() {
 
   const [showAtsPanel, setShowAtsPanel] = useState(false);
 
+  const [previewScale, setPreviewScale] = useState(1);
+  const [previewContentH, setPreviewContentH] = useState(PREVIEW_A4_H);
+  const previewFrameContainerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const apiBase =
@@ -190,6 +199,10 @@ export default function PreviewPage() {
     fetchPreview();
   }, [fetchPreview]);
 
+  useEffect(() => {
+    if (previewHtml) setPreviewContentH(PREVIEW_A4_H);
+  }, [previewHtml]);
+
   // Keep store in sync with API when viewing preview (e.g. after refresh)
   useEffect(() => {
     if (!resumeId) return;
@@ -210,17 +223,43 @@ export default function PreviewPage() {
     }
   };
 
-  /* ─── Write HTML into iframe ─── */
-  useEffect(() => {
-    if (previewHtml && iframeRef.current) {
-      const doc = iframeRef.current.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(previewHtml);
-        doc.close();
+  const measurePreviewIframe = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    try {
+      const doc = iframe.contentDocument;
+      if (doc?.body) {
+        const h = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+        setPreviewContentH(Math.max(h, PREVIEW_A4_H));
       }
+    } catch {
+      // same-origin only
     }
-  }, [previewHtml]);
+  }, []);
+
+  /* Fit scaled A4 preview to card width (layout width stays PREVIEW_A4_W = PDF).
+     Must run after the iframe mount — ref is absent on first paint while loading. */
+  useEffect(() => {
+    if (isLoadingPreview || previewError || !previewHtml) return;
+
+    const el = previewFrameContainerRef.current;
+    if (!el) return;
+
+    const updateScale = (width: number) => {
+      if (width <= 0) return;
+      setPreviewScale(Math.min(width / PREVIEW_A4_W, 1));
+    };
+
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        updateScale(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    updateScale(el.getBoundingClientRect().width);
+
+    return () => ro.disconnect();
+  }, [isLoadingPreview, previewError, previewHtml]);
 
   /* ─── ATS Check ─── */
   const handleAtsCheck = async () => {
@@ -281,8 +320,7 @@ export default function PreviewPage() {
       const a = document.createElement("a");
       a.href = url;
       const base =
-        downloadFileBase?.trim().replace(/\.(pdf|docx)$/i, "") ||
-        "Resume";
+        downloadFileBase?.trim().replace(/\.(pdf|docx)$/i, "") || "Resume";
       a.download = `${base}.pdf`;
       document.body.appendChild(a);
       a.click();
@@ -494,12 +532,20 @@ export default function PreviewPage() {
           {/* ─── Main content area ─── */}
           <motion.div variants={item}>
             <div className="flex flex-col gap-6 lg:flex-row">
-              {/* Resume preview */}
-              <div className="flex-1">
-                <div className="overflow-hidden rounded-2xl border border-border/60 bg-white shadow-lg">
+              {/* Resume preview — cap width to A4 @96dpi (794px) so layout matches PDF */}
+              <div className="flex min-w-0 flex-1 justify-center">
+                <div
+                  className="w-full overflow-hidden rounded-2xl border border-border/60 bg-white shadow-lg"
+                  style={{ maxWidth: PREVIEW_A4_W }}
+                >
                   {isLoadingPreview ? (
-                    <div className="flex aspect-[8.5/11] items-center justify-center">
-                      <div className="flex flex-col items-center gap-3">
+                    <div
+                      className="flex items-center justify-center"
+                      style={{
+                        minHeight: Math.min(PREVIEW_A4_H * previewScale, 560),
+                      }}
+                    >
+                      <div className="flex flex-col items-center gap-3 py-16">
                         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" />
                         <p className="font-manrope text-sm text-zinc-400">
                           Loading preview…
@@ -536,17 +582,38 @@ export default function PreviewPage() {
                       </div>
                     </div>
                   ) : (
-                    <iframe
-                      ref={iframeRef}
-                      title="Resume Preview"
-                      className="aspect-[8.5/11] w-full border-0"
-                      sandbox="allow-same-origin"
-                    />
+                    <div
+                      ref={previewFrameContainerRef}
+                      className="flex w-full justify-center bg-white"
+                    >
+                      <div
+                        className="overflow-hidden"
+                        style={{
+                          width: PREVIEW_A4_W * previewScale,
+                          height: previewContentH * previewScale,
+                        }}
+                      >
+                        <iframe
+                          ref={iframeRef}
+                          srcDoc={previewHtml}
+                          title="Resume Preview"
+                          className="block border-0 bg-white"
+                          sandbox="allow-same-origin"
+                          onLoad={measurePreviewIframe}
+                          style={{
+                            width: PREVIEW_A4_W,
+                            height: previewContentH,
+                            transform: `scale(${previewScale})`,
+                            transformOrigin: "top left",
+                          }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
 
                 {/* Refresh preview hint */}
-                <div className="mt-3 flex items-center justify-center gap-2">
+                {/* <div className="mt-3 flex items-center justify-center gap-2">
                   <button
                     onClick={fetchPreview}
                     className="inline-flex items-center gap-1.5 font-manrope text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -566,7 +633,7 @@ export default function PreviewPage() {
                     </svg>
                     Refresh preview
                   </button>
-                </div>
+                </div> */}
               </div>
 
               {/* ─── ATS Results Panel ─── */}

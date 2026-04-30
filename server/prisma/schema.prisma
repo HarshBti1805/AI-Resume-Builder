@@ -280,6 +280,8 @@ enum TemplateType {
   MINIMAL
   ACADEMIC
   TECHNICAL
+  COMPACT
+  ELEGANT
 }
 
 enum AchievementType {

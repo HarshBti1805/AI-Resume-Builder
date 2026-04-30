@@ -9,6 +9,8 @@ const templates: { value: TemplateType; label: string }[] = [
   { value: "MINIMAL", label: "Minimal" },
   { value: "ACADEMIC", label: "Academic" },
   { value: "TECHNICAL", label: "Technical" },
+  { value: "COMPACT", label: "Compact" },
+  { value: "ELEGANT", label: "Elegant" },
 ];
 
 export function TemplateSwitch() {

@@ -19,9 +19,8 @@ interface ResumeDataForAI {
 // ─────────────────────────────────────────────
 
 export const generateSummaryService = async (
-  data: ResumeDataForAI
+  data: ResumeDataForAI,
 ): Promise<string> => {
-  const projectList = data.projects.map((p) => p.title).join(", ") || "none";
   const expList =
     data.internships.map((i) => `${i.role} at ${i.company}`).join(", ") ||
     "none";
@@ -33,22 +32,23 @@ export const generateSummaryService = async (
       {
         role: "system",
         content:
-          "You are a professional resume writer specialising in university students. " +
-          "Write concise, impactful professional summaries. " +
-          "Never use generic filler phrases like 'hard-working', 'passionate', or 'team player'. " +
-          "Be specific. Use first person. 2–3 sentences max.",
+          "You are a professional resume writer for university students. " +
+          "Write a very short professional summary in first person. " +
+          "Hard limit: it must fit in about one line on an A4 resume at typical body font (roughly 35–50 words total, at most two short sentences or three very tight ones). " +
+          "Draw only on general skills, field of study, and genuine enthusiasm and motivation for the work—do not name or allude to specific projects, apps, or portfolio pieces. " +
+          "You may lightly reflect relevant experience only in broad terms (e.g. internships or practical exposure) without listing employers unless essential. " +
+          "Avoid empty clichés ('hard-working', 'team player'); enthusiasm should sound specific to the discipline, not generic.",
       },
       {
         role: "user",
         content:
-          `Write a professional summary for a ${data.stream} student at ${data.university}.\n` +
-          `Skills: ${skillList}\n` +
-          `Projects: ${projectList}\n` +
-          `Experience: ${expList}`,
+          `Write this summary for a ${data.stream} student at ${data.university}.\n` +
+          `Relevant skills and technologies (summarise themes in the prose, do not paste as a list): ${skillList}\n` +
+          `Background for tone only—do not turn into a job list: ${expList}`,
       },
     ],
-    max_tokens: 200,
-    temperature: 0.7,
+    max_tokens: 110,
+    temperature: 0.65,
   });
 
   return response.choices[0].message.content?.trim() ?? "";
@@ -60,7 +60,7 @@ export const generateSummaryService = async (
 
 export const enhanceBulletService = async (
   rawText: string,
-  context: string
+  context: string,
 ): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -92,7 +92,7 @@ export const enhanceBulletService = async (
 
 export const improveBulletService = async (
   bullet: string,
-  context: string
+  context: string,
 ): Promise<string> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -128,7 +128,7 @@ interface AddKeywordsResult {
 
 export const addKeywordsService = async (
   bullet: string,
-  context: string
+  context: string,
 ): Promise<AddKeywordsResult> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -167,7 +167,7 @@ export const addKeywordsService = async (
 export const generateBulletsService = async (
   description: string,
   techStack: string[],
-  count: number = 4
+  count: number = 4,
 ): Promise<string[]> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -214,7 +214,7 @@ export const refineFullResumeService = async (
   resumeData: ResumeDataForAI & {
     summary?: string;
     achievements?: { title: string }[];
-  }
+  },
 ): Promise<RefineResult> => {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",

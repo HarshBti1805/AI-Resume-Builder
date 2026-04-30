@@ -72,6 +72,16 @@ Handlebars.registerHelper(
 // eq: compare two values
 Handlebars.registerHelper("eq", (a: unknown, b: unknown) => a === b);
 
+/** Section labels (Education, Projects, …) smaller than the main name; scales with headingSize. */
+Handlebars.registerHelper(
+  "sectionHeadingSize",
+  (headingSize: unknown): number => {
+    const h = Number(headingSize);
+    if (!Number.isFinite(h) || h <= 0) return 12;
+    return Math.max(10, Math.round(h * 0.8));
+  }
+);
+
 // sectionTitle(sectionId): return custom title or default for section
 const DEFAULT_SECTION_TITLES: Record<string, string> = {
   summary: "Professional Summary",

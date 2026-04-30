@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError";
 import { getParam } from "../types";
 import { renderTemplate } from "../services/template.service";
 
-const VALID_TEMPLATES = ["CLASSIC", "MODERN", "MINIMAL", "ACADEMIC", "TECHNICAL"];
+const VALID_TEMPLATES = ["CLASSIC", "MODERN", "MINIMAL", "ACADEMIC", "TECHNICAL", "COMPACT", "ELEGANT"];
 
 // ─────────────────────────────────────────────
 // GET /api/resume/:id/preview

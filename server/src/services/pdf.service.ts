@@ -58,6 +58,13 @@ export const generatePdf = async (html: string): Promise<Buffer> => {
     try {
       const page = await browser.newPage();
 
+      // Match A4 content width at 96 DPI (794px) so line breaks align with /preview iframe.
+      await page.setViewport({
+        width: 794,
+        height: 1123,
+        deviceScaleFactor: 1,
+      });
+
       await page.setContent(html, {
         waitUntil: "networkidle0",
         timeout: 15_000,

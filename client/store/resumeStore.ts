@@ -127,7 +127,9 @@ export type TemplateType =
   | "MODERN"
   | "MINIMAL"
   | "ACADEMIC"
-  | "TECHNICAL";
+  | "TECHNICAL"
+  | "COMPACT"
+  | "ELEGANT";
 
 // ─────────────────────────────────────────────
 // Store interface

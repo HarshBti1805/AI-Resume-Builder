@@ -611,6 +611,8 @@ export const setTemplate = async (
       "MINIMAL",
       "ACADEMIC",
       "TECHNICAL",
+      "COMPACT",
+      "ELEGANT",
     ];
 
     if (!validTemplates.includes(template)) {

@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>{{fullName}} — Resume</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -24,7 +23,7 @@
   /* ── Section ── */
   .section { margin-bottom: 14px; }
   .section-title {
-    font-size: {{headingSize}}pt;
+    font-size: {{sectionHeadingSize headingSize}}pt;
     font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -54,7 +53,13 @@
   .project-item { margin-bottom: 8px; }
   .project-title { font-weight: bold; }
   .project-subtitle { font-style: italic; font-weight: normal; }
-  .project-tech { font-size: 8.5pt; color: #555; }
+  .project-tech { font-size: 9.25pt; line-height: 1.5; color: #555; margin-top: 2px; }
+  /* Bullets & description: match skills-line size & rhythm, not bold */
+  .project-item ul.project-details,
+  .project-item .project-details { font-size: 10.5pt; font-weight: normal; color: #1a1a1a; line-height: {{lineSpacing}}; margin-top: 3px; }
+  .project-item ul.project-details { padding-left: 20px; margin-bottom: 0; }
+  .project-item ul.project-details li { margin-bottom: 2px; }
+  .project-item ul.project-details li:last-child { margin-bottom: 0; }
   .project-links { font-size: 8.5pt; color: #555; margin-top: 1px; }
   .project-links a { color: #555; }
 
@@ -196,11 +201,11 @@
     </div>
     {{#ifNotEmpty techStack}}<div class="project-tech">{{join techStack " • "}}</div>{{/ifNotEmpty}}
     {{#ifNotEmpty bullets}}
-    <ul class="row-desc" style="padding-left:18px;margin-top:3px;">
+    <ul class="project-details">
       {{#each bullets}}<li>{{text}}</li>{{/each}}
     </ul>
     {{else}}
-    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{#ifVal description}}<div class="project-details">{{description}}</div>{{/ifVal}}
     {{/ifNotEmpty}}
     {{#ifVal liveUrl}}
     <div class="project-links">

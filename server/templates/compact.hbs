@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>{{fullName}} — Resume</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "{{fontFamily}}", Arial, sans-serif;
+    font-size: {{fontSize}}pt;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: {{lineSpacing}};
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 30%;
+    background: color-mix(in srgb, {{accentColor}} 12%, #fff);
+    border-right: 3px solid {{accentColor}};
+    {{#if (eq marginSize "compact")}}padding: 28px 16px;{{else}}{{#if (eq marginSize "wide")}}padding: 52px 24px;{{else}}padding: 36px 20px;{{/if}}{{/if}}
+  }
+  .sidebar h1 {
+    font-size: {{headingSize}}pt;
+    font-weight: 800;
+    color: {{accentColor}};
+    line-height: 1.15;
+    margin-bottom: 4px;
+    word-break: break-word;
+  }
+  .sidebar .degree {
+    font-size: 9pt;
+    color: #444;
+    margin-bottom: 14px;
+    font-style: italic;
+  }
+  .sidebar-section { margin-bottom: 18px; }
+  .sidebar-label {
+    font-size: 7.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: {{accentColor}};
+    border-bottom: 1.5px solid {{accentColor}};
+    padding-bottom: 2px;
+    margin-bottom: 7px;
+  }
+  .contact-item { font-size: 8.5pt; color: #444; margin-bottom: 3px; word-break: break-all; }
+  .contact-item a { color: #444; text-decoration: none; }
+
+  .skill-cat-name { font-size: 8.5pt; font-weight: 700; color: #222; margin-bottom: 2px; }
+  .skill-list { font-size: 8pt; color: #555; margin-bottom: 6px; line-height: 1.5; }
+
+  .hobby-list { font-size: 8.5pt; color: #555; line-height: 1.7; }
+
+  /* ── Main ── */
+  .main {
+    width: 70%;
+    {{#if (eq marginSize "compact")}}padding: 28px 24px;{{else}}{{#if (eq marginSize "wide")}}padding: 52px 40px;{{else}}padding: 36px 32px;{{/if}}{{/if}}
+  }
+
+  .section { margin-bottom: 15px; }
+  .section-title {
+    font-size: {{sectionHeadingSize headingSize}}pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: {{accentColor}};
+    {{#if (eq sectionDivider "none")}}border-bottom: none;{{else}}{{#if (eq sectionDivider "double")}}border-bottom: 3px double {{accentColor}};{{else}}{{#if (eq sectionDivider "dotted")}}border-bottom: 1px dotted {{accentColor}};{{else}}border-bottom: 1.5px solid {{accentColor}};{{/if}}{{/if}}{{/if}}
+    padding-bottom: 3px;
+    margin-bottom: 8px;
+  }
+
+  .row { margin-bottom: 8px; }
+  .row-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .row-title { font-weight: 700; font-size: 10pt; }
+  .row-date { font-size: 8pt; color: #777; white-space: nowrap; }
+  .row-sub { font-size: 8.5pt; color: #555; margin-top: 1px; }
+  .row-desc { font-size: 8.5pt; color: #444; margin-top: 3px; }
+  ul.row-desc { padding-left: 16px; }
+  ul.row-desc li { margin-bottom: 2px; }
+
+  .proj-tech { font-size: 8pt; color: #777; margin-top: 2px; }
+  .proj-links { font-size: 8pt; color: #777; margin-top: 2px; }
+  .proj-links a { color: {{accentColor}}; text-decoration: none; }
+  .project-subtitle { font-style: italic; font-weight: 400; color: #666; }
+
+  .ach-item { font-size: 8.5pt; margin-bottom: 3px; }
+  .ach-item::before { content: "▸ "; color: {{accentColor}}; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<div class="sidebar">
+  <h1>{{fullName}}</h1>
+  {{#ifVal stream}}<div class="degree">{{stream}}{{#ifVal branch}}, {{branch}}{{/ifVal}}</div>{{/ifVal}}
+
+  <div class="sidebar-section">
+    <div class="sidebar-label">Contact</div>
+    {{#ifVal contactEmail}}<div class="contact-item">{{contactEmail}}</div>{{/ifVal}}
+    {{#ifVal phone}}<div class="contact-item">{{phone}}</div>{{/ifVal}}
+    {{#ifVal city}}<div class="contact-item">{{city}}{{#ifVal state}}, {{state}}{{/ifVal}}</div>{{/ifVal}}
+    {{#ifVal linkedin}}<div class="contact-item"><a href="{{linkedin}}">LinkedIn</a></div>{{/ifVal}}
+    {{#ifVal github}}<div class="contact-item"><a href="{{github}}">GitHub</a></div>{{/ifVal}}
+    {{#ifVal portfolio}}<div class="contact-item"><a href="{{portfolio}}">Portfolio</a></div>{{/ifVal}}
+  </div>
+
+  {{#each sectionOrder}}
+  {{#if (eq this "skills")}}
+  {{#ifNotEmpty ../skillCategories}}
+  <div class="sidebar-section">
+    <div class="sidebar-label">Skills</div>
+    {{#each ../skillCategories}}
+    <div class="skill-cat-name">{{name}}</div>
+    <div class="skill-list">{{join skills " · "}}</div>
+    {{/each}}
+  </div>
+  {{else}}
+  {{#ifNotEmpty ../skills}}
+  <div class="sidebar-section">
+    <div class="sidebar-label">Skills</div>
+    <div class="skill-list">{{join ../skills " · "}}</div>
+  </div>
+  {{/ifNotEmpty}}
+  {{/ifNotEmpty}}
+  {{/if}}
+
+  {{#if (eq this "hobbies")}}
+  {{#ifNotEmpty ../hobbyItems}}
+  <div class="sidebar-section">
+    <div class="sidebar-label">Interests</div>
+    <div class="hobby-list">
+      {{#each ../hobbyItems}}{{name}}{{#ifVal description}} ({{description}}){{/ifVal}}{{#unless @last}}<br/>{{/unless}}{{/each}}
+    </div>
+  </div>
+  {{else}}
+  {{#ifNotEmpty ../hobbies}}
+  <div class="sidebar-section">
+    <div class="sidebar-label">Interests</div>
+    <div class="hobby-list">{{join ../hobbies " · "}}</div>
+  </div>
+  {{/ifNotEmpty}}
+  {{/ifNotEmpty}}
+  {{/if}}
+  {{/each}}
+</div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+{{#each sectionOrder}}
+{{#if (eq this "summary")}}
+{{#ifVal ../summary}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row-desc">{{../summary}}</div>
+</div>
+{{/ifVal}}
+{{/if}}
+
+{{#if (eq this "education")}}
+{{#ifVal ../university}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{../university}}</span>
+      <span class="row-date">{{../batchStart}} – {{../batchEnd}}</span>
+    </div>
+    <div class="row-sub">{{../stream}}{{#ifVal ../branch}} · {{../branch}}{{/ifVal}}{{#ifVal ../cgpa}} · CGPA {{../cgpa}}{{/ifVal}}</div>
+  </div>
+  {{#unless (eq ../showMarks12th false)}}
+    {{#ifVal ../marks12th}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">12th{{#ifVal ../board12th}} · {{../board12th}}{{/ifVal}}{{#ifVal ../schoolName12th}} · {{../schoolName12th}}{{/ifVal}}</span>
+        <span class="row-date">{{../marks12th}}%</span>
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/unless}}
+  {{#unless (eq ../showMarks10th false)}}
+    {{#ifVal ../marks10th}}
+    <div class="row">
+      <div class="row-header">
+        <span class="row-title">10th{{#ifVal ../board10th}} · {{../board10th}}{{/ifVal}}{{#ifVal ../schoolName10th}} · {{../schoolName10th}}{{/ifVal}}</span>
+        <span class="row-date">{{../marks10th}}%</span>
+      </div>
+    </div>
+    {{/ifVal}}
+  {{/unless}}
+  {{#unless (eq ../showCoursework false)}}
+    {{#ifNotEmpty ../coursework}}<div class="row-sub" style="margin-top:4px;"><strong>Coursework:</strong> {{join ../coursework ", "}}</div>{{/ifNotEmpty}}
+  {{/unless}}
+</div>
+{{/ifVal}}
+{{/if}}
+
+{{#if (eq this "experience")}}
+{{#ifNotEmpty ../internships}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../internships}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{role}} · {{company}}</span>
+      <span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>
+    </div>
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:16px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "projects")}}
+{{#ifNotEmpty ../projects}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../projects}}
+  <div class="row">
+    <div class="row-header">
+      <span class="row-title">{{title}}{{#ifVal subtitle}} — <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
+      {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
+    </div>
+    {{#ifNotEmpty techStack}}<div class="proj-tech">{{join techStack " · "}}</div>{{/ifNotEmpty}}
+    {{#ifNotEmpty bullets}}
+    <ul class="row-desc" style="padding-left:16px;margin-top:3px;">
+      {{#each bullets}}<li>{{text}}</li>{{/each}}
+    </ul>
+    {{else}}
+    {{#ifVal description}}<div class="row-desc">{{description}}</div>{{/ifVal}}
+    {{/ifNotEmpty}}
+    {{#ifVal liveUrl}}<div class="proj-links"><a href="{{liveUrl}}">Live</a>{{#ifVal repoUrl}} · <a href="{{repoUrl}}">Repo</a>{{/ifVal}}</div>{{/ifVal}}
+    {{#ifVal repoUrl}}{{#unless liveUrl}}<div class="proj-links"><a href="{{repoUrl}}">Repo</a></div>{{/unless}}{{/ifVal}}
+  </div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#if (eq this "achievements")}}
+{{#ifNotEmpty ../achievements}}
+<div class="section">
+  <div class="section-title">{{sectionTitle this}}</div>
+  {{#each ../achievements}}
+  <div class="ach-item"><strong>{{title}}</strong>{{#ifVal description}} — {{description}}{{/ifVal}}{{#ifVal link}} <a href="{{link}}" style="font-size:8pt;color:#777;">[Link]</a>{{/ifVal}}</div>
+  {{/each}}
+</div>
+{{/ifNotEmpty}}
+{{/if}}
+
+{{#with (customSectionById this)}}
+<div class="section">
+  <div class="section-title">{{title}}</div>
+  <ul class="row-desc" style="padding-left:16px;margin-top:3px;">
+    {{#each items}}<li>{{text}}</li>{{/each}}
+  </ul>
+</div>
+{{/with}}
+{{/each}}
+
+</div>
+</body>
+</html>
