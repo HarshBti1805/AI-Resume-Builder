@@ -8,7 +8,14 @@ export const authenticate = (
   res: Response,
   next: NextFunction
 ): void => {
-  const token = req.cookies?.accessToken;
+  // Prefer the Authorization: Bearer header (cross-domain clients), then fall
+  // back to the cookie (same-domain clients / local dev).
+  const authHeader = req.headers.authorization;
+  const bearerToken =
+    authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length).trim()
+      : undefined;
+  const token = bearerToken || req.cookies?.accessToken;
 
   if (!token) {
     res.status(401).json({

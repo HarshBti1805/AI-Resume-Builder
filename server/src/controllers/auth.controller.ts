@@ -142,6 +142,11 @@ export const verifyOtpAndLogin = async (
           name: user.name,
           rollNumber: user.rollNumber,
         },
+        // Also returned in the body so cross-domain clients (Vercel client +
+        // Render API) can use Bearer auth, since third-party cookies are
+        // unreliable / blocked across different registrable domains.
+        accessToken,
+        refreshToken,
       },
     });
   } catch (err) {
@@ -160,7 +165,11 @@ export const refresh = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const token = req.cookies?.refreshToken;
+    // Accept the refresh token from the request body (Bearer/localStorage
+    // clients) or the cookie (same-domain clients).
+    const token =
+      (req.body?.refreshToken as string | undefined) ||
+      req.cookies?.refreshToken;
 
     if (!token) {
       throw new AppError("No refresh token provided", 401, "NO_REFRESH_TOKEN");
@@ -194,7 +203,11 @@ export const refresh = async (
       maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
 
-    res.json({ success: true, message: "Token refreshed" });
+    res.json({
+      success: true,
+      message: "Token refreshed",
+      data: { accessToken },
+    });
   } catch (err) {
     // If JWT verification fails, clear cookies and force re-login
     if (err instanceof jwt.JsonWebTokenError) {

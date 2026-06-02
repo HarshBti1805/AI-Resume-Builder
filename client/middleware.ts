@@ -10,9 +10,11 @@ const authRoutes = ["/login", "/verify"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check for access token cookie (httpOnly cookies are readable in middleware)
-  const accessToken = request.cookies.get("accessToken")?.value;
-  const isAuthenticated = !!accessToken;
+  // Gate routes on the client-set "is-authed" flag cookie. The real auth token
+  // lives in localStorage and is sent as a Bearer header to the API; we can't
+  // read the API's httpOnly cookie here because it belongs to a different
+  // domain (Render), not the client domain (Vercel).
+  const isAuthenticated = request.cookies.get("is-authed")?.value === "1";
 
   // Protect routes — redirect to login if not authenticated
   const isProtected = protectedRoutes.some((route) =>

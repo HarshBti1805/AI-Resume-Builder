@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import api from "@/lib/api";
+import api, { tokenStore } from "@/lib/api";
 
 interface User {
   id: string;
@@ -53,7 +53,8 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           const res = await api.post("/auth/verify-otp", data);
-          const user = res.data.data.user;
+          const { user, accessToken, refreshToken } = res.data.data;
+          if (accessToken) tokenStore.set(accessToken, refreshToken);
           set({
             user,
             isAuthenticated: true,
@@ -83,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // Ignore errors — clear local state regardless
         }
+        tokenStore.clear();
         set({ user: null, isAuthenticated: false });
       },
 
