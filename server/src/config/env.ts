@@ -17,10 +17,16 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES_IN: z.string().default("24h"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
 
-  SMTP_HOST: z.string(),
+  // Email (Brevo HTTP API)
+  BREVO_API_KEY: z.string(),
+  // Verified Brevo sender address (the email you verify in Brevo).
+  EMAIL_FROM: z.string(),
+
+  // Legacy SMTP vars — kept optional so old .env files don't fail validation.
+  SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.string().default("587"),
-  SMTP_USER: z.string(),
-  SMTP_PASS: z.string(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
 
   ALLOWED_EMAIL_DOMAIN: z.string().default("chitkara.edu.in"),
   CLIENT_URL: z.string().default("http://localhost:3000"),
