@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Routes that require authentication
-const protectedRoutes = ["/form", "/templates", "/preview", "/start", "/editor"];
+const protectedRoutes = [
+  "/form",
+  "/templates",
+  "/preview",
+  "/start",
+  "/editor",
+  "/profile",
+];
 
 // Routes that should redirect to /start if already authenticated
 const authRoutes = ["/login", "/verify"];
@@ -43,6 +50,8 @@ export const config = {
     "/start",
     "/start/:path*",
     "/editor/:path*",
+    "/profile",
+    "/profile/:path*",
     "/login",
     "/verify",
   ],

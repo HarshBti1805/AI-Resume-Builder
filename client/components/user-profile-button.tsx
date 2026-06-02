@@ -115,7 +115,21 @@ export function UserProfileButton({ inline, className }: UserProfileButtonProps)
                 </p>
               </div>
             </div>
-            <div className="pt-3">
+            <div className="space-y-2 pt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  router.push("/profile");
+                }}
+                className="font-manrope flex w-full items-center justify-between rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
+                role="menuitem"
+              >
+                My resumes
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
               <button
                 type="button"
                 onClick={handleLogout}

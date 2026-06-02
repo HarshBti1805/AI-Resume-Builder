@@ -131,6 +131,25 @@ export type TemplateType =
   | "COMPACT"
   | "ELEGANT";
 
+export interface ResumeSummary {
+  id: string;
+  title: string | null;
+  fullName: string | null;
+  selectedTemplate: TemplateType | null;
+  status: "DRAFT" | "COMPLETED";
+  atsScore: number | null;
+  isPublic: boolean;
+  shareId: string | null;
+  origin?: "SCRATCH" | "UPLOADED";
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface ShareState {
+  isPublic: boolean;
+  shareId: string | null;
+}
+
 // ─────────────────────────────────────────────
 // Store interface
 // ─────────────────────────────────────────────
@@ -138,6 +157,7 @@ export type TemplateType =
 export interface ResumeStore {
   // Meta
   resumeId: string | null;
+  title: string;
   currentStep: number;
   version: number;
   status: "DRAFT" | "COMPLETED";
@@ -163,8 +183,15 @@ export interface ResumeStore {
   sectionTitles: Record<string, string>;  // e.g. { experience: "Companies", education: "Academic" }
 
   // ── Actions ──
-  initResume: () => Promise<string>;
+  initResume: (title?: string) => Promise<string>;
   loadResume: (id: string) => Promise<void>;
+
+  // Multi-resume / library
+  listResumes: () => Promise<ResumeSummary[]>;
+  duplicateResume: (id: string) => Promise<string>;
+  renameResume: (id: string, title: string) => Promise<void>;
+  removeResume: (id: string) => Promise<void>;
+  setShare: (id: string, enabled: boolean) => Promise<ShareState>;
 
   updateStep1: (data: Partial<Step1Data>) => void;
   updateStep2: (data: Partial<Step2Data>) => void;
@@ -256,6 +283,7 @@ export const useResumeStore = create<ResumeStore>()(
       (set, get) => ({
         // ── Meta ──
         resumeId: null,
+        title: "Untitled Resume",
         currentStep: 1,
         version: 1,
         status: "DRAFT",
@@ -281,16 +309,29 @@ export const useResumeStore = create<ResumeStore>()(
 
         // ── Init / Load ──────────────────────────────────────────
 
-        initResume: async () => {
-          const res = await api.post("/resume");
+        initResume: async (title?: string) => {
+          const res = await api.post("/resume", title ? { title } : {});
           const resume = res.data.data.resume;
+          // Start every new resume from a clean slate — the persisted store may
+          // still hold data from a previously edited resume.
           set({
             resumeId: resume.id,
+            title: resume.title ?? "Untitled Resume",
             version: resume.version,
             currentStep: resume.currentStep ?? 1,
             status: resume.status,
+            selectedTemplate: resume.selectedTemplate ?? null,
+            atsScore: null,
             // pre-fill email from auth
             step1: { ...defaultStep1, contactEmail: resume.contactEmail ?? "" },
+            step2: defaultStep2,
+            step3: defaultStep3,
+            step4: defaultStep4,
+            step5: defaultStep5,
+            customSections: [],
+            editorStyles: defaultEditorStyles,
+            sectionOrder: [],
+            sectionTitles: {},
           });
           return resume.id as string;
         },
@@ -300,6 +341,7 @@ export const useResumeStore = create<ResumeStore>()(
           const r = res.data.data.resume;
           set({
             resumeId: r.id,
+            title: r.title ?? "Untitled Resume",
             version: r.version,
             currentStep: r.currentStep ?? 1,
             status: r.status,
@@ -437,6 +479,33 @@ export const useResumeStore = create<ResumeStore>()(
                 ? (r.sectionTitles as Record<string, string>)
                 : {},
           });
+        },
+
+        // ── Multi-resume / library ──────────────────────────────
+
+        listResumes: async () => {
+          const res = await api.get("/resume/list");
+          return (res.data?.data?.resumes ?? []) as ResumeSummary[];
+        },
+
+        duplicateResume: async (id: string) => {
+          const res = await api.post(`/resume/${id}/duplicate`);
+          return res.data.data.resume.id as string;
+        },
+
+        renameResume: async (id: string, title: string) => {
+          await api.patch(`/resume/${id}`, { title });
+          set((s) => (s.resumeId === id ? { title } : {}));
+        },
+
+        removeResume: async (id: string) => {
+          await api.delete(`/resume/${id}`);
+          set((s) => (s.resumeId === id ? { resumeId: null } : {}));
+        },
+
+        setShare: async (id: string, enabled: boolean) => {
+          const res = await api.post(`/resume/${id}/share`, { enabled });
+          return res.data.data as ShareState;
         },
 
         // ── Local updates (instant, no API) ─────────────────────
@@ -737,6 +806,7 @@ export const useResumeStore = create<ResumeStore>()(
         reset: () =>
           set({
             resumeId: null,
+            title: "Untitled Resume",
             currentStep: 1,
             version: 1,
             status: "DRAFT",
@@ -758,6 +828,7 @@ export const useResumeStore = create<ResumeStore>()(
         // Don't persist transient save state
         partialize: (s) => ({
           resumeId: s.resumeId,
+          title: s.title,
           currentStep: s.currentStep,
           version: s.version,
           status: s.status,

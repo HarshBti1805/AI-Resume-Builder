@@ -442,6 +442,12 @@ export default function PreviewPage() {
               {/* Actions */}
               <div className="flex items-center gap-2">
                 <Link
+                  href="/profile"
+                  className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
+                >
+                  My resumes
+                </Link>
+                <Link
                   href="/start"
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
                 >
