@@ -6,9 +6,6 @@ const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
   port: parseInt(env.SMTP_PORT),
   secure: false, // true for 465, false for 587
-  // Force IPv4: some hosts (e.g. Render) can't route outbound IPv6,
-  // which causes ENETUNREACH when DNS resolves SMTP to an IPv6 address.
-  family: 4,
   auth: {
     user: env.SMTP_USER,
     pass: env.SMTP_PASS,
