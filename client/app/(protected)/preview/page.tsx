@@ -127,9 +127,19 @@ function AtsScoreRing({ score, max }: { score: number; max: number }) {
    ───────────────────────────────────────────── */
 export default function PreviewPage() {
   const router = useRouter();
-  const { resumeId, selectedTemplate, setTemplate, loadResume, step1 } =
-    useResumeStore();
+  const {
+    resumeId,
+    selectedTemplate,
+    setTemplate,
+    loadResume,
+    step1,
+    savedToLibrary,
+    saveToLibrary,
+  } = useResumeStore();
   const { isSaving } = useResumeStore();
+
+  const [isSavingToLibrary, setIsSavingToLibrary] = useState(false);
+  const [saveLibraryError, setSaveLibraryError] = useState<string | null>(null);
 
   // States
   const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
@@ -336,6 +346,25 @@ export default function PreviewPage() {
     }
   };
 
+  /* ─── Save to profile / library ─── */
+  const handleSaveToLibrary = async () => {
+    if (!resumeId || savedToLibrary) return;
+    setIsSavingToLibrary(true);
+    setSaveLibraryError(null);
+    try {
+      const suggestedTitle = step1?.fullName?.trim()
+        ? `${step1.fullName.trim()}'s Resume`
+        : undefined;
+      await saveToLibrary(resumeId, true, suggestedTitle);
+    } catch (err) {
+      setSaveLibraryError(
+        err instanceof Error ? err.message : "Could not save resume.",
+      );
+    } finally {
+      setIsSavingToLibrary(false);
+    }
+  };
+
   /* ─── Redirect if no resume ─── */
   useEffect(() => {
     if (!resumeId) {
@@ -408,6 +437,22 @@ export default function PreviewPage() {
             >
               Edit in editor
             </Link>
+            <Link
+              href="/agent"
+              className="font-space-grotesk inline-flex items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 py-2 text-xs font-medium text-foreground shadow-md transition-all hover:bg-primary/15"
+            >
+              <span className="flex h-4 w-4 items-center justify-center">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none">
+                  <path
+                    d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
+              Edit with AI
+            </Link>
           </motion.div>
 
           {/* ─── Action bar ─── */}
@@ -441,6 +486,54 @@ export default function PreviewPage() {
 
               {/* Actions */}
               <div className="flex items-center gap-2">
+                {savedToLibrary ? (
+                  <span className="font-manrope inline-flex items-center gap-1.5 rounded-lg bg-emerald-400/10 px-3 py-2 text-xs font-medium text-emerald-500">
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Saved to profile
+                  </span>
+                ) : (
+                  <button
+                    onClick={handleSaveToLibrary}
+                    disabled={isSavingToLibrary || isLoadingPreview}
+                    className="font-space-grotesk inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 py-2 text-xs font-medium text-white shadow-sm transition-all hover:bg-emerald-600 disabled:opacity-50"
+                  >
+                    {isSavingToLibrary ? (
+                      <>
+                        <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        Saving…
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          width="13"
+                          height="13"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Save resume
+                      </>
+                    )}
+                  </button>
+                )}
                 <Link
                   href="/profile"
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
@@ -549,14 +642,14 @@ export default function PreviewPage() {
           </motion.div>
 
           {/* ─── Error messages ─── */}
-          {(downloadError || atsError) && (
+          {(downloadError || atsError || saveLibraryError) && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="mb-4 rounded-xl border border-red-500/20 bg-red-500/[0.05] px-4 py-3 text-center"
             >
               <p className="font-manrope text-sm text-red-400">
-                {downloadError || atsError}
+                {downloadError || atsError || saveLibraryError}
               </p>
             </motion.div>
           )}

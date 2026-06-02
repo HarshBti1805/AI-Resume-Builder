@@ -8,6 +8,7 @@ import {
   updateResumeMeta,
   duplicateResume,
   setShare,
+  saveToLibrary,
   saveStep1,
   saveStep2,
   saveStep3,
@@ -42,6 +43,7 @@ router.delete("/:id", deleteResume);
 // ── Multi-resume actions ──────────────────────
 router.post("/:id/duplicate", duplicateResume);
 router.post("/:id/share", setShare);
+router.post("/:id/save", saveToLibrary);
 
 // ── Form steps (auto-save) ────────────────────
 router.patch("/:id/step/1", saveStep1);

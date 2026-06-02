@@ -106,6 +106,11 @@ model Resume {
   shareId          String?        @unique
   isPublic         Boolean        @default(false)
 
+  // Library: a resume only appears in "My resumes" once the user explicitly
+  // saves it, so auto-saved drafts don't clutter the profile.
+  savedToLibrary   Boolean        @default(false)
+  savedAt          DateTime?
+
   // Relations
   projects         Project[]
   internships      Internship[]
@@ -113,6 +118,11 @@ model Resume {
   skillCategories  SkillCategory[]
   hobbyItems       Hobby[]
   customSections   CustomSection[]
+
+  // Agentic mode
+  snapshots        ResumeSnapshot[]
+  agentMessages    AgentMessage[]
+  artifacts        Artifact[]
 
   @@index([userId])
   @@index([userId, status])
@@ -271,8 +281,62 @@ model CustomSectionItem {
 }
 
 // ─────────────────────────────────────────────
+// AGENTIC MODE: snapshots, chat, artifacts
+// ─────────────────────────────────────────────
+
+// Full-resume snapshot taken before each agent action (enables undo/rollback).
+model ResumeSnapshot {
+  id        String   @id @default(uuid())
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId  String
+  userId    String
+  version   Int                         // resume.version at snapshot time
+  label     String?                     // human-readable description of the change
+  source    String   @default("agent")  // "agent" | "manual"
+  data      Json                         // serialized resume (all relations)
+  createdAt DateTime @default(now())
+
+  @@index([resumeId])
+  @@index([resumeId, createdAt])
+}
+
+// Persisted agentic chat (one running conversation per resume).
+model AgentMessage {
+  id         String   @id @default(uuid())
+  resume     Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId   String
+  userId     String
+  role       String                      // "user" | "assistant"
+  content    String   @db.Text
+  toolEvents Json?                        // [{ tool, label, snapshotId }]
+  createdAt  DateTime @default(now())
+
+  @@index([resumeId, createdAt])
+}
+
+// Extracted text from uploaded files / pasted job descriptions used as context.
+model Artifact {
+  id        String       @id @default(uuid())
+  resume    Resume       @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  resumeId  String
+  userId    String
+  kind      ArtifactKind @default(FILE)
+  label     String?                       // filename or short title
+  mimeType  String?
+  text      String       @db.Text         // extracted plain text
+  createdAt DateTime     @default(now())
+
+  @@index([resumeId, createdAt])
+}
+
+// ─────────────────────────────────────────────
 // ENUMS
 // ─────────────────────────────────────────────
+
+enum ArtifactKind {
+  FILE
+  JD
+}
 
 enum ResumeStatus {
   DRAFT

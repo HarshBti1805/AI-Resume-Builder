@@ -115,6 +115,18 @@ export default function SummaryPage() {
     }
   };
 
+  const handleOpenAgent = async () => {
+    setIsFinishing(true);
+    try {
+      await saveAllSteps();
+      router.push("/agent");
+    } catch {
+      // saveError is set in store; layout shows it
+    } finally {
+      setIsFinishing(false);
+    }
+  };
+
   return (
     <motion.div variants={container} initial="hidden" animate="show">
       <motion.div variants={item} className="mb-8">
@@ -330,6 +342,14 @@ export default function SummaryPage() {
               className="font-manrope inline-flex h-11 items-center justify-center rounded-xl border border-border bg-transparent px-5 text-sm font-medium text-foreground transition-colors hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-foreground/20 disabled:opacity-50"
             >
               {isFinishing ? "Saving…" : "Edit in editor"}
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenAgent}
+              disabled={isFinishing}
+              className="font-manrope inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+            >
+              {isFinishing ? "Saving…" : "Edit with AI"}
             </button>
             <button
               type="button"

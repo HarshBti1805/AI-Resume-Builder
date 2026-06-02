@@ -30,6 +30,13 @@ const envSchema = z.object({
 
   ALLOWED_EMAIL_DOMAIN: z.string().default("chitkara.edu.in"),
   CLIENT_URL: z.string().default("http://localhost:3000"),
+
+  // AI providers — optional so existing .env files don't fail validation.
+  // Read directly via process.env in the services that need them.
+  OPENAI_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional(),
+  // Optional override for the agentic model.
+  ANTHROPIC_MODEL: z.string().default("claude-sonnet-4-6"),
 });
 
 const parsed = envSchema.safeParse(process.env);

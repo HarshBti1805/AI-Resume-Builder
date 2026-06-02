@@ -8,10 +8,12 @@ export function GlobalToolbar() {
   const pathname = usePathname();
   const isForm = pathname?.startsWith("/form");
   const isEditor = pathname === "/editor";
+  const isAgent = pathname === "/agent";
   const isStart = pathname === "/start";
   const isTemplates = pathname?.startsWith("/templates");
   const isPreview = pathname === "/preview";
-  if (isForm || isEditor || isStart || isTemplates || isPreview) return null;
+  if (isForm || isEditor || isAgent || isStart || isTemplates || isPreview)
+    return null;
   return (
     <>
       <UserProfileButton />

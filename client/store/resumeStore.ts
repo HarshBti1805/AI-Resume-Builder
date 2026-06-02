@@ -141,6 +141,7 @@ export interface ResumeSummary {
   isPublic: boolean;
   shareId: string | null;
   origin?: "SCRATCH" | "UPLOADED";
+  savedToLibrary?: boolean;
   updatedAt: string;
   createdAt: string;
 }
@@ -163,6 +164,7 @@ export interface ResumeStore {
   status: "DRAFT" | "COMPLETED";
   selectedTemplate: TemplateType | null;
   atsScore: number | null;
+  savedToLibrary: boolean;
 
   // Save indicator
   isSaving: boolean;
@@ -192,6 +194,7 @@ export interface ResumeStore {
   renameResume: (id: string, title: string) => Promise<void>;
   removeResume: (id: string) => Promise<void>;
   setShare: (id: string, enabled: boolean) => Promise<ShareState>;
+  saveToLibrary: (id: string, saved?: boolean, title?: string) => Promise<boolean>;
 
   updateStep1: (data: Partial<Step1Data>) => void;
   updateStep2: (data: Partial<Step2Data>) => void;
@@ -289,6 +292,7 @@ export const useResumeStore = create<ResumeStore>()(
         status: "DRAFT",
         selectedTemplate: null,
         atsScore: null,
+        savedToLibrary: false,
 
         // ── Save state ──
         isSaving: false,
@@ -322,6 +326,7 @@ export const useResumeStore = create<ResumeStore>()(
             status: resume.status,
             selectedTemplate: resume.selectedTemplate ?? null,
             atsScore: null,
+            savedToLibrary: resume.savedToLibrary ?? false,
             // pre-fill email from auth
             step1: { ...defaultStep1, contactEmail: resume.contactEmail ?? "" },
             step2: defaultStep2,
@@ -347,6 +352,7 @@ export const useResumeStore = create<ResumeStore>()(
             status: r.status,
             selectedTemplate: r.selectedTemplate ?? null,
             atsScore: r.atsScore ?? null,
+            savedToLibrary: r.savedToLibrary ?? false,
             step1: {
               fullName: r.fullName ?? "",
               dateOfBirth: r.dateOfBirth
@@ -484,7 +490,11 @@ export const useResumeStore = create<ResumeStore>()(
         // ── Multi-resume / library ──────────────────────────────
 
         listResumes: async () => {
-          const res = await api.get("/resume/list");
+          // Cache-bust + no-cache so the browser never serves a stale (e.g.
+          // empty) copy of the library after a resume is saved.
+          const res = await api.get(`/resume/list?t=${Date.now()}`, {
+            headers: { "Cache-Control": "no-cache" },
+          });
           return (res.data?.data?.resumes ?? []) as ResumeSummary[];
         },
 
@@ -506,6 +516,23 @@ export const useResumeStore = create<ResumeStore>()(
         setShare: async (id: string, enabled: boolean) => {
           const res = await api.post(`/resume/${id}/share`, { enabled });
           return res.data.data as ShareState;
+        },
+
+        saveToLibrary: async (id: string, saved = true, title?: string) => {
+          const res = await api.post(`/resume/${id}/save`, {
+            saved,
+            ...(title ? { title } : {}),
+          });
+          const next = Boolean(res.data?.data?.savedToLibrary);
+          set((s) =>
+            s.resumeId === id
+              ? {
+                  savedToLibrary: next,
+                  ...(title ? { title } : {}),
+                }
+              : {}
+          );
+          return next;
         },
 
         // ── Local updates (instant, no API) ─────────────────────
@@ -812,6 +839,7 @@ export const useResumeStore = create<ResumeStore>()(
             status: "DRAFT",
             selectedTemplate: null,
             atsScore: null,
+            savedToLibrary: false,
             isSaving: false,
             lastSaved: null,
             saveError: null,
@@ -833,6 +861,7 @@ export const useResumeStore = create<ResumeStore>()(
           version: s.version,
           status: s.status,
           selectedTemplate: s.selectedTemplate,
+          savedToLibrary: s.savedToLibrary,
           step1: s.step1,
           step2: s.step2,
           step3: s.step3,

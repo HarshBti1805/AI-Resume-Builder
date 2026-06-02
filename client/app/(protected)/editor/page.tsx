@@ -237,6 +237,12 @@ export default function EditorPage() {
           <span className="hidden shrink-0 font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/50 sm:inline">
             Editing Room
           </span>
+          <Link
+            href="/agent"
+            className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 font-manrope text-[11px] font-medium text-foreground transition-colors hover:bg-primary/15"
+          >
+            Edit with AI
+          </Link>
         </div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <TemplateSwitch />

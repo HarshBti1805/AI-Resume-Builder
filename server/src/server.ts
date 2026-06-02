@@ -20,6 +20,7 @@ import { requestLogger } from "./middleware/requestLogger";
 import authRoutes from "./routes/auth.routes";
 import resumeRoutes from "./routes/resume.route";
 import aiRoutes from "./routes/ai.route";
+import agentRoutes from "./routes/agent.route";
 import uploadRoutes from "./routes/upload.route";
 import publicRoutes from "./routes/public.route";
 
@@ -100,6 +101,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/public", publicRoutes); // unauthenticated, read-only shared resumes
 app.use("/api/resume", resumeRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/agent", agentRoutes);
 app.use("/api/upload", uploadRoutes);
 
 // ─────────────────────────────────────────────

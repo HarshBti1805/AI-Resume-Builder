@@ -53,8 +53,10 @@ export const listResumes = async (
   try {
     const userId = req.user!.id;
 
+    // Only show resumes the user has explicitly saved to their library.
+    // Auto-saved drafts stay hidden until the user clicks "Save" on the preview.
     const resumes = await prisma.resume.findMany({
-      where: { userId },
+      where: { userId, savedToLibrary: true },
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -71,6 +73,9 @@ export const listResumes = async (
       },
     });
 
+    // Per-user dynamic list: never serve a cached/304 version, so the library
+    // always reflects newly created or updated resumes immediately.
+    res.setHeader("Cache-Control", "no-store");
     res.json({ success: true, data: { resumes } });
   } catch (err) {
     next(err);
@@ -152,6 +157,9 @@ export const duplicateResume = async (
           currentStep: src.currentStep,
           selectedTemplate: src.selectedTemplate,
           title: `Copy of ${src.title ?? "Untitled Resume"}`,
+          // Duplicates are created from the library, so keep them in the library.
+          savedToLibrary: true,
+          savedAt: new Date(),
           // Personal
           fullName: src.fullName,
           dateOfBirth: src.dateOfBirth,
@@ -347,6 +355,49 @@ export const setShare = async (
       success: true,
       data: { isPublic: makePublic, shareId: shareId ?? null },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/resume/:id/save  — add/remove a resume from the user's library
+// Body: { saved?: boolean, title?: string } (defaults to saving)
+// ─────────────────────────────────────────────
+
+export const saveToLibrary = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { saved, title } = req.body as { saved?: boolean; title?: string };
+
+    const resume = await prisma.resume.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    const save = saved !== false;
+
+    const updated = await prisma.resume.update({
+      where: { id },
+      data: {
+        savedToLibrary: save,
+        savedAt: save ? new Date() : null,
+        ...(save && typeof title === "string" && title.trim()
+          ? { title: title.trim() }
+          : {}),
+      },
+      select: { id: true, savedToLibrary: true, savedAt: true, title: true },
+    });
+
+    logger.info("Resume save-to-library toggled", { userId, resumeId: id, save });
+
+    res.json({ success: true, data: updated });
   } catch (err) {
     next(err);
   }

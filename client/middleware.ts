@@ -8,6 +8,7 @@ const protectedRoutes = [
   "/preview",
   "/start",
   "/editor",
+  "/agent",
   "/profile",
 ];
 
@@ -50,6 +51,7 @@ export const config = {
     "/start",
     "/start/:path*",
     "/editor/:path*",
+    "/agent/:path*",
     "/profile",
     "/profile/:path*",
     "/login",
