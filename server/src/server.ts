@@ -38,19 +38,27 @@ app.set("trust proxy", 1);
 // ─────────────────────────────────────────────
 
 app.use(helmet());
+// Normalize origins (strip trailing slashes) so a misconfigured FRONTEND_URL
+// like "https://app.vercel.app/" still matches the browser's Origin header,
+// which never includes a trailing slash.
+const stripSlash = (url: string): string => url.replace(/\/+$/, "");
 const allowedOrigins = [
   env.CLIENT_URL,
   ...(process.env.FRONTEND_URL
     ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
     : []),
-].filter(Boolean);
+]
+  .filter(Boolean)
+  .map((o) => stripSlash(o as string));
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow non-browser requests (no Origin header)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (allowedOrigins.includes(stripSlash(origin))) {
+        return callback(null, true);
+      }
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,

@@ -7,6 +7,17 @@ import { sendOtpEmail } from "../services/email.service";
 import { AppError } from "../utils/AppError";
 import logger from "../utils/logger";
 
+// Cookie attributes for the auth tokens.
+// In production the client (Vercel) and API (Render) are on different sites, so
+// the cookies must be SameSite=None + Secure to survive cross-site requests.
+// Locally (same-site localhost) we use Lax so cookies work over plain HTTP.
+const isProd = env.NODE_ENV === "production";
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+} as const;
+
 // ─────────────────────────────────────────────
 // POST /api/auth/send-otp
 // Body: { email: string }
@@ -108,16 +119,12 @@ export const verifyOtpAndLogin = async (
     // Set httpOnly cookies (session is cookie-based; Redis is used for OTP only)
     const ACCESS_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24h — align with JWT_ACCESS_EXPIRES_IN
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      ...authCookieOptions,
       maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
 
     res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      ...authCookieOptions,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -183,9 +190,7 @@ export const refresh = async (
     // Issue new access token (cookie TTL aligned with JWT)
     const ACCESS_COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
     res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: env.NODE_ENV === "production",
-      sameSite: "strict",
+      ...authCookieOptions,
       maxAge: ACCESS_COOKIE_MAX_AGE_MS,
     });
 
@@ -193,8 +198,8 @@ export const refresh = async (
   } catch (err) {
     // If JWT verification fails, clear cookies and force re-login
     if (err instanceof jwt.JsonWebTokenError) {
-      res.clearCookie("accessToken");
-      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken", authCookieOptions);
+      res.clearCookie("refreshToken", authCookieOptions);
       res.status(401).json({
         success: false,
         error: {
@@ -214,8 +219,8 @@ export const refresh = async (
 // ─────────────────────────────────────────────
 
 export const logout = async (_req: Request, res: Response): Promise<void> => {
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  res.clearCookie("accessToken", authCookieOptions);
+  res.clearCookie("refreshToken", authCookieOptions);
   res.json({ success: true, message: "Logged out successfully" });
 };
 
