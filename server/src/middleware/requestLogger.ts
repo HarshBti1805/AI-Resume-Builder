@@ -12,7 +12,7 @@ export const requestLogger = (
     const duration = Date.now() - start;
     const level = res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
 
-    logger[level]({
+    logger[level](`${req.method} ${req.path} ${res.statusCode}`, {
       method: req.method,
       path: req.path,
       status: res.statusCode,
