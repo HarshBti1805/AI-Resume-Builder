@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
 import prisma from "../config/prisma";
 import { AppError } from "../utils/AppError";
 import { getParam } from "../types";
@@ -6,7 +7,9 @@ import logger from "../utils/logger";
 
 // ─────────────────────────────────────────────
 // POST /api/resume
-// Create a new empty resume for the logged-in user
+// Create a new resume for the logged-in user.
+// Users can keep multiple resumes (e.g. "SDE", "Data"), so this always
+// creates a fresh record rather than reusing an existing draft.
 // ─────────────────────────────────────────────
 
 export const createResume = async (
@@ -16,26 +19,13 @@ export const createResume = async (
 ): Promise<void> => {
   try {
     const userId = req.user!.id;
-
-    // Check if user already has a draft resume
-    const existing = await prisma.resume.findFirst({
-      where: { userId, status: "DRAFT" },
-    });
-
-    if (existing) {
-      // Return the existing draft instead of creating a new one
-      res.json({
-        success: true,
-        data: { resume: existing },
-        message: "Existing draft resume found",
-      });
-      return;
-    }
+    const { title } = (req.body ?? {}) as { title?: string };
 
     const resume = await prisma.resume.create({
       data: {
         userId,
         contactEmail: req.user!.email,
+        ...(title && title.trim() ? { title: title.trim() } : {}),
       },
     });
 
@@ -44,6 +34,318 @@ export const createResume = async (
     res.status(201).json({
       success: true,
       data: { resume },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// GET /api/resume/list
+// Lightweight summaries of all the user's resumes (for the profile/library)
+// ─────────────────────────────────────────────
+
+export const listResumes = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+
+    const resumes = await prisma.resume.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        title: true,
+        fullName: true,
+        selectedTemplate: true,
+        status: true,
+        atsScore: true,
+        isPublic: true,
+        shareId: true,
+        origin: true,
+        updatedAt: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({ success: true, data: { resumes } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// PATCH /api/resume/:id  — update light metadata (title/rename)
+// ─────────────────────────────────────────────
+
+export const updateResumeMeta = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { title } = req.body as { title?: string };
+
+    const data: Record<string, unknown> = {};
+    if (typeof title === "string") {
+      data.title = title.trim() || "Untitled Resume";
+    }
+
+    if (Object.keys(data).length === 0) {
+      res.json({ success: true, message: "Nothing to update" });
+      return;
+    }
+
+    const updated = await prisma.resume.updateMany({
+      where: { id, userId },
+      data,
+    });
+
+    if (updated.count === 0) {
+      throw new AppError("Resume not found", 404, "NOT_FOUND");
+    }
+
+    res.json({ success: true, message: "Resume updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/resume/:id/duplicate
+// Deep-copy a resume (and all relations) into a new DRAFT
+// ─────────────────────────────────────────────
+
+export const duplicateResume = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+
+    const src = await prisma.resume.findFirst({
+      where: { id, userId },
+      include: {
+        projects: { include: { bullets: true } },
+        internships: { include: { bullets: true } },
+        achievements: true,
+        skillCategories: true,
+        hobbyItems: true,
+        customSections: { include: { items: true } },
+      },
+    });
+
+    if (!src) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    const created = await prisma.$transaction(async (tx) => {
+      const copy = await tx.resume.create({
+        data: {
+          userId,
+          status: "DRAFT",
+          currentStep: src.currentStep,
+          selectedTemplate: src.selectedTemplate,
+          title: `Copy of ${src.title ?? "Untitled Resume"}`,
+          // Personal
+          fullName: src.fullName,
+          dateOfBirth: src.dateOfBirth,
+          phone: src.phone,
+          contactEmail: src.contactEmail,
+          city: src.city,
+          state: src.state,
+          linkedin: src.linkedin,
+          github: src.github,
+          portfolio: src.portfolio,
+          photoUrl: src.photoUrl,
+          // Academic
+          university: src.university,
+          stream: src.stream,
+          branch: src.branch,
+          batchStart: src.batchStart,
+          batchEnd: src.batchEnd,
+          cgpa: src.cgpa,
+          marks10th: src.marks10th,
+          marks12th: src.marks12th,
+          board10th: src.board10th,
+          board12th: src.board12th,
+          schoolName10th: src.schoolName10th,
+          schoolName12th: src.schoolName12th,
+          coursework: src.coursework,
+          showCoursework: src.showCoursework,
+          showMarks10th: src.showMarks10th,
+          showMarks12th: src.showMarks12th,
+          // Skills / hobbies / summary
+          skills: src.skills,
+          hobbies: src.hobbies,
+          summary: src.summary,
+          aiGeneratedSummary: src.aiGeneratedSummary,
+          // Editor styles & ordering
+          sectionOrder: src.sectionOrder,
+          sectionTitles: src.sectionTitles ?? undefined,
+          fontFamily: src.fontFamily,
+          fontSize: src.fontSize,
+          headingSize: src.headingSize,
+          accentColor: src.accentColor,
+          lineSpacing: src.lineSpacing,
+          marginSize: src.marginSize,
+          sectionDivider: src.sectionDivider,
+          // Origin (duplicates start private — no shareId/isPublic copied)
+          origin: src.origin,
+          originalFileUrl: src.originalFileUrl,
+        },
+      });
+
+      for (const p of src.projects) {
+        await tx.project.create({
+          data: {
+            resumeId: copy.id,
+            title: p.title,
+            subtitle: p.subtitle,
+            description: p.description,
+            techStack: p.techStack,
+            liveUrl: p.liveUrl,
+            repoUrl: p.repoUrl,
+            startDate: p.startDate,
+            endDate: p.endDate,
+            sortOrder: p.sortOrder,
+            bullets: {
+              create: p.bullets.map((b) => ({
+                text: b.text,
+                sortOrder: b.sortOrder,
+              })),
+            },
+          },
+        });
+      }
+
+      for (const i of src.internships) {
+        await tx.internship.create({
+          data: {
+            resumeId: copy.id,
+            company: i.company,
+            role: i.role,
+            description: i.description,
+            startDate: i.startDate,
+            endDate: i.endDate,
+            sortOrder: i.sortOrder,
+            bullets: {
+              create: i.bullets.map((b) => ({
+                text: b.text,
+                sortOrder: b.sortOrder,
+              })),
+            },
+          },
+        });
+      }
+
+      if (src.achievements.length > 0) {
+        await tx.achievement.createMany({
+          data: src.achievements.map((a) => ({
+            resumeId: copy.id,
+            title: a.title,
+            description: a.description,
+            date: a.date,
+            link: a.link,
+            type: a.type,
+            sortOrder: a.sortOrder,
+          })),
+        });
+      }
+
+      if (src.skillCategories.length > 0) {
+        await tx.skillCategory.createMany({
+          data: src.skillCategories.map((c) => ({
+            resumeId: copy.id,
+            name: c.name,
+            skills: c.skills,
+            sortOrder: c.sortOrder,
+          })),
+        });
+      }
+
+      if (src.hobbyItems.length > 0) {
+        await tx.hobby.createMany({
+          data: src.hobbyItems.map((h) => ({
+            resumeId: copy.id,
+            name: h.name,
+            description: h.description,
+            sortOrder: h.sortOrder,
+          })),
+        });
+      }
+
+      for (const cs of src.customSections) {
+        await tx.customSection.create({
+          data: {
+            resumeId: copy.id,
+            title: cs.title,
+            sortOrder: cs.sortOrder,
+            items: {
+              create: cs.items.map((it) => ({
+                text: it.text,
+                sortOrder: it.sortOrder,
+              })),
+            },
+          },
+        });
+      }
+
+      return copy;
+    });
+
+    logger.info("Resume duplicated", {
+      userId,
+      sourceId: id,
+      newId: created.id,
+    });
+
+    res.status(201).json({ success: true, data: { resume: created } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────
+// POST /api/resume/:id/share  — enable/disable a public share link
+// Body: { enabled?: boolean } (defaults to enable)
+// ─────────────────────────────────────────────
+
+export const setShare = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const userId = req.user!.id;
+    const id = getParam(req, "id");
+    const { enabled } = req.body as { enabled?: boolean };
+
+    const resume = await prisma.resume.findFirst({ where: { id, userId } });
+    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
+
+    const makePublic = enabled !== false;
+    let shareId = resume.shareId;
+    if (makePublic && !shareId) {
+      shareId = crypto.randomBytes(8).toString("hex");
+    }
+
+    await prisma.resume.update({
+      where: { id },
+      data: {
+        isPublic: makePublic,
+        ...(shareId ? { shareId } : {}),
+      },
+    });
+
+    res.json({
+      success: true,
+      data: { isPublic: makePublic, shareId: shareId ?? null },
     });
   } catch (err) {
     next(err);

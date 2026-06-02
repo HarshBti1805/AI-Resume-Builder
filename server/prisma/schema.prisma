@@ -101,6 +101,11 @@ model Resume {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
+  // Multiple resumes / versions + shareable public link
+  title            String?        @default("Untitled Resume")
+  shareId          String?        @unique
+  isPublic         Boolean        @default(false)
+
   // Relations
   projects         Project[]
   internships      Internship[]

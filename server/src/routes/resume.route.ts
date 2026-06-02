@@ -4,6 +4,10 @@ import {
   createResume,
   getResume,
   getMyResume,
+  listResumes,
+  updateResumeMeta,
+  duplicateResume,
+  setShare,
   saveStep1,
   saveStep2,
   saveStep3,
@@ -29,9 +33,15 @@ router.post("/preview-live", postPreviewLive);
 
 // ── CRUD ──────────────────────────────────────
 router.post("/", createResume);
+router.get("/list", listResumes); // must be before /:id
 router.get("/me", getMyResume); // must be before /:id
 router.get("/:id", getResume);
+router.patch("/:id", updateResumeMeta);
 router.delete("/:id", deleteResume);
+
+// ── Multi-resume actions ──────────────────────
+router.post("/:id/duplicate", duplicateResume);
+router.post("/:id/share", setShare);
 
 // ── Form steps (auto-save) ────────────────────
 router.patch("/:id/step/1", saveStep1);

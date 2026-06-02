@@ -21,6 +21,7 @@ import authRoutes from "./routes/auth.routes";
 import resumeRoutes from "./routes/resume.route";
 import aiRoutes from "./routes/ai.route";
 import uploadRoutes from "./routes/upload.route";
+import publicRoutes from "./routes/public.route";
 
 import prisma from "./config/prisma";
 import redis from "./config/redis";
@@ -96,6 +97,7 @@ app.get("/health", async (_req: Request, res: Response) => {
 // ─────────────────────────────────────────────
 
 app.use("/api/auth", authRoutes);
+app.use("/api/public", publicRoutes); // unauthenticated, read-only shared resumes
 app.use("/api/resume", resumeRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/upload", uploadRoutes);
