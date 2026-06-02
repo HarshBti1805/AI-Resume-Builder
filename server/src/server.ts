@@ -1,3 +1,9 @@
+import dns from "node:dns";
+// Prefer IPv4 for all DNS lookups. Some hosts (e.g. Render) can't route
+// outbound IPv6, which causes ENETUNREACH when a hostname (like smtp.gmail.com)
+// resolves to an IPv6 address first.
+dns.setDefaultResultOrder("ipv4first");
+
 import "./config/env"; // validate env vars before anything else
 
 import express, { Request, Response } from "express";
@@ -22,6 +28,10 @@ import { drainBrowserPool } from "./services/pdf.service";
 import logger from "./utils/logger";
 
 const app = express();
+
+// Render (and most PaaS) sit behind a reverse proxy that sets X-Forwarded-For.
+// Trust the first proxy hop so express-rate-limit can read the real client IP.
+app.set("trust proxy", 1);
 
 // ─────────────────────────────────────────────
 // Global middleware

@@ -5,72 +5,54 @@
 <title>{{fullName}} — Resume</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "{{fontFamily}}", "Times New Roman", serif;
-    font-size: {{fontSize}}pt;
-    color: #1a1a1a;
-    background: #fff;
-    {{#if (eq marginSize "compact")}}padding: 24px 36px;{{else}}{{#if (eq marginSize "wide")}}padding: 48px 60px;{{else}}padding: 36px 48px;{{/if}}{{/if}}
-    line-height: {{lineSpacing}};
-  }
+  body { font-family: "{{fontFamily}}", "Times New Roman", serif; font-size: {{fontSize}}pt; color: #3a3a3a; background: #fff; {{#if (eq marginSize "compact")}}padding: 24px 36px;{{else}}{{#if (eq marginSize "wide")}}padding: 48px 60px;{{else}}padding: 36px 48px;{{/if}}{{/if}} line-height: {{lineSpacing}}; font-weight: 400; }
 
   /* ── Header ── */
-  .header { text-align: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid {{accentColor}}; }
-  .header h1 { font-size: {{headingSize}}pt; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-  .contact-line { font-size: 9pt; color: #444; display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 14px; }
-  .contact-line a { color: #444; text-decoration: none; }
+  .header { text-align: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #c8c0b4; }
+  .header h1 { font-size: {{headingSize}}pt; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #1a1a1a; margin-bottom: 4px; }
+  .header-sub { font-size: 9.5pt; font-weight: 400; color: #7a7065; letter-spacing: 0.5px; margin-bottom: 6px; font-style: italic; }
+  .contact-line { font-size: 8.5pt; color: #8a8078; font-weight: 400; display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 16px; letter-spacing: 0.2px; }
+  .contact-line a { color: #8a8078; text-decoration: none; }
 
   /* ── Section ── */
   .section { margin-bottom: 14px; }
-  .section-title {
-    font-size: {{sectionHeadingSize headingSize}}pt;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    {{#if (eq sectionDivider "none")}}border-bottom: none;{{else}}{{#if (eq sectionDivider "double")}}border-bottom: 3px double {{accentColor}};{{else}}{{#if (eq sectionDivider "dotted")}}border-bottom: 1px dotted {{accentColor}};{{else}}border-bottom: 1px solid {{accentColor}};{{/if}}{{/if}}{{/if}}
-    padding-bottom: 3px;
-    margin-bottom: 8px;
-    color: {{accentColor}};
-  }
+  .section-title { font-size: {{sectionHeadingSize headingSize}}pt; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: {{accentColor}}; {{#if (eq sectionDivider "none")}}border-bottom: none;{{else}}{{#if (eq sectionDivider "double")}}border-bottom: 2px double #c8c0b4;{{else}}{{#if (eq sectionDivider "dotted")}}border-bottom: 1px dotted #c8c0b4;{{else}}border-bottom: 1px solid #c8c0b4;{{/if}}{{/if}}{{/if}} padding-bottom: 4px; margin-bottom: 9px; }
 
   /* ── Summary ── */
-  .summary p { font-style: italic; color: #333; }
+  .summary-text { font-style: italic; font-weight: 400; color: #5a5450; font-size: 9.5pt; line-height: 1.6; }
 
-  /* ── Education ── */
-  .edu-row, .exp-row { margin-bottom: 8px; }
+  /* ── Rows (education, experience) ── */
+  .edu-row, .exp-row { margin-bottom: 9px; }
   .row-header { display: flex; justify-content: space-between; align-items: baseline; }
-  .row-title { font-weight: bold; font-size: 10.5pt; }
-  .row-date { font-size: 9pt; color: #555; white-space: nowrap; }
-  .row-sub { font-size: 9.5pt; color: #444; margin-top: 1px; }
-  .row-desc { font-size: 9.5pt; margin-top: 3px; color: #333; }
+  .row-title { font-weight: 700; font-size: 10pt; color: #1f1f1f; }
+  .row-date { font-size: 8.5pt; color: #9a9288; font-weight: 400; white-space: nowrap; letter-spacing: 0.2px; }
+  .row-sub { font-size: 9pt; color: #6a6258; font-weight: 400; font-style: italic; margin-top: 1px; }
+  .row-desc { font-size: 9.5pt; font-weight: 400; color: #4a4540; margin-top: 3px; }
 
-  /* ── Skills: same 10.5pt as 10th/12th row-title; tighter gap than edu-row (8px) ── */
-  .skills-line { margin-bottom: 5px; font-size: 10.5pt; font-weight: normal; color: #1a1a1a; }
-  .skills-line strong { font-weight: bold; }
+  /* ── Skills ── */
+  .skills-line { margin-bottom: 5px; font-size: 9.5pt; color: #4a4540; }
+  .skills-line strong { font-weight: 700; color: #1f1f1f; }
   .skills-line:last-child { margin-bottom: 0; }
 
   /* ── Projects ── */
-  .project-item { margin-bottom: 8px; }
-  .project-title { font-weight: bold; }
-  .project-subtitle { font-style: italic; font-weight: normal; }
-  .project-tech { font-size: 9.25pt; line-height: 1.5; color: #555; margin-top: 2px; }
-  /* Bullets & description: match skills-line size & rhythm, not bold */
-  .project-item ul.project-details,
-  .project-item .project-details { font-size: 10.5pt; font-weight: normal; color: #1a1a1a; line-height: {{lineSpacing}}; margin-top: 3px; }
-  .project-item ul.project-details { padding-left: 20px; margin-bottom: 0; }
-  .project-item ul.project-details li { margin-bottom: 2px; }
-  .project-item ul.project-details li:last-child { margin-bottom: 0; }
-  .project-links { font-size: 8.5pt; color: #555; margin-top: 1px; }
-  .project-links a { color: #555; }
+  .project-item { margin-bottom: 9px; }
+  .project-title { font-weight: 700; font-size: 10pt; color: #1f1f1f; }
+  .project-subtitle { font-style: italic; font-weight: 400; color: #6a6258; }
+  .project-tech { font-size: 8.5pt; font-weight: 400; color: #8a8078; margin-top: 2px; letter-spacing: 0.2px; }
+  .project-details { font-size: 9.5pt; font-weight: 400; color: #4a4540; margin-top: 3px; }
+  ul.project-details { padding-left: 18px; }
+  ul.project-details li { margin-bottom: 2px; }
+  .project-links { font-size: 8.5pt; font-weight: 400; color: #9a9288; margin-top: 2px; }
+  .project-links a { color: #9a9288; text-decoration: none; }
 
   /* ── Achievements ── */
-  .achievement-item { margin-bottom: 4px; }
-  .achievement-title { font-weight: bold; }
+  .achievement-item { margin-bottom: 5px; font-size: 9.5pt; font-weight: 400; color: #4a4540; }
+  .achievement-title { font-weight: 700; color: #1f1f1f; }
 
   /* ── Hobbies ── */
-  .hobbies { font-size: 9.5pt; color: #444; }
+  .hobbies { font-size: 9.5pt; font-weight: 400; color: #6a6258; font-style: italic; letter-spacing: 0.3px; }
 
-  /* ── Photo (optional) ── */
+  /* ── Photo ── */
   .photo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 8px; }
 </style>
 </head>
@@ -82,6 +64,7 @@
     <img class="photo" src="{{photoUrl}}" alt="Profile photo" />
   {{/ifVal}}
   <h1>{{fullName}}</h1>
+  {{#ifVal stream}}<div class="header-sub">{{stream}}{{#ifVal branch}} &middot; {{branch}}{{/ifVal}}</div>{{/ifVal}}
   <div class="contact-line">
     {{#ifVal contactEmail}}<span>{{contactEmail}}</span>{{/ifVal}}
     {{#ifVal phone}}<span>{{phone}}</span>{{/ifVal}}
@@ -92,13 +75,13 @@
   </div>
 </div>
 
-<!-- ── SECTIONS (ordered by sectionOrder) ───────────────────────────── -->
+<!-- ── SECTIONS ───────────────────────────── -->
 {{#each sectionOrder}}
 {{#if (eq this "summary")}}
 {{#ifVal ../summary}}
 <div class="section summary">
   <div class="section-title">{{sectionTitle this}}</div>
-  <p>{{../summary}}</p>
+  <div class="summary-text">{{../summary}}</div>
 </div>
 {{/ifVal}}
 {{/if}}
@@ -112,38 +95,27 @@
       <span class="row-title">{{../university}}</span>
       <span class="row-date">{{../batchStart}} – {{../batchEnd}}</span>
     </div>
-    <div class="row-sub">
-      {{../stream}}{{#ifVal ../branch}} — {{../branch}}{{/ifVal}}
-      {{#ifVal ../cgpa}} &nbsp;|&nbsp; CGPA: {{../cgpa}}{{/ifVal}}
+    <div class="row-sub">{{../stream}}{{#ifVal ../branch}} — {{../branch}}{{/ifVal}}{{#ifVal ../cgpa}} &nbsp;|&nbsp; CGPA: {{../cgpa}}{{/ifVal}}</div>
+  </div>
+  {{#unless (eq ../showMarks12th false)}}{{#ifVal ../marks12th}}
+  <div class="edu-row">
+    <div class="row-header">
+      <span class="row-title">12th Grade{{#ifVal ../board12th}} — {{../board12th}}{{/ifVal}}{{#ifVal ../schoolName12th}} ({{../schoolName12th}}){{/ifVal}}</span>
+      <span class="row-date">{{../marks12th}}%</span>
     </div>
   </div>
-  {{#unless (eq ../showMarks12th false)}}
-    {{#ifVal ../marks12th}}
-    <div class="edu-row">
-      <div class="row-header">
-        <span class="row-title">12th Grade{{#ifVal ../board12th}} — {{../board12th}}{{/ifVal}}{{#ifVal ../schoolName12th}} ({{../schoolName12th}}){{/ifVal}}</span>
-        <span class="row-date">{{../marks12th}}%</span>
-      </div>
+  {{/ifVal}}{{/unless}}
+  {{#unless (eq ../showMarks10th false)}}{{#ifVal ../marks10th}}
+  <div class="edu-row">
+    <div class="row-header">
+      <span class="row-title">10th Grade{{#ifVal ../board10th}} — {{../board10th}}{{/ifVal}}{{#ifVal ../schoolName10th}} ({{../schoolName10th}}){{/ifVal}}</span>
+      <span class="row-date">{{../marks10th}}%</span>
     </div>
-    {{/ifVal}}
-  {{/unless}}
-  {{#unless (eq ../showMarks10th false)}}
-    {{#ifVal ../marks10th}}
-    <div class="edu-row">
-      <div class="row-header">
-        <span class="row-title">10th Grade{{#ifVal ../board10th}} — {{../board10th}}{{/ifVal}}{{#ifVal ../schoolName10th}} ({{../schoolName10th}}){{/ifVal}}</span>
-        <span class="row-date">{{../marks10th}}%</span>
-      </div>
-    </div>
-    {{/ifVal}}
-  {{/unless}}
-  {{#unless (eq ../showCoursework false)}}
-    {{#ifNotEmpty ../coursework}}
-    <div class="row-sub" style="margin-top:4px;">
-      <strong>Relevant Coursework:</strong> {{join ../coursework ", "}}
-    </div>
-    {{/ifNotEmpty}}
-  {{/unless}}
+  </div>
+  {{/ifVal}}{{/unless}}
+  {{#unless (eq ../showCoursework false)}}{{#ifNotEmpty ../coursework}}
+  <div class="row-sub" style="margin-top:4px;"><strong style="font-weight:700;color:#1f1f1f;font-style:normal;">Relevant Coursework:</strong> {{join ../coursework ", "}}</div>
+  {{/ifNotEmpty}}{{/unless}}
 </div>
 {{/ifVal}}
 {{/if}}
@@ -160,7 +132,7 @@
 {{#ifNotEmpty ../skills}}
 <div class="section">
   <div class="section-title">{{sectionTitle this}}</div>
-  <div class="skills-line">{{join ../skills " • "}}</div>
+  <div class="skills-line">{{join ../skills " · "}}</div>
 </div>
 {{/ifNotEmpty}}
 {{/ifNotEmpty}}
@@ -196,10 +168,10 @@
   {{#each ../projects}}
   <div class="project-item">
     <div class="row-header">
-      <span class="project-title">{{title}}{{#ifVal subtitle}} - <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
+      <span class="project-title">{{title}}{{#ifVal subtitle}} — <span class="project-subtitle">{{subtitle}}</span>{{/ifVal}}</span>
       {{#ifVal startDate}}<span class="row-date">{{fmtDate startDate}} – {{fmtDate endDate}}</span>{{/ifVal}}
     </div>
-    {{#ifNotEmpty techStack}}<div class="project-tech">{{join techStack " • "}}</div>{{/ifNotEmpty}}
+    {{#ifNotEmpty techStack}}<div class="project-tech">{{join techStack " · "}}</div>{{/ifNotEmpty}}
     {{#ifNotEmpty bullets}}
     <ul class="project-details">
       {{#each bullets}}<li>{{text}}</li>{{/each}}
@@ -208,18 +180,11 @@
     {{#ifVal description}}<div class="project-details">{{description}}</div>{{/ifVal}}
     {{/ifNotEmpty}}
     {{#ifVal liveUrl}}
-    <div class="project-links">
-      <a href="{{liveUrl}}">Live</a>
-      {{#ifVal repoUrl}}&nbsp;|&nbsp;<a href="{{repoUrl}}">Repository</a>{{/ifVal}}
-    </div>
+    <div class="project-links"><a href="{{liveUrl}}">Live</a>{{#ifVal repoUrl}} &nbsp;|&nbsp; <a href="{{repoUrl}}">Repository</a>{{/ifVal}}</div>
     {{/ifVal}}
-    {{#ifVal repoUrl}}
-      {{#unless liveUrl}}
-      <div class="project-links">
-        <a href="{{repoUrl}}">Repository</a>
-      </div>
-      {{/unless}}
-    {{/ifVal}}
+    {{#ifVal repoUrl}}{{#unless liveUrl}}
+    <div class="project-links"><a href="{{repoUrl}}">Repository</a></div>
+    {{/unless}}{{/ifVal}}
   </div>
   {{/each}}
 </div>
@@ -232,9 +197,7 @@
   <div class="section-title">{{sectionTitle this}}</div>
   {{#each ../achievements}}
   <div class="achievement-item">
-    <span class="achievement-title">{{title}}</span>
-    {{#ifVal description}} — {{description}}{{/ifVal}}
-    {{#ifVal link}} <a href="{{link}}" style="font-size:8.5pt;color:#555;">[Link]</a>{{/ifVal}}
+    <span class="achievement-title">{{title}}</span>{{#ifVal description}} — {{description}}{{/ifVal}}{{#ifVal link}} <a href="{{link}}" style="font-size:8.5pt;color:#9a9288;">[Link]</a>{{/ifVal}}
   </div>
   {{/each}}
 </div>
@@ -245,15 +208,13 @@
 {{#ifNotEmpty ../hobbyItems}}
 <div class="section">
   <div class="section-title">{{sectionTitle this}}</div>
-  <div class="hobbies">
-    {{#each ../hobbyItems}}{{#if @index}} • {{/if}}{{name}}{{#ifVal description}} ({{description}}){{/ifVal}}{{/each}}
-  </div>
+  <div class="hobbies">{{#each ../hobbyItems}}{{#if @index}} &nbsp;&middot;&nbsp; {{/if}}{{name}}{{#ifVal description}} ({{description}}){{/ifVal}}{{/each}}</div>
 </div>
 {{else}}
 {{#ifNotEmpty ../hobbies}}
 <div class="section">
   <div class="section-title">{{sectionTitle this}}</div>
-  <div class="hobbies">{{join ../hobbies " • "}}</div>
+  <div class="hobbies">{{join ../hobbies " · "}}</div>
 </div>
 {{/ifNotEmpty}}
 {{/ifNotEmpty}}
