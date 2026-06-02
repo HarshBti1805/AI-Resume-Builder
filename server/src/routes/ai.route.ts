@@ -8,7 +8,6 @@ import {
   improveBullet,
   addKeywords,
   generateBullets,
-  refineResume,
 } from "../controllers/ai.controller";
 
 const router = Router();
@@ -22,6 +21,5 @@ router.post("/ats-check", atsCheck);
 router.post("/improve-bullet", improveBullet);
 router.post("/add-keywords", addKeywords);
 router.post("/generate-bullets", generateBullets);
-router.post("/refine-resume", refineResume);
 
 export default router;

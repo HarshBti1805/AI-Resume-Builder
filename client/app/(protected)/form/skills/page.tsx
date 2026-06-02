@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { FormNavLink } from "@/components/form/FormNavLink";
+import { GenerateBulletsButton } from "@/components/form/GenerateBulletsButton";
 import { isStep3Complete } from "@/lib/formStepGating";
 import type { Project, Bullet, SkillCategory } from "@/store/resumeStore";
 import { useResumeStore } from "@/store/resumeStore";
@@ -181,6 +182,14 @@ export default function SkillsPage() {
       "bullets",
       project.bullets.filter((_, i) => i !== bulletIndex)
     );
+  };
+
+  const addGeneratedBullets = (projIndex: number, texts: string[]) => {
+    const project = step3.projects[projIndex];
+    if (!project) return;
+    const existing = project.bullets.filter((b) => b.text.trim());
+    const generated: Bullet[] = texts.map((t) => ({ text: t }));
+    updateProject(projIndex, "bullets", [...existing, ...generated]);
   };
 
   // ── Tech stack ──
@@ -582,13 +591,22 @@ export default function SkillsPage() {
                           </div>
                         ))}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => addBullet(index)}
-                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-foreground/10 px-3 py-2 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
-                      >
-                        + Add bullet
-                      </button>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => addBullet(index)}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-foreground/10 px-3 py-2 font-manrope text-xs font-medium text-foreground transition-colors hover:bg-foreground/15"
+                        >
+                          + Add bullet
+                        </button>
+                      </div>
+                      <div className="mt-3">
+                        <GenerateBulletsButton
+                          techStack={project.techStack}
+                          placeholder="Describe this project — what you built, your role, and the impact…"
+                          onAdd={(texts) => addGeneratedBullets(index, texts)}
+                        />
+                      </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">

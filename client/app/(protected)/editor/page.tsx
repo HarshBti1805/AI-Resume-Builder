@@ -15,6 +15,124 @@ import type { Bullet } from "@/store/resumeStore";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
+// ─── Shared field primitives (consistent, always-visible inputs) ──────────
+const FIELD_CLASS =
+  "font-manrope w-full rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none transition-colors focus:border-primary focus:bg-background focus:ring-2 focus:ring-primary/15";
+const CARD_CLASS = "rounded-xl border border-border/60 bg-card/40 p-4 shadow-sm";
+const SECTION_TITLE_CLASS =
+  "font-space-grotesk text-sm font-semibold text-foreground";
+const GHOST_BTN_CLASS =
+  "font-manrope rounded-lg bg-foreground/[0.06] px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/[0.12]";
+
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1.5">
+      <span className="font-dm-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground/80">
+        {label}
+        {required && <span className="text-red-400"> *</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return <input {...props} className={`${FIELD_CLASS} ${props.className ?? ""}`} />;
+}
+
+function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`${FIELD_CLASS} resize-y leading-relaxed ${props.className ?? ""}`}
+    />
+  );
+}
+
+function RemoveButton({
+  onClick,
+  label = "Remove",
+}: {
+  onClick: () => void;
+  label?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="shrink-0 rounded-md px-2 py-1 font-manrope text-xs text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+    >
+      {label}
+    </button>
+  );
+}
+
+function TagInput({
+  tags,
+  onChange,
+  placeholder,
+}: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+  placeholder?: string;
+}) {
+  const [val, setVal] = useState("");
+  const add = () => {
+    const v = val.trim();
+    if (!v || tags.includes(v)) return;
+    onChange([...tags, v]);
+    setVal("");
+  };
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        <TextInput
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          placeholder={placeholder || "Type and press Enter…"}
+        />
+        <button type="button" onClick={add} className={`${GHOST_BTN_CLASS} shrink-0`}>
+          Add
+        </button>
+      </div>
+      {tags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tags.map((t) => (
+            <span
+              key={t}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-card/80 px-2.5 py-1 font-manrope text-xs text-foreground"
+            >
+              {t}
+              <button
+                type="button"
+                onClick={() => onChange(tags.filter((x) => x !== t))}
+                className="rounded-full text-muted-foreground transition-colors hover:text-red-500"
+                aria-label={`Remove ${t}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EditorPage() {
   const {
     resumeId,
@@ -264,15 +382,12 @@ function SummarySection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Professional Summary
-      </h2>
-      <textarea
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Professional Summary</h2>
+      <TextArea
         value={summary}
         onChange={(e) => onChange(e.target.value)}
         rows={5}
         placeholder="A 2-3 sentence summary highlighting your key skills and goals..."
-        className="font-manrope w-full resize-none rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
       />
     </div>
   );
@@ -287,49 +402,53 @@ function EducationSection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Education
-      </h2>
-      <div className="flex flex-col gap-3">
-        <input
-          value={step2.university}
-          onChange={(e) => onChange({ university: e.target.value })}
-          placeholder="University"
-          className="font-manrope w-full rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            value={step2.stream}
-            onChange={(e) => onChange({ stream: e.target.value })}
-            placeholder="Stream"
-            className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Education</h2>
+      <div className="flex flex-col gap-4">
+        <Field label="University">
+          <TextInput
+            value={step2.university}
+            onChange={(e) => onChange({ university: e.target.value })}
+            placeholder="Chitkara University"
           />
-          <input
-            value={step2.branch}
-            onChange={(e) => onChange({ branch: e.target.value })}
-            placeholder="Branch"
-            className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-          />
+        </Field>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Stream">
+            <TextInput
+              value={step2.stream}
+              onChange={(e) => onChange({ stream: e.target.value })}
+              placeholder="B.E."
+            />
+          </Field>
+          <Field label="Branch">
+            <TextInput
+              value={step2.branch}
+              onChange={(e) => onChange({ branch: e.target.value })}
+              placeholder="Computer Science"
+            />
+          </Field>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <input
-            value={step2.cgpa}
-            onChange={(e) => onChange({ cgpa: e.target.value })}
-            placeholder="CGPA"
-            className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-          />
-          <input
-            value={step2.batchStart}
-            onChange={(e) => onChange({ batchStart: e.target.value })}
-            placeholder="Start year"
-            className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-          />
-          <input
-            value={step2.batchEnd}
-            onChange={(e) => onChange({ batchEnd: e.target.value })}
-            placeholder="End year"
-            className="font-manrope rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-          />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Field label="CGPA">
+            <TextInput
+              value={step2.cgpa}
+              onChange={(e) => onChange({ cgpa: e.target.value })}
+              placeholder="9.2"
+            />
+          </Field>
+          <Field label="Start year">
+            <TextInput
+              value={step2.batchStart}
+              onChange={(e) => onChange({ batchStart: e.target.value })}
+              placeholder="2023"
+            />
+          </Field>
+          <Field label="End year">
+            <TextInput
+              value={step2.batchEnd}
+              onChange={(e) => onChange({ batchEnd: e.target.value })}
+              placeholder="2027"
+            />
+          </Field>
         </div>
       </div>
     </div>
@@ -343,100 +462,47 @@ function SkillsSection({
   skillCategories: { name: string; skills: string[] }[];
   onChange: (cats: { name: string; skills: string[] }[]) => void;
 }) {
-  const [inputs, setInputs] = useState<Record<number, string>>({});
-
-  const addSkill = (catIndex: number) => {
-    const val = (inputs[catIndex] || "").trim();
-    if (!val) return;
-    const cat = skillCategories[catIndex];
-    if (!cat || cat.skills.includes(val)) return;
-    onChange(
-      skillCategories.map((c, i) =>
-        i === catIndex ? { ...c, skills: [...c.skills, val] } : c
-      )
-    );
-    setInputs((p) => ({ ...p, [catIndex]: "" }));
-  };
-
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Skills
-      </h2>
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Skills</h2>
       <div className="flex flex-col gap-4">
         {skillCategories.map((cat, ci) => (
-          <div key={ci} className="rounded-lg border border-border/60 p-3">
-            <div className="mb-2 flex items-center gap-2">
-              <input
-                value={cat.name}
-                onChange={(e) =>
-                  onChange(
-                    skillCategories.map((c, i) =>
-                      i === ci ? { ...c, name: e.target.value } : c
+          <div key={ci} className={CARD_CLASS}>
+            <div className="mb-3 flex items-end gap-2">
+              <Field label="Category">
+                <TextInput
+                  value={cat.name}
+                  onChange={(e) =>
+                    onChange(
+                      skillCategories.map((c, i) =>
+                        i === ci ? { ...c, name: e.target.value } : c
+                      )
                     )
-                  )
-                }
-                className="font-manrope rounded border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-foreground outline-none hover:border-border focus:border-primary"
-                placeholder="Category name"
-              />
+                  }
+                  placeholder="e.g. Languages"
+                />
+              </Field>
               {skillCategories.length > 1 && (
-                <button
-                  type="button"
+                <RemoveButton
                   onClick={() =>
                     onChange(skillCategories.filter((_, i) => i !== ci))
                   }
-                  className="text-xs text-muted-foreground hover:text-red-500"
-                >
-                  ×
-                </button>
+                />
               )}
             </div>
-            <div className="flex gap-2">
-              <input
-                value={inputs[ci] || ""}
-                onChange={(e) =>
-                  setInputs((p) => ({ ...p, [ci]: e.target.value }))
+            <Field label="Skills">
+              <TagInput
+                tags={cat.skills}
+                onChange={(skills) =>
+                  onChange(
+                    skillCategories.map((c, i) =>
+                      i === ci ? { ...c, skills } : c
+                    )
+                  )
                 }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addSkill(ci);
-                  }
-                }}
-                placeholder="Add skill..."
-                className="font-manrope flex-1 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-xs text-foreground outline-none focus:border-primary"
+                placeholder="Add a skill and press Enter…"
               />
-            </div>
-            {cat.skills.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {cat.skills.map((s) => (
-                  <span
-                    key={s}
-                    className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-2 py-0.5 font-manrope text-[11px] text-foreground"
-                  >
-                    {s}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        onChange(
-                          skillCategories.map((c, i) =>
-                            i === ci
-                              ? {
-                                  ...c,
-                                  skills: c.skills.filter((sk) => sk !== s),
-                                }
-                              : c
-                          )
-                        )
-                      }
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            </Field>
           </div>
         ))}
         <button
@@ -444,7 +510,7 @@ function SkillsSection({
           onClick={() =>
             onChange([...skillCategories, { name: "", skills: [] }])
           }
-          className="self-start font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+          className={`${GHOST_BTN_CLASS} self-start`}
         >
           + Add category
         </button>
@@ -462,63 +528,93 @@ function ExperienceSection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Experience
-      </h2>
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Experience</h2>
       <div className="flex flex-col gap-4">
         {internships.map((intern, i) => (
-          <div key={i} className="rounded-lg border border-border/60 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <input
-                  value={intern.role}
-                  onChange={(e) =>
-                    onChange(
-                      internships.map((x, idx) =>
-                        idx === i ? { ...x, role: e.target.value } : x
-                      )
-                    )
-                  }
-                  placeholder="Role"
-                  className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-foreground outline-none hover:border-border focus:border-primary"
-                />
-                <span className="text-muted-foreground">at</span>
-                <input
-                  value={intern.company}
-                  onChange={(e) =>
-                    onChange(
-                      internships.map((x, idx) =>
-                        idx === i ? { ...x, company: e.target.value } : x
-                      )
-                    )
-                  }
-                  placeholder="Company"
-                  className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-sm text-foreground outline-none hover:border-border focus:border-primary"
-                />
-              </div>
+          <div key={i} className={CARD_CLASS}>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                Experience {i + 1}
+              </span>
               {internships.length > 1 && (
-                <button
-                  type="button"
+                <RemoveButton
                   onClick={() =>
                     onChange(internships.filter((_, idx) => idx !== i))
                   }
-                  className="text-xs text-muted-foreground hover:text-red-500"
-                >
-                  Remove
-                </button>
+                />
               )}
             </div>
-            <BulletEditor
-              bullets={intern.bullets || []}
-              onChange={(bullets: Bullet[]) =>
-                onChange(
-                  internships.map((x, idx) =>
-                    idx === i ? { ...x, bullets } : x
-                  )
-                )
-              }
-              placeholder="Describe your work..."
-            />
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Role">
+                  <TextInput
+                    value={intern.role}
+                    onChange={(e) =>
+                      onChange(
+                        internships.map((x, idx) =>
+                          idx === i ? { ...x, role: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="Software Engineering Intern"
+                  />
+                </Field>
+                <Field label="Company">
+                  <TextInput
+                    value={intern.company}
+                    onChange={(e) =>
+                      onChange(
+                        internships.map((x, idx) =>
+                          idx === i ? { ...x, company: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="Google"
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Start date">
+                  <TextInput
+                    type="month"
+                    value={intern.startDate}
+                    onChange={(e) =>
+                      onChange(
+                        internships.map((x, idx) =>
+                          idx === i ? { ...x, startDate: e.target.value } : x
+                        )
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="End date">
+                  <TextInput
+                    type="month"
+                    value={intern.endDate}
+                    onChange={(e) =>
+                      onChange(
+                        internships.map((x, idx) =>
+                          idx === i ? { ...x, endDate: e.target.value } : x
+                        )
+                      )
+                    }
+                  />
+                </Field>
+              </div>
+              <Field label="Bullet points">
+                <BulletEditor
+                  bullets={intern.bullets || []}
+                  onChange={(bullets: Bullet[]) =>
+                    onChange(
+                      internships.map((x, idx) =>
+                        idx === i ? { ...x, bullets } : x
+                      )
+                    )
+                  }
+                  placeholder="Describe your work…"
+                />
+              </Field>
+            </div>
           </div>
         ))}
         <button
@@ -536,9 +632,9 @@ function ExperienceSection({
               },
             ])
           }
-          className="self-start font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+          className={`${GHOST_BTN_CLASS} self-start`}
         >
-          + Add internship
+          + Add experience
         </button>
       </div>
     </div>
@@ -554,47 +650,107 @@ function ProjectsSection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Projects
-      </h2>
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Projects</h2>
       <div className="flex flex-col gap-4">
         {projects.map((proj, i) => (
-          <div key={i} className="rounded-lg border border-border/60 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <input
-                value={proj.title}
-                onChange={(e) =>
-                  onChange(
-                    projects.map((x, idx) =>
-                      idx === i ? { ...x, title: e.target.value } : x
-                    )
-                  )
-                }
-                placeholder="Project title"
-                className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-foreground outline-none hover:border-border focus:border-primary"
-              />
+          <div key={i} className={CARD_CLASS}>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                Project {i + 1}
+              </span>
               {projects.length > 1 && (
-                <button
-                  type="button"
+                <RemoveButton
                   onClick={() =>
                     onChange(projects.filter((_, idx) => idx !== i))
                   }
-                  className="text-xs text-muted-foreground hover:text-red-500"
-                >
-                  Remove
-                </button>
+                />
               )}
             </div>
-            <BulletEditor
-              bullets={proj.bullets || []}
-              onChange={(bullets: Bullet[]) =>
-                onChange(
-                  projects.map((x, idx) =>
-                    idx === i ? { ...x, bullets } : x
-                  )
-                )
-              }
-            />
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Title">
+                  <TextInput
+                    value={proj.title}
+                    onChange={(e) =>
+                      onChange(
+                        projects.map((x, idx) =>
+                          idx === i ? { ...x, title: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="Heritage Threads"
+                  />
+                </Field>
+                <Field label="Subtitle / Tagline">
+                  <TextInput
+                    value={proj.subtitle || ""}
+                    onChange={(e) =>
+                      onChange(
+                        projects.map((x, idx) =>
+                          idx === i ? { ...x, subtitle: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="AI-powered eCommerce platform"
+                  />
+                </Field>
+              </div>
+              <Field label="Tech stack">
+                <TagInput
+                  tags={proj.techStack || []}
+                  onChange={(techStack) =>
+                    onChange(
+                      projects.map((x, idx) =>
+                        idx === i ? { ...x, techStack } : x
+                      )
+                    )
+                  }
+                  placeholder="React, Node.js…"
+                />
+              </Field>
+              <Field label="Bullet points">
+                <BulletEditor
+                  bullets={proj.bullets || []}
+                  onChange={(bullets: Bullet[]) =>
+                    onChange(
+                      projects.map((x, idx) =>
+                        idx === i ? { ...x, bullets } : x
+                      )
+                    )
+                  }
+                />
+              </Field>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label="Live URL">
+                  <TextInput
+                    type="url"
+                    value={proj.liveUrl || ""}
+                    onChange={(e) =>
+                      onChange(
+                        projects.map((x, idx) =>
+                          idx === i ? { ...x, liveUrl: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="https://myapp.vercel.app"
+                  />
+                </Field>
+                <Field label="Repository URL">
+                  <TextInput
+                    type="url"
+                    value={proj.repoUrl || ""}
+                    onChange={(e) =>
+                      onChange(
+                        projects.map((x, idx) =>
+                          idx === i ? { ...x, repoUrl: e.target.value } : x
+                        )
+                      )
+                    }
+                    placeholder="https://github.com/user/repo"
+                  />
+                </Field>
+              </div>
+            </div>
           </div>
         ))}
         <button
@@ -613,7 +769,7 @@ function ProjectsSection({
               },
             ])
           }
-          className="self-start font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+          className={`${GHOST_BTN_CLASS} self-start`}
         >
           + Add project
         </button>
@@ -631,61 +787,65 @@ function AchievementsSection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Achievements
-      </h2>
-      <div className="flex flex-col gap-3">
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Achievements</h2>
+      <div className="flex flex-col gap-4">
         {achievements.map((ach, i) => (
-          <div key={i} className="flex items-start gap-2 rounded-lg border border-border/60 p-3">
-            <div className="flex flex-1 flex-col gap-2">
-              <input
-                value={ach.title}
-                onChange={(e) =>
-                  onChange(
-                    achievements.map((a, idx) =>
-                      idx === i ? { ...a, title: e.target.value } : a
-                    )
-                  )
-                }
-                placeholder="Achievement title"
-                className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-foreground outline-none hover:border-border focus:border-primary"
-              />
-              <input
-                value={ach.description || ""}
-                onChange={(e) =>
-                  onChange(
-                    achievements.map((a, idx) =>
-                      idx === i ? { ...a, description: e.target.value } : a
-                    )
-                  )
-                }
-                placeholder="Description"
-                className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-foreground outline-none hover:border-border focus:border-primary"
-              />
-              <input
-                value={ach.link || ""}
-                onChange={(e) =>
-                  onChange(
-                    achievements.map((a, idx) =>
-                      idx === i ? { ...a, link: e.target.value } : a
-                    )
-                  )
-                }
-                placeholder="Link (optional)"
-                className="font-manrope rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-muted-foreground outline-none hover:border-border focus:border-primary"
-              />
+          <div key={i} className={CARD_CLASS}>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-dm-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                Achievement {i + 1}
+              </span>
+              {achievements.length > 1 && (
+                <RemoveButton
+                  onClick={() =>
+                    onChange(achievements.filter((_, idx) => idx !== i))
+                  }
+                />
+              )}
             </div>
-            {achievements.length > 1 && (
-              <button
-                type="button"
-                onClick={() =>
-                  onChange(achievements.filter((_, idx) => idx !== i))
-                }
-                className="text-xs text-muted-foreground hover:text-red-500"
-              >
-                ×
-              </button>
-            )}
+            <div className="flex flex-col gap-4">
+              <Field label="Title" required>
+                <TextInput
+                  value={ach.title}
+                  onChange={(e) =>
+                    onChange(
+                      achievements.map((a, idx) =>
+                        idx === i ? { ...a, title: e.target.value } : a
+                      )
+                    )
+                  }
+                  placeholder="Runner-Up at Salesforce Crosswalk '25"
+                />
+              </Field>
+              <Field label="Description">
+                <TextArea
+                  value={ach.description || ""}
+                  rows={2}
+                  onChange={(e) =>
+                    onChange(
+                      achievements.map((a, idx) =>
+                        idx === i ? { ...a, description: e.target.value } : a
+                      )
+                    )
+                  }
+                  placeholder="Led a team of 6 to build an AI-powered system…"
+                />
+              </Field>
+              <Field label="Link">
+                <TextInput
+                  type="url"
+                  value={ach.link || ""}
+                  onChange={(e) =>
+                    onChange(
+                      achievements.map((a, idx) =>
+                        idx === i ? { ...a, link: e.target.value } : a
+                      )
+                    )
+                  }
+                  placeholder="https://certificate-url.com"
+                />
+              </Field>
+            </div>
           </div>
         ))}
         <button
@@ -696,7 +856,7 @@ function AchievementsSection({
               { title: "", description: "", link: "", type: "OTHER" as const },
             ])
           }
-          className="self-start font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+          className={`${GHOST_BTN_CLASS} self-start`}
         >
           + Add achievement
         </button>
@@ -714,13 +874,14 @@ function HobbiesSection({
 }) {
   return (
     <div>
-      <h2 className="font-space-grotesk mb-3 text-sm font-semibold text-foreground">
-        Hobbies & Interests
-      </h2>
-      <div className="flex flex-col gap-2">
+      <h2 className={`${SECTION_TITLE_CLASS} mb-3`}>Hobbies & Interests</h2>
+      <div className="flex flex-col gap-3">
         {hobbyItems.map((h, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <input
+          <div
+            key={i}
+            className="flex flex-col gap-2 sm:flex-row sm:items-center"
+          >
+            <TextInput
               value={h.name}
               onChange={(e) =>
                 onChange(
@@ -730,9 +891,9 @@ function HobbiesSection({
                 )
               }
               placeholder="Hobby name"
-              className="font-manrope w-1/3 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+              className="sm:max-w-[12rem]"
             />
-            <input
+            <TextInput
               value={h.description || ""}
               onChange={(e) =>
                 onChange(
@@ -742,15 +903,11 @@ function HobbiesSection({
                 )
               }
               placeholder="Brief description (optional)"
-              className="font-manrope flex-1 rounded-md border border-border bg-muted/40 px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
             />
-            <button
-              type="button"
+            <RemoveButton
+              label="×"
               onClick={() => onChange(hobbyItems.filter((_, idx) => idx !== i))}
-              className="text-xs text-muted-foreground hover:text-red-500"
-            >
-              ×
-            </button>
+            />
           </div>
         ))}
         <button
@@ -758,7 +915,7 @@ function HobbiesSection({
           onClick={() =>
             onChange([...hobbyItems, { name: "", description: "" }])
           }
-          className="self-start font-manrope text-xs text-primary transition-colors hover:text-primary/80"
+          className={`${GHOST_BTN_CLASS} self-start`}
         >
           + Add hobby
         </button>

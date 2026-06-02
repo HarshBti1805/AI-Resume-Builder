@@ -53,6 +53,8 @@ interface AtsResult {
   suggestions: string[];
 }
 
+type DownloadFormat = "pdf" | "docx";
+
 /* ─────────────────────────────────────────────
    ATS Score Ring Component
    ───────────────────────────────────────────── */
@@ -141,6 +143,7 @@ export default function PreviewPage() {
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [downloadFormat, setDownloadFormat] = useState<DownloadFormat>("pdf");
 
   const [downloadFileBase, setDownloadFileBase] = useState<string>("");
   const didInitDownloadBaseRef = useRef(false);
@@ -291,7 +294,7 @@ export default function PreviewPage() {
     }
   };
 
-  /* ─── PDF Download ─── */
+  /* ─── Download (PDF or DOCX) ─── */
   const handleDownload = async () => {
     if (!resumeId) return;
 
@@ -304,7 +307,7 @@ export default function PreviewPage() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          format: "pdf",
+          format: downloadFormat,
           fileName: downloadFileBase,
         }),
       });
@@ -314,14 +317,14 @@ export default function PreviewPage() {
         throw new Error(errData?.error?.message || "Download failed");
       }
 
-      // Response is a PDF blob
+      // Response is a PDF/DOCX blob
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       const base =
         downloadFileBase?.trim().replace(/\.(pdf|docx)$/i, "") || "Resume";
-      a.download = `${base}.pdf`;
+      a.download = `${base}.${downloadFormat}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -391,6 +394,22 @@ export default function PreviewPage() {
             </p>
           </motion.div>
 
+          {/* ─── Primary edit buttons (separate) ─── */}
+          <motion.div variants={item} className="mb-4 flex flex-wrap gap-2">
+            <Link
+              href="/form/summary"
+              className="font-space-grotesk inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-xs font-medium text-background shadow-md transition-all hover:opacity-90"
+            >
+              Edit form
+            </Link>
+            <Link
+              href="/editor"
+              className="font-space-grotesk inline-flex items-center gap-2 rounded-xl bg-foreground px-5 py-2 text-xs font-medium text-background shadow-md transition-all hover:opacity-90"
+            >
+              Edit in editor
+            </Link>
+          </motion.div>
+
           {/* ─── Action bar ─── */}
           <motion.div variants={item} className="mb-6">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/50 px-5 py-3.5 backdrop-blur-sm">
@@ -422,18 +441,6 @@ export default function PreviewPage() {
 
               {/* Actions */}
               <div className="flex items-center gap-2">
-                <Link
-                  href="/form/summary"
-                  className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
-                >
-                  Edit form
-                </Link>
-                <Link
-                  href="/editor"
-                  className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
-                >
-                  Edit in editor
-                </Link>
                 <Link
                   href="/start"
                   className="font-manrope rounded-lg bg-foreground/[0.06] px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
@@ -472,6 +479,25 @@ export default function PreviewPage() {
                 </button>
 
                 <div className="flex items-center gap-2">
+                  {/* PDF / DOCX format toggle */}
+                  <div className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
+                    {(["pdf", "docx"] as DownloadFormat[]).map((fmt) => (
+                      <button
+                        key={fmt}
+                        type="button"
+                        onClick={() => setDownloadFormat(fmt)}
+                        disabled={isDownloading || isLoadingPreview}
+                        className={`font-dm-mono rounded-md px-2.5 py-1.5 text-[10px] uppercase tracking-widest transition-colors disabled:opacity-50 ${
+                          downloadFormat === fmt
+                            ? "bg-foreground text-background"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {fmt}
+                      </button>
+                    ))}
+                  </div>
+
                   <input
                     type="text"
                     value={downloadFileBase}
@@ -507,7 +533,7 @@ export default function PreviewPage() {
                           <polyline points="7 10 12 15 17 10" />
                           <line x1="12" y1="15" x2="12" y2="3" />
                         </svg>
-                        Download PDF
+                        Download {downloadFormat.toUpperCase()}
                       </>
                     )}
                   </button>
@@ -806,7 +832,7 @@ export default function PreviewPage() {
               {isDownloading ? (
                 <>
                   <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-background/30 border-t-background" />
-                  Generating PDF…
+                  Generating {downloadFormat.toUpperCase()}…
                 </>
               ) : (
                 <>
@@ -824,7 +850,7 @@ export default function PreviewPage() {
                     <polyline points="7 10 12 15 17 10" />
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                  Download PDF
+                  Download {downloadFormat.toUpperCase()}
                 </>
               )}
             </button>

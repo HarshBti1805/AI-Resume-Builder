@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { FormNavLink } from "@/components/form/FormNavLink";
+import { GenerateBulletsButton } from "@/components/form/GenerateBulletsButton";
 import { isStep4Complete } from "@/lib/formStepGating";
 import type { Internship, Achievement, Bullet } from "@/store/resumeStore";
 import { useResumeStore } from "@/store/resumeStore";
@@ -108,6 +109,14 @@ export default function ExperiencePage() {
       "bullets",
       (intern.bullets || []).filter((_, i) => i !== bIndex)
     );
+  };
+
+  const addGeneratedInternBullets = (intIndex: number, texts: string[]) => {
+    const intern = step4.internships[intIndex];
+    if (!intern) return;
+    const existing = (intern.bullets || []).filter((b) => b.text.trim());
+    const generated: Bullet[] = texts.map((t) => ({ text: t }));
+    updateInternship(intIndex, "bullets", [...existing, ...generated]);
   };
 
   // ── Achievements ──
@@ -265,6 +274,18 @@ export default function ExperiencePage() {
                       >
                         + Add bullet point
                       </button>
+                      <div className="mt-3">
+                        <GenerateBulletsButton
+                          placeholder={`Describe your work${
+                            intern.role ? ` as ${intern.role}` : ""
+                          }${
+                            intern.company ? ` at ${intern.company}` : ""
+                          } — responsibilities and impact…`}
+                          onAdd={(texts) =>
+                            addGeneratedInternBullets(index, texts)
+                          }
+                        />
+                      </div>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2">

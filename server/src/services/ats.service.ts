@@ -8,9 +8,13 @@ interface ResumeDataForAts {
   phone?: string | null;
   fullName?: string | null;
   cgpa?: number | null;
+  stream?: string | null;
+  university?: string | null;
   skills: string[];
   summary?: string | null;
-  projects: { title: string; description: string }[];
+  projects: { title: string; description: string; bullets?: string[] }[];
+  internships?: { role: string; company: string; bullets?: string[] }[];
+  achievements?: { title: string }[];
 }
 
 // ─────────────────────────────────────────────
@@ -95,25 +99,39 @@ export const atsCheckService = async (
         {
           role: "system",
           content:
-            "You are an ATS (Applicant Tracking System) compatibility analyser. " +
+            "You are a senior technical recruiter and ATS (Applicant Tracking System) " +
+            "compatibility analyser reviewing a real student resume. " +
+            "Your feedback must be SPECIFIC to the actual content provided — never generic. " +
             "You must return ONLY a valid JSON object with no markdown, no explanation.",
         },
         {
           role: "user",
           content:
-            "Analyse this resume data for ATS compatibility and give a score from 0 to 60.\n\n" +
+            "Analyse this resume's actual content for ATS compatibility and give a score from 0 to 60.\n\n" +
             "Scoring criteria:\n" +
             "- Keyword density and industry relevance (0–20 pts)\n" +
             "- Use of strong action verbs in descriptions (0–15 pts)\n" +
             "- Quantified achievements (0–15 pts)\n" +
             "- Professional language and clarity (0–10 pts)\n\n" +
+            "RULES FOR issues AND suggestions — these are mandatory:\n" +
+            "1. Every item MUST reference something concrete from THIS resume: name the " +
+            "specific project, internship, skill, or quote the exact weak bullet/phrase you mean.\n" +
+            "2. For a weak bullet, show how to fix it: rewrite it or state exactly what metric/detail to add.\n" +
+            "3. Point out missing keywords that this student's field (" +
+            (data.stream || "their field") +
+            ") and listed projects/skills imply but that are absent.\n" +
+            "4. BANNED generic phrases (do NOT output these): 'add more details', 'use action verbs', " +
+            "'quantify achievements', 'add specific roles and responsibilities', 'include relevant coursework', " +
+            "'consider rephrasing the summary', 'tailor to the job'. If you would write one of these, " +
+            "instead name the exact bullet/section it applies to and what concretely to write.\n" +
+            "5. Keep each item to one actionable sentence. Prefer 3–6 high-value items over many shallow ones.\n\n" +
             "Return exactly this JSON shape (no other text):\n" +
             '{ "score": number, "issues": string[], "suggestions": string[] }\n\n' +
             `Resume data:\n${JSON.stringify(data, null, 2)}`,
         },
       ],
-      max_tokens: 500,
-      temperature: 0.2,
+      max_tokens: 700,
+      temperature: 0.3,
       response_format: { type: "json_object" },
     });
 

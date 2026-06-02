@@ -9,7 +9,6 @@ import {
   improveBulletService,
   addKeywordsService,
   generateBulletsService,
-  refineFullResumeService,
 } from "../services/ai.service";
 import { atsCheckService } from "../services/ats.service";
 
@@ -177,7 +176,17 @@ export const atsCheck = async (
 
     const resume = await prisma.resume.findFirst({
       where: { id: resumeId, userId },
-      include: { projects: true },
+      include: {
+        projects: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
+        internships: {
+          orderBy: { sortOrder: "asc" },
+          include: { bullets: { orderBy: { sortOrder: "asc" } } },
+        },
+        achievements: { orderBy: { sortOrder: "asc" } },
+      },
     });
 
     if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
@@ -187,12 +196,21 @@ export const atsCheck = async (
       phone: resume.phone,
       fullName: resume.fullName,
       cgpa: resume.cgpa,
+      stream: resume.stream,
+      university: resume.university,
       skills: resume.skills,
       summary: resume.summary,
       projects: resume.projects.map((p) => ({
         title: p.title,
         description: p.description,
+        bullets: p.bullets.map((b) => b.text),
       })),
+      internships: resume.internships.map((i) => ({
+        role: i.role,
+        company: i.company,
+        bullets: i.bullets.map((b) => b.text),
+      })),
+      achievements: resume.achievements.map((a) => ({ title: a.title })),
     });
 
     // Persist score so it shows in the UI without re-running
@@ -290,57 +308,6 @@ export const generateBullets = async (
       count ?? 4
     );
     res.json({ success: true, data: { bullets } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-// ─────────────────────────────────────────────
-// POST /api/ai/refine-resume
-// ─────────────────────────────────────────────
-
-export const refineResume = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  try {
-    const userId = req.user!.id;
-    const { resumeId } = req.body;
-
-    if (!resumeId) throw new AppError("resumeId is required", 400, "MISSING_FIELD");
-
-    const resume = await prisma.resume.findFirst({
-      where: { id: resumeId, userId },
-      include: { projects: true, internships: true, achievements: true },
-    });
-
-    if (!resume) throw new AppError("Resume not found", 404, "NOT_FOUND");
-
-    const result = await refineFullResumeService({
-      stream: resume.stream ?? "",
-      university: resume.university ?? "",
-      skills: resume.skills,
-      projects: resume.projects.map((p) => ({ title: p.title })),
-      internships: resume.internships.map((i) => ({
-        role: i.role,
-        company: i.company,
-      })),
-      summary: resume.summary ?? "",
-      achievements: resume.achievements.map((a) => ({ title: a.title })),
-    });
-
-    if (result.score > 0) {
-      await prisma.resume.update({
-        where: { id: resumeId },
-        data: {
-          atsScore: Math.round(result.score),
-          lastAtsCheck: new Date(),
-        },
-      });
-    }
-
-    res.json({ success: true, data: result });
   } catch (err) {
     next(err);
   }
